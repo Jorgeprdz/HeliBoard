@@ -4,12 +4,17 @@
 package helium314.keyboard.latin;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+
+import helium314.keyboard.keyboard.KeyboardTheme;
+import helium314.keyboard.latin.settings.Settings;
+import helium314.keyboard.latin.utils.KtxKt;
 
 /**
  * Applies the iOS-inspired frosted-glass surface used by the Jorgeprdz HeliBoard fork.
@@ -22,6 +27,7 @@ import android.view.WindowManager;
 public final class IosGlassController {
     private static final int BLUR_RADIUS_DP = 88;
     private static final int PANEL_CORNER_RADIUS_DP = 18;
+    private static final String PREF_VISUAL_PROFILE_V2 = "ios_glass_visual_profile_v2";
 
     private IosGlassController() {}
 
@@ -29,6 +35,8 @@ public final class IosGlassController {
         if (inputView == null || keyboardPanel == null) {
             return;
         }
+
+        ensureVisualProfile(inputView.getContext());
 
         final GradientDrawable frost = new GradientDrawable();
         frost.setShape(GradientDrawable.RECTANGLE);
@@ -46,6 +54,24 @@ public final class IosGlassController {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             inputView.post(() -> applyCrossWindowBlur(inputView));
         }
+    }
+
+    /**
+     * Migrate existing installs of the first prototype to the visual profile used by the concept.
+     * The marker makes this a one-shot migration, so the user's later theme choices are respected.
+     */
+    private static void ensureVisualProfile(final Context context) {
+        final SharedPreferences prefs = KtxKt.prefs(context);
+        if (prefs.getBoolean(PREF_VISUAL_PROFILE_V2, false)) {
+            return;
+        }
+        prefs.edit()
+                .putString(Settings.PREF_THEME_COLORS, KeyboardTheme.THEME_DARKER)
+                .putString(Settings.PREF_THEME_COLORS_NIGHT, KeyboardTheme.THEME_DARKER)
+                .putBoolean(Settings.PREF_THEME_DAY_NIGHT, false)
+                .putBoolean(Settings.PREF_SHOW_HINTS, false)
+                .putBoolean(PREF_VISUAL_PROFILE_V2, true)
+                .apply();
     }
 
     private static float dp(final View view, final int value) {
