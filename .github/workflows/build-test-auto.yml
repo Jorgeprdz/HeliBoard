@@ -27,13 +27,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - uses: gradle/actions/setup-gradle@v3
+      - uses: gradle/actions/setup-gradle@v4
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew testRunTestsUnitTest
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest
 
       - name: Archive reports for failed job
         uses: actions/upload-artifact@v4
