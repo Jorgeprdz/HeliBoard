@@ -46,11 +46,11 @@ object Defaults {
     private const val DEFAULT_SIZE_SCALE = 1.0f // 100%
     const val PREF_THEME_STYLE = KeyboardTheme.STYLE_MATERIAL
     fun PREF_ICON_STYLE(prefs: SharedPreferences) = prefs.getString(Settings.PREF_THEME_STYLE, PREF_THEME_STYLE)!!
-    const val PREF_THEME_COLORS = KeyboardTheme.THEME_LIGHT
-    const val PREF_THEME_COLORS_NIGHT = KeyboardTheme.THEME_DARK
+    const val PREF_THEME_COLORS = KeyboardTheme.THEME_DARKER
+    const val PREF_THEME_COLORS_NIGHT = KeyboardTheme.THEME_DARKER
     const val PREF_THEME_KEY_BORDERS = false
     @JvmField
-    val PREF_THEME_DAY_NIGHT = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+    val PREF_THEME_DAY_NIGHT = false
     const val PREF_CUSTOM_ICON_NAMES = ""
     const val PREF_TOOLBAR_CUSTOM_KEY_CODES = ""
     const val PREF_AUTO_CAP = true
@@ -142,7 +142,7 @@ object Defaults {
     const val PREF_LOCALIZED_NUMBER_ROW = true
     const val PREF_SHOW_NUMBER_ROW_HINTS = false
     const val PREF_CUSTOM_CURRENCY_KEY = ""
-    const val PREF_SHOW_HINTS = true
+    const val PREF_SHOW_HINTS = false
     const val PREF_POPUP_KEYS_ORDER = POPUP_KEYS_ORDER_DEFAULT
     const val PREF_POPUP_KEYS_HINT_ORDER = POPUP_KEYS_LABEL_DEFAULT
     const val PREF_SHOW_POPUP_HINTS = false
