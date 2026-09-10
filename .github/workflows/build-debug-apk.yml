@@ -26,6 +26,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Restore Android build identity
+        uses: actions/cache@v4
+        with:
+          path: ~/.android
+          key: ios-glass-android-home-v1
+
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Grant execute permission for gradlew
@@ -42,6 +48,8 @@ jobs:
           APK="$(find app/build/outputs/apk/debug -type f -name '*-debug*.apk' | head -1)"
           test -n "$APK"
           echo "path=$APK" >> "$GITHUB_OUTPUT"
+          echo "APK signing certificate:"
+          keytool -printcert -jarfile "$APK" | grep -E 'Owner:|SHA256:'
           sha256sum "$APK"
 
       - name: Upload iOS Glass APK
