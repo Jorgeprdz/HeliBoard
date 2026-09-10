@@ -17,7 +17,9 @@ import android.view.View;
 import helium314.keyboard.event.HapticEvent;
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode;
 import helium314.keyboard.latin.common.Constants;
+import helium314.keyboard.latin.settings.IosGlassPreferences;
 import helium314.keyboard.latin.settings.SettingsValues;
+import helium314.keyboard.latin.utils.KtxKt;
 
 /**
  * This class gathers audio feedback and haptic feedback functions.
@@ -28,6 +30,7 @@ import helium314.keyboard.latin.settings.SettingsValues;
 public final class AudioAndHapticFeedbackManager {
     private AudioManager mAudioManager;
     private Vibrator mVibrator;
+    private Context mContext;
 
     private SettingsValues mSettingsValues;
     private boolean mSoundOn;
@@ -49,6 +52,7 @@ public final class AudioAndHapticFeedbackManager {
     }
 
     private void initInternal(final Context context) {
+        mContext = context.getApplicationContext();
         mAudioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         mVibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
     }
@@ -66,20 +70,31 @@ public final class AudioAndHapticFeedbackManager {
         return mVibrator != null && mVibrator.hasVibrator();
     }
 
-    /**
-     * Custom-duration haptics for the iOS-glass build. HeliBoard already exposes duration as a
-     * slider; on hardware with amplitude control we map that same control to a progressively
-     * stronger pulse as well. This keeps the existing preference/backup format intact while
-     * making the upper half of the slider feel substantially stronger on modern Galaxy/Pixel
-     * devices.
-     */
     public void vibrate(final long milliseconds) {
+        vibrate(milliseconds, readHapticStrength());
+    }
+
+    /** Gives the settings slider immediate tactile feedback without changing duration. */
+    public void previewHapticStrength(final int strengthPercent) {
+        vibrate(16L, strengthPercent);
+    }
+
+    private int readHapticStrength() {
+        if (mContext == null) {
+            return IosGlassPreferences.DEFAULT_HAPTIC_STRENGTH;
+        }
+        return KtxKt.prefs(mContext).getInt(
+                IosGlassPreferences.PREF_HAPTIC_STRENGTH,
+                IosGlassPreferences.DEFAULT_HAPTIC_STRENGTH);
+    }
+
+    private void vibrate(final long milliseconds, final int strengthPercent) {
         if (mVibrator == null || milliseconds <= 0) {
             return;
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             final int amplitude = mVibrator.hasAmplitudeControl()
-                    ? amplitudeForDuration(milliseconds)
+                    ? amplitudeForStrength(strengthPercent)
                     : VibrationEffect.DEFAULT_AMPLITUDE;
             mVibrator.vibrate(VibrationEffect.createOneShot(milliseconds, amplitude));
         } else {
@@ -88,10 +103,10 @@ public final class AudioAndHapticFeedbackManager {
         }
     }
 
-    private static int amplitudeForDuration(final long milliseconds) {
-        // 1 ms starts crisp but gentle; ~24 ms is already strong; >= 45 ms reaches full amplitude.
-        final float normalized = Math.min(1.0f, milliseconds / 45.0f);
-        return Math.max(1, Math.min(255, Math.round(72.0f + (183.0f * normalized))));
+    private static int amplitudeForStrength(final int strengthPercent) {
+        final int clamped = Math.max(1, Math.min(100, strengthPercent));
+        // Keep the low end crisp instead of mushy, while allowing the top end to reach full power.
+        return Math.max(1, Math.min(255, Math.round(36.0f + (219.0f * clamped / 100.0f))));
     }
 
     private boolean reevaluateIfSoundIsOn() {
@@ -133,7 +148,7 @@ public final class AudioAndHapticFeedbackManager {
             vibrate(mSettingsValues.mKeypressVibrationDuration);
             return;
         }
-        // Go ahead with the system default
+        // Keep HeliBoard's system-default path when the user selects system vibration duration.
         if (viewToPerformHapticFeedbackOn != null) {
             viewToPerformHapticFeedbackOn.performHapticFeedback(
                     hapticEvent.feedbackConstant,
