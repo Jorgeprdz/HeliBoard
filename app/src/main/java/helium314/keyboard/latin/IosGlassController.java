@@ -5,6 +5,7 @@ package helium314.keyboard.latin;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
@@ -16,18 +17,11 @@ import helium314.keyboard.keyboard.KeyboardTheme;
 import helium314.keyboard.latin.settings.Settings;
 import helium314.keyboard.latin.utils.KtxKt;
 
-/**
- * Applies the iOS-inspired frosted-glass surface used by the Jorgeprdz HeliBoard fork.
- *
- * The reference design is intentionally a dark smoked glass surface even when the host app is
- * using a light theme. Android's cross-window blur can be disabled by the platform/OEM at runtime,
- * so a dense translucent frost layer is always present while FLAG_BLUR_BEHIND remains an optional
- * enhancement. This intentionally never blurs the keyboard's own content.
- */
+/** Applies the iOS-inspired adaptive frosted surface used by the Jorgeprdz HeliBoard fork. */
 public final class IosGlassController {
-    private static final int BLUR_RADIUS_DP = 88;
+    private static final int BLUR_RADIUS_DP = 80;
     private static final int PANEL_CORNER_RADIUS_DP = 18;
-    private static final String PREF_VISUAL_PROFILE_V2 = "ios_glass_visual_profile_v2";
+    private static final String PREF_VISUAL_PROFILE_V3 = "ios_glass_visual_profile_v3";
 
     private IosGlassController() {}
 
@@ -38,12 +32,14 @@ public final class IosGlassController {
 
         ensureVisualProfile(inputView.getContext());
 
+        final boolean dark = isNightMode(inputView.getResources().getConfiguration());
         final GradientDrawable frost = new GradientDrawable();
         frost.setShape(GradientDrawable.RECTANGLE);
-        // iOS concept target: smoky black glass, not a system-light translucent sheet.
-        // Alpha is intentionally high enough that text from the app behind the IME does not compete
-        // visually with the key legends when OEM blur is unavailable.
-        frost.setColor(Color.argb(222, 24, 24, 26));
+        // Day: iOS-like pale grey/white sheet. Night: smoked dark grey sheet.
+        // Keep enough opacity that the app behind never competes with key legends if OEM blur is off.
+        frost.setColor(dark
+                ? Color.argb(228, 28, 28, 30)
+                : Color.argb(238, 238, 238, 242));
         frost.setCornerRadii(new float[] {
                 dp(inputView, PANEL_CORNER_RADIUS_DP), dp(inputView, PANEL_CORNER_RADIUS_DP),
                 dp(inputView, PANEL_CORNER_RADIUS_DP), dp(inputView, PANEL_CORNER_RADIUS_DP),
@@ -56,22 +52,26 @@ public final class IosGlassController {
         }
     }
 
-    /**
-     * Migrate existing installs of the first prototype to the visual profile used by the concept.
-     * The marker makes this a one-shot migration, so the user's later theme choices are respected.
-     */
+    /** Migrate prototype installs once so preserved prefs do not keep the keyboard permanently dark. */
     private static void ensureVisualProfile(final Context context) {
         final SharedPreferences prefs = KtxKt.prefs(context);
-        if (prefs.getBoolean(PREF_VISUAL_PROFILE_V2, false)) {
+        if (prefs.getBoolean(PREF_VISUAL_PROFILE_V3, false)) {
             return;
         }
         prefs.edit()
-                .putString(Settings.PREF_THEME_COLORS, KeyboardTheme.THEME_DARKER)
+                .putString(Settings.PREF_THEME_STYLE, KeyboardTheme.STYLE_MATERIAL)
+                .putString(Settings.PREF_THEME_COLORS, KeyboardTheme.THEME_LIGHT)
                 .putString(Settings.PREF_THEME_COLORS_NIGHT, KeyboardTheme.THEME_DARKER)
-                .putBoolean(Settings.PREF_THEME_DAY_NIGHT, false)
+                .putBoolean(Settings.PREF_THEME_DAY_NIGHT, true)
+                .putBoolean(Settings.PREF_THEME_KEY_BORDERS, false)
                 .putBoolean(Settings.PREF_SHOW_HINTS, false)
-                .putBoolean(PREF_VISUAL_PROFILE_V2, true)
+                .putBoolean(PREF_VISUAL_PROFILE_V3, true)
                 .apply();
+    }
+
+    private static boolean isNightMode(final Configuration configuration) {
+        return (configuration.uiMode & Configuration.UI_MODE_NIGHT_MASK)
+                == Configuration.UI_MODE_NIGHT_YES;
     }
 
     private static float dp(final View view, final int value) {
