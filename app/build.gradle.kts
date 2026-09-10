@@ -13,8 +13,8 @@ android {
         applicationId = "com.jorgeprdz.ioskeyboard"
         minSdk = 21
         targetSdk = 37
-        versionCode = 4101
-        versionName = "4.1-iosglass.1"
+        versionCode = 4102
+        versionName = "4.1-iosglass.2"
         ndk {
             abiFilters.clear()
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
