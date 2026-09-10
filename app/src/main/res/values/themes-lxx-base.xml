@@ -31,11 +31,11 @@
         name="KeyboardView.LXX_Base"
         parent="KeyboardView.LXX"
         >
-        <!-- Jorgeprdz iOS-glass surface: transparent canvas, rounded keycaps, visible spacebar. -->
+        <!-- iOS Glass: no outline/bevel. Shape is separated only by spacing and tone. -->
         <item name="android:background">@android:color/transparent</item>
-        <item name="keyBackground">@drawable/btn_keyboard_key_rounded_base_border</item>
-        <item name="functionalKeyBackground">@drawable/btn_keyboard_key_functional_rounded_base_border</item>
-        <item name="spacebarNoBorderBackground">@drawable/btn_keyboard_key_rounded_base_border</item>
+        <item name="keyBackground">@drawable/btn_keyboard_key_ios_surface</item>
+        <item name="functionalKeyBackground">@drawable/btn_keyboard_key_ios_surface</item>
+        <item name="spacebarNoBorderBackground">@drawable/btn_keyboard_key_ios_surface</item>
         <item name="keyTextInactivatedColor">@color/key_text_inactive_color_lxx_light</item>
         <item name="keyShiftedLetterHintInactivatedColor">@color/key_text_inactive_color_lxx_light</item>
         <item name="keyShiftedLetterHintActivatedColor">@color/key_text_color_lxx_light</item>
