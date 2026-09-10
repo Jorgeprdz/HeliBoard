@@ -5,19 +5,19 @@
     { "label": "delete", "width": 0.15 }
   ],
   [
-    { "label": "symbol_alpha", "width": 0.15 },
+    { "label": "symbol_alpha", "width": 0.09 },
     { "$": "variation_selector",
       "default":  { "label": "comma", "labelFlags": 1073741824 },
       "email":    { "label": "@", "labelFlags": 1073741824, "groupId": 1, "type": "function" },
       "uri":      { "label": "/", "labelFlags": 1073741824, "groupId": 1, "type": "function" }
     },
-    { "$": "keyboard_state_selector", "languageKeyEnabled": { "$": "keyboard_state_selector", "alphabet": { "label": "language_switch" }}},
-    { "$": "keyboard_state_selector", "emojiKeyEnabled": { "$": "keyboard_state_selector", "alphabet": { "label": "emoji" }}},
-    { "$": "keyboard_state_selector", "symbols": { "label": "numpad" } },
+    { "$": "keyboard_state_selector", "languageKeyEnabled": { "$": "keyboard_state_selector", "alphabet": { "label": "language_switch", "width": 0.09 }}},
+    { "$": "keyboard_state_selector", "emojiKeyEnabled": { "$": "keyboard_state_selector", "alphabet": { "label": "emoji", "width": 0.09 }}},
+    { "$": "keyboard_state_selector", "symbols": { "label": "numpad", "width": 0.09 } },
     { "label": "space" },
     { "$": "keyboard_state_selector",
-      "symbols": { "$": "keyboard_state_selector", "dpadKeyEnabled": { "label": "dpad" } },
-      "dpad": { "label": "symbol" }
+      "symbols": { "$": "keyboard_state_selector", "dpadKeyEnabled": { "label": "dpad", "width": 0.09 } },
+      "dpad": { "label": "symbol", "width": 0.09 }
     },
     { "label": "period", "labelFlags": 1073741824 },
     { "label": "action", "width": 0.15, "labelFlags": 1073741824 }

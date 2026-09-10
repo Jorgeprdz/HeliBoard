@@ -19,9 +19,9 @@ import helium314.keyboard.latin.utils.KtxKt;
 
 /** Applies the iOS-inspired adaptive frosted surface used by the Jorgeprdz HeliBoard fork. */
 public final class IosGlassController {
-    private static final int BLUR_RADIUS_DP = 80;
+    private static final int BLUR_RADIUS_DP = 88;
     private static final int PANEL_CORNER_RADIUS_DP = 18;
-    private static final String PREF_VISUAL_PROFILE_V3 = "ios_glass_visual_profile_v3";
+    private static final String PREF_VISUAL_PROFILE_V4 = "ios_glass_visual_profile_v4";
 
     private IosGlassController() {}
 
@@ -35,11 +35,10 @@ public final class IosGlassController {
         final boolean dark = isNightMode(inputView.getResources().getConfiguration());
         final GradientDrawable frost = new GradientDrawable();
         frost.setShape(GradientDrawable.RECTANGLE);
-        // Day: iOS-like pale grey/white sheet. Night: smoked dark grey sheet.
-        // Keep enough opacity that the app behind never competes with key legends if OEM blur is off.
+        // 88-89% translucent frost: enough density for legibility while preserving real backdrop blur.
         frost.setColor(dark
-                ? Color.argb(228, 28, 28, 30)
-                : Color.argb(238, 238, 238, 242));
+                ? Color.argb(224, 28, 28, 30)
+                : Color.argb(226, 238, 238, 242));
         frost.setCornerRadii(new float[] {
                 dp(inputView, PANEL_CORNER_RADIUS_DP), dp(inputView, PANEL_CORNER_RADIUS_DP),
                 dp(inputView, PANEL_CORNER_RADIUS_DP), dp(inputView, PANEL_CORNER_RADIUS_DP),
@@ -52,10 +51,13 @@ public final class IosGlassController {
         }
     }
 
-    /** Migrate prototype installs once so preserved prefs do not keep the keyboard permanently dark. */
+    /**
+     * One-shot visual migration. It only changes theme presentation flags; keyboard features and
+     * behavioral preferences remain untouched and subsequent user theme changes are respected.
+     */
     private static void ensureVisualProfile(final Context context) {
         final SharedPreferences prefs = KtxKt.prefs(context);
-        if (prefs.getBoolean(PREF_VISUAL_PROFILE_V3, false)) {
+        if (prefs.getBoolean(PREF_VISUAL_PROFILE_V4, false)) {
             return;
         }
         prefs.edit()
@@ -63,9 +65,10 @@ public final class IosGlassController {
                 .putString(Settings.PREF_THEME_COLORS, KeyboardTheme.THEME_LIGHT)
                 .putString(Settings.PREF_THEME_COLORS_NIGHT, KeyboardTheme.THEME_DARKER)
                 .putBoolean(Settings.PREF_THEME_DAY_NIGHT, true)
-                .putBoolean(Settings.PREF_THEME_KEY_BORDERS, false)
-                .putBoolean(Settings.PREF_SHOW_HINTS, false)
-                .putBoolean(PREF_VISUAL_PROFILE_V3, true)
+                // Logical borders keep normal/functional/action color roles separate. The iOS
+                // drawable itself has no hard outline, so this does not reintroduce Material borders.
+                .putBoolean(Settings.PREF_THEME_KEY_BORDERS, true)
+                .putBoolean(PREF_VISUAL_PROFILE_V4, true)
                 .apply();
     }
 
@@ -96,7 +99,7 @@ public final class IosGlassController {
                 windowManager.updateViewLayout(root, params);
             }
         } catch (RuntimeException ignored) {
-            // Some OEM IME windows reject blur/layout changes. The frost fallback remains visible.
+            // Some OEM IME windows reject cross-window blur. The translucent frost remains usable.
         }
     }
 }

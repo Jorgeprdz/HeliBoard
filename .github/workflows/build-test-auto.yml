@@ -1,10 +1,15 @@
 name: Test build
-# Builds unit tests without producing an APK.
+# Runs the complete debug unit-test suite without exclusions.
 
 on:
+  push:
+    branches:
+      - feature/ios-glass-keyboard
   pull_request:
     paths:
       - 'app/src/main/java**'
+      - 'app/src/main/res/**'
+      - 'app/src/main/assets/layouts/**'
   workflow_dispatch:
 
 jobs:
@@ -25,28 +30,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run unit tests
-        shell: bash
-        run: |
-          cat > "$RUNNER_TEMP/ios-glass-tests.init.gradle" <<'EOF'
-          import org.gradle.api.tasks.testing.Test
-
-          allprojects {
-              tasks.withType(Test).configureEach {
-                  filter {
-                      // Upstream explicitly marks these two as known failures and normally
-                      // bypasses them in the historical runTests build type.
-                      excludeTestsMatching "helium314.keyboard.latin.InputLogicTest.insertLetterIntoWordHangulFails"
-                      excludeTestsMatching "helium314.keyboard.latin.StringUtilsTest.detectEmojisAtEndFails"
-
-                      // External-link checks are unrelated to application regressions and can
-                      // fail when a third-party page disappears (Roccobot/HeliBoard-RLM is 404).
-                      excludeTestsMatching "helium314.keyboard.XLinkTest.*"
-                  }
-              }
-          }
-          EOF
-          ./gradlew -I "$RUNNER_TEMP/ios-glass-tests.init.gradle" testDebugUnitTest
+      - name: Run complete unit-test suite
+        run: ./gradlew testDebugUnitTest
 
       - name: Archive reports for failed job
         uses: actions/upload-artifact@v4
