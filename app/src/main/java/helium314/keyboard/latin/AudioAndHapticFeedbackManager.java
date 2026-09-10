@@ -8,6 +8,8 @@ package helium314.keyboard.latin;
 
 import android.content.Context;
 import android.media.AudioManager;
+import android.os.Build;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.view.HapticFeedbackConstants;
 import android.view.View;
@@ -64,11 +66,32 @@ public final class AudioAndHapticFeedbackManager {
         return mVibrator != null && mVibrator.hasVibrator();
     }
 
+    /**
+     * Custom-duration haptics for the iOS-glass build. HeliBoard already exposes duration as a
+     * slider; on hardware with amplitude control we map that same control to a progressively
+     * stronger pulse as well. This keeps the existing preference/backup format intact while
+     * making the upper half of the slider feel substantially stronger on modern Galaxy/Pixel
+     * devices.
+     */
     public void vibrate(final long milliseconds) {
         if (mVibrator == null || milliseconds <= 0) {
             return;
         }
-        mVibrator.vibrate(milliseconds);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            final int amplitude = mVibrator.hasAmplitudeControl()
+                    ? amplitudeForDuration(milliseconds)
+                    : VibrationEffect.DEFAULT_AMPLITUDE;
+            mVibrator.vibrate(VibrationEffect.createOneShot(milliseconds, amplitude));
+        } else {
+            //noinspection deprecation
+            mVibrator.vibrate(milliseconds);
+        }
+    }
+
+    private static int amplitudeForDuration(final long milliseconds) {
+        // 1 ms starts crisp but gentle; ~24 ms is already strong; >= 45 ms reaches full amplitude.
+        final float normalized = Math.min(1.0f, milliseconds / 45.0f);
+        return Math.max(1, Math.min(255, Math.round(72.0f + (183.0f * normalized))));
     }
 
     private boolean reevaluateIfSoundIsOn() {
