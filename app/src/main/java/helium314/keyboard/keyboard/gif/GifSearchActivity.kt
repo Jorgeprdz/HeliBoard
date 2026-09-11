@@ -66,11 +66,7 @@ class GifSearchActivity : ComponentActivity() {
                 ?.showSoftInput(searchField, InputMethodManager.SHOW_IMPLICIT)
         }, 150L)
 
-        if (apiKey().isBlank()) {
-            mainHandler.post { showApiKeyDialog(firstRun = true) }
-        } else {
-            loadGifs("")
-        }
+        loadGifs("")
     }
 
     override fun onDestroy() {
@@ -172,14 +168,14 @@ class GifSearchActivity : ComponentActivity() {
             adapter = this@GifSearchActivity.adapter
             setOnItemClickListener { _, _, position, _ ->
                 val item = this@GifSearchActivity.adapter.getItem(position)
-                GifBridge.select(
-                    GifSelection(
-                        id = item.id,
-                        title = item.title,
-                        mediaUrl = item.mediaUrl,
-                        pageUrl = item.pageUrl
-                    )
+                val selection = GifSelection(
+                    id = item.id,
+                    title = item.title,
+                    mediaUrl = item.mediaUrl,
+                    pageUrl = item.pageUrl
                 )
+                GifRecentsStore.add(this@GifSearchActivity, selection)
+                GifBridge.select(selection)
                 finish()
             }
         }
@@ -234,7 +230,10 @@ class GifSearchActivity : ComponentActivity() {
         dialog.show()
     }
 
-    private fun apiKey(): String = prefs().getString(PREF_GIPHY_API_KEY, "")?.trim().orEmpty()
+    private fun apiKey(): String = prefs()
+        .getString(PREF_GIPHY_API_KEY, GIPHY_BETA_API_KEY)
+        ?.trim().orEmpty()
+        .ifBlank { GIPHY_BETA_API_KEY }
 
     private fun loadGifs(query: String) {
         val key = apiKey()
@@ -353,6 +352,7 @@ class GifSearchActivity : ComponentActivity() {
 
     companion object {
         private const val PREF_GIPHY_API_KEY = "ios_glass_giphy_api_key"
+        private const val GIPHY_BETA_API_KEY = "dc6zaTOxFJmzC"
         private const val SEARCH_DEBOUNCE_MS = 350L
         private const val RESULT_LIMIT = 24
     }
