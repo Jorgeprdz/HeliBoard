@@ -1,39 +1,37 @@
 name: Test build
-# builds only for a single abi and does not produce an APK
+# Runs the complete debug unit-test suite without exclusions.
 
 on:
-# disabled on push: when I push to non-main, I do a PR anyway
-#  push:
-    # don't run on main. I noticed I often don't push commits to avoid unnecessary workflow runs
-#    branches-ignore: [ main ]
-#    paths:
-#      - 'app/**'
+  push:
+    branches:
+      - feature/ios-glass-keyboard
   pull_request:
     paths:
       - 'app/src/main/java**'
+      - 'app/src/main/res/**'
+      - 'app/src/main/assets/layouts/**'
   workflow_dispatch:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK
+      - name: Set up JDK 21 for Robolectric
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
-      - uses: gradle/actions/setup-gradle@v3
+      - uses: gradle/actions/setup-gradle@v4
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew testRunTestsUnitTest
+      - name: Run complete unit-test suite
+        run: ./gradlew testDebugUnitTest
 
       - name: Archive reports for failed job
         uses: actions/upload-artifact@v4

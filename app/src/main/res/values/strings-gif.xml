@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gif">GIF</string>
+    <string name="gif_tab_description">Buscar e insertar GIF</string>
+    <string name="gif_search_title">GIF</string>
+    <string name="gif_search_hint">Buscar GIFs…</string>
+    <string name="gif_search_button">🔍 Buscar GIFs…</string>
+    <string name="gif_recents">Recientes</string>
+    <string name="gif_popular">Populares</string>
+    <string name="gif_no_recents">Aún no tienes GIFs recientes.</string>
+    <string name="gif_back_to_keyboard">ABC</string>
+    <string name="gif_no_results">No encontré GIFs.</string>
+    <string name="gif_network_error">No pude cargar los GIFs. Revisa la conexión.</string>
+    <string name="gif_space">espacio</string>
+    <string name="gif_clear">limpiar</string>
+    <string name="gif_done">listo</string>
+</resources>

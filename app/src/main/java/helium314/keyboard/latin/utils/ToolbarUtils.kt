@@ -8,9 +8,11 @@ import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.forEach
 import helium314.keyboard.event.HapticEvent
+import helium314.keyboard.keyboard.gif.GifPanelView
 import helium314.keyboard.keyboard.internal.KeyboardIconsSet
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode
 import helium314.keyboard.latin.AudioAndHapticFeedbackManager
@@ -31,7 +33,10 @@ fun createToolbarKey(context: Context, key: ToolbarKey): ImageButton {
     button.tag = key
     button.contentDescription = key.name.lowercase().getStringResourceOrName("", context)
     setToolbarButtonActivatedState(button)
-    button.setImageDrawable(KeyboardIconsSet.instance.getNewDrawable(key.name, context))
+    button.setImageDrawable(
+        if (key == GIF) ContextCompat.getDrawable(context, R.drawable.ic_gif)?.mutate()
+        else KeyboardIconsSet.instance.getNewDrawable(key.name, context)
+    )
     return button
 }
 
@@ -64,6 +69,7 @@ private fun setToolbarButtonActivatedState(button: ImageButton) {
 fun getCodeForToolbarKey(key: ToolbarKey) = Settings.getInstance().getCustomToolbarKeyCode(key) ?: when (key) {
     VOICE -> KeyCode.VOICE_INPUT
     CLIPBOARD -> KeyCode.CLIPBOARD
+    GIF -> KeyCode.UNSPECIFIED
     NUMPAD -> KeyCode.NUMPAD
     DPAD -> KeyCode.DPAD
     UNDO -> KeyCode.UNDO
@@ -119,7 +125,7 @@ fun getCodeForToolbarKeyLongClick(key: ToolbarKey) = Settings.getInstance().getC
 
 // names need to be aligned with resources strings (using lowercase of key.name)
 enum class ToolbarKey {
-    VOICE, CLIPBOARD, NUMPAD, DPAD, UNDO, REDO, SETTINGS, SELECT_ALL, SELECT_WORD, COPY, CUT, PASTE, ONE_HANDED, FLOATING, SPLIT,
+    VOICE, CLIPBOARD, GIF, NUMPAD, DPAD, UNDO, REDO, SETTINGS, SELECT_ALL, SELECT_WORD, COPY, CUT, PASTE, ONE_HANDED, FLOATING, SPLIT,
     INCOGNITO, AUTOCORRECT, CLEAR_CLIPBOARD, CLOSE_HISTORY, EMOJI, LEFT, RIGHT, UP, DOWN, WORD_LEFT, WORD_RIGHT,
     PAGE_UP, PAGE_DOWN, FULL_LEFT, FULL_RIGHT, PAGE_START, PAGE_END, BACKGROUND_GATHERING
 }
@@ -131,7 +137,7 @@ enum class ToolbarMode {
 val toolbarKeyStrings = entries.associateWithTo(EnumMap(ToolbarKey::class.java)) { it.toString().lowercase(Locale.US) }
 
 val defaultToolbarPref by lazy {
-    val default = listOf(SETTINGS, VOICE, CLIPBOARD, UNDO, REDO, SELECT_WORD, COPY, PASTE, LEFT, RIGHT)
+    val default = listOf(SETTINGS, VOICE, CLIPBOARD, GIF, UNDO, REDO, SELECT_WORD, COPY, PASTE, LEFT, RIGHT)
     val others = entries.filterNot { it in default || it == CLOSE_HISTORY }
     default.joinToString(Separators.ENTRY) { it.name + Separators.KV + true } + Separators.ENTRY +
             others.joinToString(Separators.ENTRY) { it.name + Separators.KV + false }
@@ -150,9 +156,23 @@ val defaultClipboardToolbarPref by lazy {
 
 /** add missing keys, typically because a new key has been added */
 fun upgradeToolbarPrefs(prefs: SharedPreferences) {
+    val gifPrefix = GIF.name + Separators.KV
+    val hadGif = prefs.getString(Settings.PREF_TOOLBAR_KEYS, null)
+        ?.split(Separators.ENTRY)
+        ?.any { it.startsWith(gifPrefix) } == true
+
     upgradeToolbarPref(prefs, Settings.PREF_TOOLBAR_KEYS, defaultToolbarPref)
     upgradeToolbarPref(prefs, Settings.PREF_PINNED_TOOLBAR_KEYS, defaultPinnedToolbarPref)
     upgradeToolbarPref(prefs, Settings.PREF_CLIPBOARD_TOOLBAR_KEYS, defaultClipboardToolbarPref)
+
+    // This fork introduces GIF as a first-class toolbar action. Existing installs already have a
+    // stored toolbar preference, so explicitly enable the newly-added entry once during upgrade.
+    if (!hadGif && prefs.contains(Settings.PREF_TOOLBAR_KEYS)) {
+        val list = prefs.getString(Settings.PREF_TOOLBAR_KEYS, defaultToolbarPref)!!
+            .split(Separators.ENTRY)
+            .map { if (it.startsWith(gifPrefix)) gifPrefix + true else it }
+        prefs.edit { putString(Settings.PREF_TOOLBAR_KEYS, list.joinToString(Separators.ENTRY)) }
+    }
 }
 
 private fun upgradeToolbarPref(prefs: SharedPreferences, pref: String, default: String) {
@@ -252,7 +272,12 @@ fun clearCustomToolbarKeyCodes() {
 
 fun onClickToolbarKey(view: View, onCodeInput: (Int) -> Unit) {
     AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, view, HapticEvent.KEY_PRESS)
-    val code = getCodeForToolbarKey(view.tag as ToolbarKey)
+    val key = view.tag as ToolbarKey
+    if (key == GIF) {
+        GifPanelView.openFromToolbar(view)
+        return
+    }
+    val code = getCodeForToolbarKey(key)
     if (code != KeyCode.UNSPECIFIED) {
         onCodeInput(code)
     }

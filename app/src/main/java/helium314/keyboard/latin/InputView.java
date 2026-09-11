@@ -107,7 +107,9 @@ public final class InputView extends FrameLayout {
     }
 
     private Unit onNextLayout(View v) {
-        Settings.getValues().mColors.setBackground(findViewById(R.id.main_keyboard_frame), ColorType.MAIN_BACKGROUND);
+        final View keyboardPanel = findViewById(R.id.main_keyboard_frame);
+        Settings.getValues().mColors.setBackground(keyboardPanel, ColorType.MAIN_BACKGROUND);
+        IosGlassController.apply(this, keyboardPanel);
 
         // Work around inset application being unreliable
         requestApplyInsets();
@@ -122,9 +124,8 @@ public final class InputView extends FrameLayout {
      * This class forwards series of {@link MotionEvent}s from <code>SenderView</code> to
      * <code>ReceiverView</code>.
      *
-     * @param <SenderView> a {@link View} that may send a {@link MotionEvent} to <ReceiverView>.
-     * @param <ReceiverView> a {@link View} that receives forwarded {@link MotionEvent} from
-     *     <SenderView>.
+     * @param <SenderView> a {@link View} that may send {@link MotionEvent}s
+     * @param <ReceiverView> a {@link View} that receives forwarded {@link MotionEvent}s
      */
     private static abstract class
             MotionEventForwarder<SenderView extends View, ReceiverView extends View> {
@@ -139,30 +140,25 @@ public final class InputView extends FrameLayout {
             mReceiverView = receiverView;
         }
 
-        // Return true if a touch event of global coordinate x, y needs to be forwarded.
+        // Return true if a MotionEvent at global coordinate x, y needs to be forwarded.
         protected abstract boolean needsToForward(final int x, final int y);
 
-        // Translate global x-coordinate to <code>ReceiverView</code> local coordinate.
+        // Translate global x-coordinate to ReceiverView local coordinate.
         protected int translateX(final int x) {
             return x - mEventReceivingRect.left;
         }
 
-        // Translate global y-coordinate to <code>ReceiverView</code> local coordinate.
+        // Translate global y-coordinate to ReceiverView local coordinate.
         protected int translateY(final int y) {
             return y - mEventReceivingRect.top;
         }
 
-        /**
-         * Callback when a {@link MotionEvent} is forwarded.
-         * @param me the motion event to be forwarded.
-         */
+        /** Callback when a {@link MotionEvent} is forwarded. */
         protected void onForwardingEvent(final MotionEvent me) {}
 
-        // Returns true if a {@link MotionEvent} is needed to be forwarded to
-        // <code>ReceiverView</code>. Otherwise returns false.
+        // Returns true if a MotionEvent is needed to be forwarded.
         public boolean onInterceptTouchEvent(final int x, final int y, final MotionEvent me) {
-            // Forwards a {link MotionEvent} only if both <code>SenderView</code> and
-            // <code>ReceiverView</code> are visible.
+            // Forwards only if both SenderView and ReceiverView are visible.
             if (mSenderView.getVisibility() != View.VISIBLE ||
                     mReceiverView.getVisibility() != View.VISIBLE) {
                 return false;
@@ -173,19 +169,16 @@ public final class InputView extends FrameLayout {
             }
 
             if (me.getActionMasked() == MotionEvent.ACTION_DOWN) {
-                // If the down event happens in the forwarding area, successive
-                // {@link MotionEvent}s should be forwarded to <code>ReceiverView</code>.
+                // If down happens in the forwarding area, successive events are forwarded.
                 return needsToForward(x, y);
             }
 
             return false;
         }
 
-        // Returns true if a {@link MotionEvent} is forwarded to <code>ReceiverView</code>.
-        // Otherwise returns false.
+        // Returns true if a MotionEvent is forwarded.
         public boolean onTouchEvent(final int x, final int y, final MotionEvent me) {
             mReceiverView.getGlobalVisibleRect(mEventReceivingRect);
-            // Translate global coordinates to <code>ReceiverView</code> local coordinates.
             me.setLocation(translateX(x), translateY(y));
             mReceiverView.dispatchTouchEvent(me);
             onForwardingEvent(me);
@@ -194,8 +187,8 @@ public final class InputView extends FrameLayout {
     }
 
     /**
-     * This class forwards {@link MotionEvent}s happened in the top padding of
-     * {@link MainKeyboardView} to {@link SuggestionStripView}.
+     * Forwards events in the top padding of {@link MainKeyboardView} to
+     * {@link SuggestionStripView}.
      */
     private static class KeyboardTopPaddingForwarder
             extends MotionEventForwarder<MainKeyboardView, SuggestionStripView> {
@@ -216,10 +209,6 @@ public final class InputView extends FrameLayout {
 
         @Override
         protected boolean needsToForward(final int x, final int y) {
-            // Forwarding an event only when {@link MainKeyboardView} is visible.
-            // Because the visibility of {@link MainKeyboardView} is controlled by its parent
-            // view in {@link KeyboardSwitcher#setMainKeyboardFrame()}, we should check the
-            // visibility of the parent view.
             final View mainKeyboardFrame = (View)mSenderView.getParent();
             return mainKeyboardFrame.getVisibility() == View.VISIBLE && isInKeyboardTopPadding(y);
         }
@@ -228,7 +217,6 @@ public final class InputView extends FrameLayout {
         protected int translateY(final int y) {
             final int translatedY = super.translateY(y);
             if (isInKeyboardTopPadding(y)) {
-                // The forwarded event should have coordinates that are inside of the target.
                 return Math.min(translatedY, mEventReceivingRect.height() - 1);
             }
             return translatedY;
@@ -236,10 +224,8 @@ public final class InputView extends FrameLayout {
     }
 
     /**
-     * This class forwards {@link MotionEvent}s happened in the {@link MainKeyboardView} to
-     * {@link SuggestionStripView} when the {@link MoreSuggestionsView} is showing.
-     * {@link SuggestionStripView} dismisses {@link MoreSuggestionsView} when it receives any event
-     * outside of it.
+     * Forwards events in {@link MainKeyboardView} to {@link SuggestionStripView} while
+     * {@link MoreSuggestionsView} is showing.
      */
     private static class MoreSuggestionsViewCanceler
             extends MotionEventForwarder<MainKeyboardView, SuggestionStripView> {

@@ -1,39 +1,68 @@
-name: Build debug APK
+name: Build iOS Glass debug APK
 
 on:
+  push:
+    branches:
+      - feature/ios-glass-keyboard
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
+
+concurrency:
+  group: ios-glass-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - uses: gradle/actions/setup-gradle@v3
+      - name: Restore Android build identity
+        uses: actions/cache@v4
+        with:
+          path: ~/.android
+          key: ios-glass-android-home-v1
+
+      - uses: gradle/actions/setup-gradle@v4
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build with Gradle
+      - name: Build debug APK
         run: ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Locate APK
+        id: apk
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find app/build/outputs/apk/debug -type f -name '*-debug*.apk' | head -1)"
+          test -n "$APK"
+          echo "path=$APK" >> "$GITHUB_OUTPUT"
+          echo "APK signing certificate:"
+          keytool -printcert -jarfile "$APK" | grep -E 'Owner:|SHA256:'
+          sha256sum "$APK"
+
+      - name: Upload iOS Glass APK
         uses: actions/upload-artifact@v4
         with:
-          name: HeliBoard-debug
-          path: app/build/outputs/apk/debug/*-debug*.apk
+          name: HeliBoard-iOS-Glass-debug
+          path: ${{ steps.apk.outputs.path }}
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Archive reports for failed job
         uses: actions/upload-artifact@v4
         with:
-          name: reports
+          name: ios-glass-reports
           path: '*/build/reports'
         if: ${{ failure() }}
