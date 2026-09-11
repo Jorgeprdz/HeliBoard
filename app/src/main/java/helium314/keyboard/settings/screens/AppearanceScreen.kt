@@ -208,7 +208,7 @@ fun createAppearanceSettings(context: Context) = listOf(
             key = setting.key,
             default = IosGlassPreferences.DEFAULT_BLUR_INTENSITY,
             range = 0f..100f,
-            stepSize = 1f,
+            stepSize = 1,
             description = { "${it.toInt()}%" }
         ) { KeyboardSwitcher.getInstance().setThemeNeedsReload() }
     },
