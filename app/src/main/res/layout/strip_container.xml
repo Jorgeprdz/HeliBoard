@@ -23,7 +23,12 @@
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        style="?attr/suggestionStripViewStyle" />
+        style="?attr/suggestionStripViewStyle">
+        <helium314.keyboard.keyboard.gif.GifTabView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+    </LinearLayout>
     <HorizontalScrollView
         android:id="@+id/clipboard_strip_scroll_view"
         android:layout_width="match_parent"
