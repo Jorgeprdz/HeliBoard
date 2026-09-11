@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gif_tab_description">Buscar e insertar GIF</string>
+    <string name="gif_search_title">GIF</string>
+    <string name="gif_search_hint">Buscar GIFs…</string>
+    <string name="gif_powered_by_giphy">Powered by GIPHY</string>
+    <string name="gif_api_button">API</string>
+    <string name="gif_api_key_title">GIPHY API key</string>
+    <string name="gif_api_key_hint">Pega tu API key de GIPHY</string>
+    <string name="gif_api_key_explanation">La búsqueda de GIFs usa GIPHY. La clave se guarda solo en este dispositivo y no se incluye en el repositorio.</string>
+    <string name="gif_api_key_save">Guardar</string>
+    <string name="gif_api_key_required">Necesitas una API key</string>
+    <string name="gif_no_results">No encontré GIFs.</string>
+    <string name="gif_network_error">No pude cargar los GIFs. Revisa la conexión o la API key.</string>
+    <string name="gif_back">Volver</string>
+    <string name="gif_close">Cerrar</string>
+</resources>
