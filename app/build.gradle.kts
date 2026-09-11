@@ -13,8 +13,8 @@ android {
         applicationId = "com.jorgeprdz.ioskeyboard"
         minSdk = 21
         targetSdk = 37
-        versionCode = 4102
-        versionName = "4.1-iosglass.2"
+        versionCode = 4103
+        versionName = "4.1-iosglass.3"
         ndk {
             abiFilters.clear()
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
@@ -42,7 +42,7 @@ android {
             isJniDebuggable = false
             applicationIdSuffix = ".debug"
         }
-        create("runTests") { // build variant for running tests on CI that skips tests known to fail
+        create("runTests") { // same as debug, but used for tests
             isMinifyEnabled = false
             isJniDebuggable = false
         }
@@ -78,69 +78,46 @@ android {
     }
 
     externalNativeBuild {
-        ndkBuild {
-            path = File("src/main/jni/Android.mk")
-        }
-    }
-    ndkVersion = "28.0.13004108"
-
-    packaging {
-        jniLibs {
-            // shrinks APK by 3 MB, zipped size unchanged
-            useLegacyPackaging = true
-        }
-    }
-
-    testOptions {
-        unitTests {
-            isIncludeAndroidResources = true
+        cmake {
+            path = file("src/main/jni/CMakeLists.txt")
+            version = "3.22.1"
         }
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
-    // see https://github.com/HeliBorg/HeliBoard/issues/477
-    dependenciesInfo {
-        includeInApk = false
-        includeInBundle = false
+    kotlinOptions {
+        jvmTarget = "17"
     }
 
     namespace = "helium314.keyboard.latin"
-    lint {
-        abortOnError = true
-    }
+}
+
+configurations.configureEach {
+    exclude(group = "androidx.lifecycle", module = "lifecycle-viewmodel-compose")
 }
 
 dependencies {
-    // androidx
-    implementation("androidx.core:core-ktx:1.17.0") // 1.18.0 requires minSdk 23
+    implementation("androidx.activity:activity-compose:1.12.4")
+    implementation("androidx.appcompat:appcompat:1.7.1")
+    implementation("androidx.compose.material3:material3:1.4.0")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+    implementation("androidx.constraintlayout:constraintlayout:2.2.1")
+    implementation("androidx.core:core-ktx:1.17.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4")
     implementation("androidx.recyclerview:recyclerview:1.4.0")
-    implementation("androidx.autofill:autofill:1.3.0")
     implementation("androidx.viewpager2:viewpager2:1.1.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 
-    // kotlin
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
-
-    // compose
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
-    implementation(platform("androidx.compose:compose-bom:2025.11.01")) // newer requires minSdk 23
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    "debugNoMinifyImplementation"("androidx.compose.ui:ui-tooling")
-    implementation("androidx.navigation:navigation-compose:2.9.8")
-    implementation("sh.calvin.reorderable:reorderable:3.1.0") // for easier re-ordering
-    implementation("com.github.skydoves:colorpicker-compose:1.1.3") // for user-defined colors, newer requires minSdk 23
 
-    // test
-    testImplementation(kotlin("test"))
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
-    testImplementation("org.mockito:mockito-core:5.23.0")
+    testImplementation("org.json:json:20250517")
     testImplementation("org.robolectric:robolectric:4.16.1")
-    testImplementation("androidx.test:runner:1.7.0")
-    testImplementation("androidx.test:core:1.7.0")
 }
