@@ -12,6 +12,7 @@ import android.util.AttributeSet
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AbsListView
 import android.widget.BaseAdapter
 import android.widget.GridView
 import android.widget.LinearLayout
@@ -123,7 +124,9 @@ class GifPanelView @JvmOverloads constructor(
             adapter = this@GifPanelView.adapter
             setPadding(dp(6), dp(3), dp(6), dp(6))
             clipToPadding = false
-            setOnItemClickListener { _, _, position, _ -> insertGif(adapter.getItem(position)) }
+            setOnItemClickListener { _, _, position, _ ->
+                insertGif(this@GifPanelView.adapter.getItem(position))
+            }
         }
 
         addView(top)
@@ -314,7 +317,7 @@ class GifPanelView @JvmOverloads constructor(
 
         override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
             val preview = (convertView as? GifPreviewView) ?: GifPreviewView(context).apply {
-                layoutParams = GridView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(116))
+                layoutParams = AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(116))
             }
             preview.contentDescription = items[position].selection.title
             preview.load(items[position].previewUrl)
