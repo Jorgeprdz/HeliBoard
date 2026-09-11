@@ -91,10 +91,6 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
             android:theme="@style/TransparentActivityTheme" android:excludeFromRecents="true" android:noHistory="true"
             android:windowSoftInputMode="adjustResize|stateAlwaysVisible" android:configChanges="orientation|screenSize"/>
 
-        <activity android:name="helium314.keyboard.keyboard.gif.GifSearchActivity" android:exported="false"
-            android:theme="@style/TransparentActivityTheme" android:excludeFromRecents="true" android:noHistory="true"
-            android:windowSoftInputMode="adjustResize|stateAlwaysVisible" android:configChanges="orientation|screenSize"/>
-
         <!-- Broadcast receivers -->
         <receiver android:name="SystemBroadcastReceiver"
                 android:exported="true">
@@ -124,7 +120,7 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
                 android:resource="@xml/clipboard_provider_path"/>
         </provider>
 
-        <!-- Streams selected GIPHY media directly to editors that accept image/gif. -->
+        <!-- Streams selected GIF media directly to editors that accept image/gif. -->
         <provider android:name="helium314.keyboard.keyboard.gif.GifContentProvider"
             android:authorities="${applicationId}.gifprovider"
             android:enabled="true"
