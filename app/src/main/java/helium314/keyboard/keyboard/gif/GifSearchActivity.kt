@@ -14,6 +14,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import android.widget.AbsListView
 import android.widget.BaseAdapter
 import android.widget.Button
 import android.widget.EditText
@@ -325,7 +326,7 @@ class GifSearchActivity : ComponentActivity() {
 
         override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
             val preview = (convertView as? GifPreviewView) ?: GifPreviewView(this@GifSearchActivity).apply {
-                layoutParams = GridView.LayoutParams(
+                layoutParams = AbsListView.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     dp(132)
                 )
