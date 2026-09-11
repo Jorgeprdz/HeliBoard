@@ -23,8 +23,11 @@ class GifContentProvider : ContentProvider() {
             ?: throw FileNotFoundException("Missing remote GIF URL")
         val remote = Uri.parse(remoteUrl)
         val host = remote.host?.lowercase()
-        if (remote.scheme != "https" || host == null ||
-            (host != "giphy.com" && !host.endsWith(".giphy.com"))) {
+        val allowedHost = host != null && (
+            host == "gifsnap.com" || host.endsWith(".gifsnap.com") ||
+            host == "giphy.com" || host.endsWith(".giphy.com")
+        )
+        if (remote.scheme != "https" || !allowedHost) {
             throw FileNotFoundException("Unsupported GIF host")
         }
 
@@ -38,6 +41,7 @@ class GifContentProvider : ContentProvider() {
                         readTimeout = 20_000
                         instanceFollowRedirects = true
                         setRequestProperty("Accept", "image/gif,image/*;q=0.8,*/*;q=0.5")
+                        setRequestProperty("User-Agent", "HeliKeyboard-GIF/1.0")
                     }
                     val code = connection.responseCode
                     if (code !in 200..299) return@use
