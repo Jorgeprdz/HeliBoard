@@ -14,12 +14,12 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 
 import helium314.keyboard.keyboard.KeyboardTheme;
+import helium314.keyboard.latin.settings.IosGlassPreferences;
 import helium314.keyboard.latin.settings.Settings;
 import helium314.keyboard.latin.utils.KtxKt;
 
 /** Applies the iOS-inspired adaptive frosted surface used by the Jorgeprdz HeliBoard fork. */
 public final class IosGlassController {
-    private static final int BLUR_RADIUS_DP = 88;
     private static final int PANEL_CORNER_RADIUS_DP = 18;
     private static final String PREF_VISUAL_PROFILE_V4 = "ios_glass_visual_profile_v4";
 
@@ -90,8 +90,10 @@ public final class IosGlassController {
             }
 
             final WindowManager.LayoutParams params = (WindowManager.LayoutParams) rawParams;
+            final SharedPreferences prefs = KtxKt.prefs(inputView.getContext());
+            final int blurRadiusDp = IosGlassPreferences.resolveBlurRadiusDp(prefs);
             params.flags |= WindowManager.LayoutParams.FLAG_BLUR_BEHIND;
-            params.setBlurBehindRadius(Math.round(dp(inputView, BLUR_RADIUS_DP)));
+            params.setBlurBehindRadius(Math.round(dp(inputView, blurRadiusDp)));
 
             final WindowManager windowManager =
                     (WindowManager) inputView.getContext().getSystemService(Context.WINDOW_SERVICE);

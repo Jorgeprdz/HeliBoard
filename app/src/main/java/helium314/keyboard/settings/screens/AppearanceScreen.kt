@@ -20,6 +20,7 @@ import helium314.keyboard.keyboard.KeyboardTheme
 import helium314.keyboard.keyboard.internal.KeyboardIconsSet
 import helium314.keyboard.latin.R
 import helium314.keyboard.latin.settings.Defaults
+import helium314.keyboard.latin.settings.IosGlassPreferences
 import helium314.keyboard.latin.utils.Log
 import helium314.keyboard.latin.utils.getActivity
 import helium314.keyboard.latin.utils.getStringResourceOrName
@@ -67,6 +68,8 @@ fun AppearanceScreen(
         Settings.PREF_THEME_COLORS,
         if (dayNightMode) Settings.PREF_THEME_COLORS_NIGHT else null,
         Settings.PREF_NAVBAR_COLOR,
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+            IosGlassPreferences.PREF_BLUR_INTENSITY else null,
         SettingsWithoutKey.BACKGROUND_IMAGE,
         SettingsWithoutKey.BACKGROUND_IMAGE_LANDSCAPE,
         R.string.settings_category_miscellaneous,
@@ -198,6 +201,16 @@ fun createAppearanceSettings(context: Context) = listOf(
     },
     Setting(context, Settings.PREF_NAVBAR_COLOR, R.string.theme_navbar, R.string.day_night_mode_summary) {
         SwitchPreference(it, Defaults.PREF_NAVBAR_COLOR)
+    },
+    Setting(context, IosGlassPreferences.PREF_BLUR_INTENSITY, R.string.ios_glass_blur_intensity) { setting ->
+        SliderPreference(
+            name = setting.title,
+            key = setting.key,
+            default = IosGlassPreferences.DEFAULT_BLUR_INTENSITY,
+            range = 0f..100f,
+            stepSize = 1f,
+            description = { "${it.toInt()}%" }
+        ) { KeyboardSwitcher.getInstance().setThemeNeedsReload() }
     },
     Setting(context, SettingsWithoutKey.BACKGROUND_IMAGE, R.string.customize_background_image) {
         BackgroundImagePref(it, false)
