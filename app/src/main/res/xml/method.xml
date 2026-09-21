@@ -18,7 +18,7 @@
         android:imeSubtypeLocale="en_US"
         android:languageTag="en-US"
         android:imeSubtypeMode="keyboard"
-        android:imeSubtypeExtraValue="TrySuppressingImeSwitcher,AsciiCapable,SupportTouchPositionCorrection,EmojiCapable"
+        android:imeSubtypeExtraValue="TrySuppressingImeSwitcher,AsciiCapable,SupportTouchPositionCorrection,EmojiCapable,SecondaryLocales=es-419"
         android:isAsciiCapable="true" />
 
     <subtype
@@ -28,6 +28,6 @@
         android:imeSubtypeLocale="es_419"
         android:languageTag="es-419"
         android:imeSubtypeMode="keyboard"
-        android:imeSubtypeExtraValue="KeyboardLayoutSet=MAIN:qwerty+,AsciiCapable,SupportTouchPositionCorrection,EmojiCapable"
+        android:imeSubtypeExtraValue="KeyboardLayoutSet=MAIN:qwerty+,AsciiCapable,SupportTouchPositionCorrection,EmojiCapable,SecondaryLocales=en-US"
         android:isAsciiCapable="true" />
 </input-method>
