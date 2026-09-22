@@ -7,10 +7,13 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
+import android.view.Window;
 import android.view.WindowManager;
 
 import helium314.keyboard.keyboard.KeyboardTheme;
@@ -32,22 +35,63 @@ public final class IosGlassController {
 
         ensureVisualProfile(inputView.getContext());
 
+        // The IME root must stay transparent. Otherwise the rectangular SoftInputWindow/inputArea
+        // leaks through around the rounded panel and produces white corner wedges.
+        inputView.setBackgroundColor(Color.TRANSPARENT);
+
         final boolean dark = isNightMode(inputView.getResources().getConfiguration());
         final GradientDrawable frost = new GradientDrawable();
         frost.setShape(GradientDrawable.RECTANGLE);
-        // 88-89% translucent frost: enough density for legibility while preserving real backdrop blur.
+        // Restore the earlier, visibly translucent frost. The real blur comes from the window
+        // behind this surface; the tint only keeps keys readable.
         frost.setColor(dark
-                ? Color.argb(224, 28, 28, 30)
-                : Color.argb(226, 238, 238, 242));
+                ? Color.argb(196, 31, 31, 33)
+                : Color.argb(202, 242, 242, 247));
+
+        final float radius = dp(inputView, PANEL_CORNER_RADIUS_DP);
         frost.setCornerRadii(new float[] {
-                dp(inputView, PANEL_CORNER_RADIUS_DP), dp(inputView, PANEL_CORNER_RADIUS_DP),
-                dp(inputView, PANEL_CORNER_RADIUS_DP), dp(inputView, PANEL_CORNER_RADIUS_DP),
-                0f, 0f, 0f, 0f
+                radius, radius,
+                radius, radius,
+                radius, radius,
+                radius, radius
         });
         keyboardPanel.setBackground(frost);
+        // Same principle used by modern BlurView integrations: clip the rendered surface to the
+        // rounded background so neither children nor blur/tint spill into the transparent corners.
+        keyboardPanel.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
+        keyboardPanel.setClipToOutline(true);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             inputView.post(() -> applyCrossWindowBlur(inputView));
+        }
+    }
+
+    /**
+     * Keep every layer outside the rounded keyboard panel transparent. SoftInputWindow uses a
+     * rectangular inputArea even though the visible keyboard is rounded, so an opaque decor or
+     * inputArea shows up as white wedges at the corners.
+     */
+    public static void prepareWindow(final LatinIME service, final View inputView) {
+        if (service == null || inputView == null || service.getWindow() == null) {
+            return;
+        }
+        try {
+            final Window window = service.getWindow().getWindow();
+            if (window == null) {
+                return;
+            }
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            final View decor = window.getDecorView();
+            if (decor != null) {
+                decor.setBackgroundColor(Color.TRANSPARENT);
+            }
+            final View inputArea = window.findViewById(android.R.id.inputArea);
+            if (inputArea != null) {
+                inputArea.setBackgroundColor(Color.TRANSPARENT);
+            }
+            inputView.setBackgroundColor(Color.TRANSPARENT);
+        } catch (RuntimeException ignored) {
+            // Transparency is a visual enhancement; never make the IME unusable if an OEM rejects it.
         }
     }
 
@@ -92,8 +136,13 @@ public final class IosGlassController {
             final WindowManager.LayoutParams params = (WindowManager.LayoutParams) rawParams;
             final SharedPreferences prefs = KtxKt.prefs(inputView.getContext());
             final int blurRadiusDp = IosGlassPreferences.resolveBlurRadiusDp(prefs);
-            params.flags |= WindowManager.LayoutParams.FLAG_BLUR_BEHIND;
-            params.setBlurBehindRadius(Math.round(dp(inputView, blurRadiusDp)));
+            if (blurRadiusDp <= 0) {
+                params.flags &= ~WindowManager.LayoutParams.FLAG_BLUR_BEHIND;
+                params.setBlurBehindRadius(0);
+            } else {
+                params.flags |= WindowManager.LayoutParams.FLAG_BLUR_BEHIND;
+                params.setBlurBehindRadius(Math.round(dp(inputView, blurRadiusDp)));
+            }
 
             final WindowManager windowManager =
                     (WindowManager) inputView.getContext().getSystemService(Context.WINDOW_SERVICE);
