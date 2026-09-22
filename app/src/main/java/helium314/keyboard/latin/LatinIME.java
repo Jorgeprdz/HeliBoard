@@ -129,6 +129,8 @@ public class LatinIME extends InputMethodService implements
     public final KeyboardActionListener mKeyboardActionListener;
     private int mOriginalNavBarColor = 0;
     private int mOriginalNavBarFlags = 0;
+    private int mOriginalNavBarDividerColor = 0;
+    private boolean mOriginalNavBarContrastEnforced = true;
 
     // UIHandler is needed when creating InputLogic
     public final UIHandler mHandler = new UIHandler(this);
@@ -773,6 +775,7 @@ public class LatinIME extends InputMethodService implements
         mInputView = view;
         mInsetsUpdater = ViewOutlineProviderUtilsKt.setInsetsOutlineProvider(view);
         KtxKt.updateSoftInputWindowLayoutParameters(this, mInputView);
+        IosGlassController.prepareWindow(this, mInputView);
         updateSuggestionStripView(view);
     }
 
@@ -1814,21 +1817,35 @@ public class LatinIME extends InputMethodService implements
     // slightly modified from Simple Keyboard: https://github.com/rkkr/simple-keyboard/blob/master/app/src/main/java/rkr/simplekeyboard/inputmethod/latin/LatinIME.java
     @SuppressWarnings("deprecation")
     private void setNavigationBarColor() {
-        final SettingsValues settingsValues = mSettings.getCurrent();
-        if (!settingsValues.mCustomNavBarColor)
-            return;
-        final int color = settingsValues.mColors.get(ColorType.NAVIGATION_BAR);
         final Window window = getWindow().getWindow();
         if (window == null)
             return;
+
+        // Jorge personal build: keep the IME navigation bar visually transparent so the host app
+        // continues behind the keyboard instead of showing an opaque gray/white strip.
         mOriginalNavBarColor = window.getNavigationBarColor();
-        window.setNavigationBarColor(color);
+        window.setNavigationBarColor(Color.TRANSPARENT);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            mOriginalNavBarDividerColor = window.getNavigationBarDividerColor();
+            window.setNavigationBarDividerColor(Color.TRANSPARENT);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            mOriginalNavBarContrastEnforced = window.isNavigationBarContrastEnforced();
+            window.setNavigationBarContrastEnforced(false);
+        }
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
             return;
+
         final View view = window.getDecorView();
         mOriginalNavBarFlags = view.getSystemUiVisibility();
-        if (ColorUtilKt.isBrightColor(color)) {
+
+        // Keep icon contrast appropriate for the current keyboard theme while leaving the bar itself
+        // transparent. This only affects icon appearance; it does not paint a background.
+        final boolean dark = (getResources().getConfiguration().uiMode
+                & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        if (!dark) {
             view.setSystemUiVisibility(mOriginalNavBarFlags | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
         } else {
             view.setSystemUiVisibility(mOriginalNavBarFlags & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
@@ -1837,14 +1854,18 @@ public class LatinIME extends InputMethodService implements
 
     @SuppressWarnings("deprecation")
     private void clearNavigationBarColor() {
-        final SettingsValues settingsValues = mSettings.getCurrent();
-        if (!settingsValues.mCustomNavBarColor)
-            return;
         final Window window = getWindow().getWindow();
         if (window == null) {
             return;
         }
+
         window.setNavigationBarColor(mOriginalNavBarColor);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.setNavigationBarDividerColor(mOriginalNavBarDividerColor);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.setNavigationBarContrastEnforced(mOriginalNavBarContrastEnforced);
+        }
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
             return;

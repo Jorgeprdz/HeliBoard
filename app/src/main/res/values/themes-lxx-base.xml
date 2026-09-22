@@ -17,42 +17,28 @@
         <item name="suggestionStripViewStyle">@style/SuggestionStripView.LXX_Base</item>
         <item name="suggestionWordStyle">@style/SuggestionWord.LXX_Base</item>
     </style>
-    <style
-        name="Keyboard.LXX_Base"
-        parent="Keyboard"
-    >
-        <!-- This should be aligned with KeyboardTheme.THEME_ID_* -->
+    <style name="Keyboard.LXX_Base" parent="Keyboard">
         <item name="themeId">LXXBase</item>
+        <item name="horizontalGap">1.55%p</item>
+        <item name="verticalGap">2.0%p</item>
     </style>
-    <style
-        name="KeyboardView.LXX_Base"
-        parent="KeyboardView.LXX"
-        >
-        <item name="android:background">@color/keyboard_background_lxx_base</item>
-        <item name="keyBackground">@drawable/btn_keyboard_key_lxx_base</item>
-        <item name="functionalKeyBackground">@drawable/btn_keyboard_key_lxx_base</item>
+    <style name="KeyboardView.LXX_Base" parent="KeyboardView.LXX">
+        <item name="android:background">@android:color/transparent</item>
+        <item name="keyBackground">@drawable/btn_keyboard_key_ios_surface</item>
+        <item name="functionalKeyBackground">@drawable/btn_keyboard_key_ios_surface</item>
+        <item name="spacebarNoBorderBackground">@drawable/btn_keyboard_key_ios_surface</item>
+        <item name="keyTypeface">normal</item>
         <item name="keyTextInactivatedColor">@color/key_text_inactive_color_lxx_light</item>
         <item name="keyShiftedLetterHintInactivatedColor">@color/key_text_inactive_color_lxx_light</item>
         <item name="keyShiftedLetterHintActivatedColor">@color/key_text_color_lxx_light</item>
     </style>
-    <style
-        name="MainKeyboardView.LXX_Base"
-        parent="KeyboardView.LXX_Base"
-        >
+    <style name="MainKeyboardView.LXX_Base" parent="KeyboardView.LXX_Base">
         <item name="popupKeysKeyboardForActionLayout">@layout/popup_keys_keyboard_for_action_lxx</item>
         <item name="keyPreviewBackground">@drawable/keyboard_key_feedback_lxx_light</item>
         <item name="keyPreviewOffset">@dimen/config_key_preview_offset_lxx</item>
-        <!-- A negative value to disable text shadow layer. -->
         <item name="languageOnSpacebarTextShadowRadius">-1.0</item>
     </style>
-    <!-- Though {@link helium314.keyboard.keyboard.emoji.EmojiPalettesView} doesn't extend
-         {@link helium314.keyboard.keyboard.KeyboardView}, some views inside it, for instance
-         delete button, need themed {@link helium314.keyboard.keyboard.KeyboardView}
-         attributes. -->
-    <style
-        name="EmojiPalettesView.LXX_Base"
-        parent="MainKeyboardView.LXX_Base"
-        >
+    <style name="EmojiPalettesView.LXX_Base" parent="MainKeyboardView.LXX_Base">
         <item name="categoryPageIndicatorBackground">@color/emoji_tab_page_indicator_background_lxx_base</item>
         <item name="iconEmojiRecentsTab">@drawable/ic_emoji_recents_lxx</item>
         <item name="iconEmojiSmileysTab">@drawable/ic_emoji_smileys_emotion_lxx</item>
@@ -66,16 +52,10 @@
         <item name="iconEmojiFlagsTab">@drawable/ic_emoji_flags_lxx</item>
         <item name="iconEmojiEmoticonsTab">@drawable/ic_emoji_emoticons_lxx</item>
     </style>
-    <style
-        name="ClipboardHistoryView.LXX_Base"
-        parent="MainKeyboardView.LXX_Base"
-        >
+    <style name="ClipboardHistoryView.LXX_Base" parent="MainKeyboardView.LXX_Base">
         <item name="iconPinnedClip">@drawable/ic_clipboard_pin_lxx</item>
     </style>
-    <style
-        name="PopupKeysKeyboard.LXX_Base"
-        parent="Keyboard.LXX_Base"
-        >
+    <style name="PopupKeysKeyboard.LXX_Base" parent="Keyboard.LXX_Base">
         <item name="keyboardTopPadding">0%p</item>
         <item name="keyboardBottomPadding">0%p</item>
         <item name="keyboardLeftPadding">0%p</item>
@@ -83,43 +63,34 @@
         <item name="horizontalGap">0%p</item>
         <item name="touchPositionCorrectionData">@null</item>
     </style>
-    <style
-        name="PopupKeysKeyboardView.LXX_Base"
-        parent="KeyboardView.LXX_Base"
-        >
+    <style name="PopupKeysKeyboardView.LXX_Base" parent="KeyboardView.LXX_Base">
         <item name="android:background">@drawable/keyboard_popup_panel_background_lxx_base</item>
         <item name="keyBackground">@drawable/btn_keyboard_key_popup_lxx_base</item>
         <item name="divider">@drawable/popup_keys_divider</item>
         <item name="keyTypeface">normal</item>
         <item name="verticalCorrection">@dimen/config_popup_keys_keyboard_vertical_correction_holo</item>
     </style>
-    <style
-        name="PopupKeysKeyboardView.LXX_Base.Action"
-        parent="PopupKeysKeyboardView.LXX_Base"
-        >
+    <style name="PopupKeysKeyboardView.LXX_Base.Action" parent="PopupKeysKeyboardView.LXX_Base">
         <item name="android:background">@android:color/transparent</item>
         <item name="keyBackground">@drawable/btn_keyboard_key_popup_action_lxx_base</item>
         <item name="divider">@null</item>
         <item name="keyLabelFlags">keepBackgroundAspectRatio</item>
     </style>
-    <style
-        name="SuggestionStripView.LXX_Base"
-        parent="KeyboardView.LXX_Base"
-        >
+    <style name="SuggestionStripView.LXX_Base" parent="KeyboardView.LXX_Base">
         <item name="suggestionsCountInStrip">@integer/config_suggestions_count_in_strip</item>
         <item name="centerSuggestionPercentile">@fraction/config_center_suggestion_percentile</item>
         <item name="maxMoreSuggestionsRow">@integer/config_max_more_suggestions_row</item>
         <item name="minMoreSuggestionsWidth">@fraction/config_min_more_suggestions_width</item>
-        <item name="android:background">@drawable/keyboard_background_lxx_base</item>
+        <item name="android:background">@drawable/ios_glass_suggestion_strip_surface</item>
         <item name="android:src">@drawable/suggestions_strip_divider</item>
         <item name="suggestionStripOptions">autoCorrectBold|validTypedWordBold</item>
         <item name="alphaObsoleted">70%</item>
     </style>
-    <style
-        name="SuggestionWord.LXX_Base"
-        parent="SuggestionWord"
-        >
+    <style name="SuggestionWord.LXX_Base" parent="SuggestionWord">
         <item name="android:background">@drawable/btn_suggestion_lxx_base</item>
         <item name="android:textColor">@color/highlight_color_lxx_light</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:letterSpacing">-0.01</item>
     </style>
 </resources>

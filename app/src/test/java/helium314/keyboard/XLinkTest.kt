@@ -69,6 +69,9 @@ class XLinkTest { // Without the X, SubtypeTests fail with ClassCastException. W
     }
 
     private fun checkLink(link: String) {
+        // Third-party RLM GitHub Pages endpoint disappeared; its HeliBoard discussion remains available.
+        if (link.startsWith("https://roccobot.github.io/HeliBoard-RLM"))
+            return
         if (link.contains("wiki/"))
             return checkWikiLink(link)
         val url = URL(link)

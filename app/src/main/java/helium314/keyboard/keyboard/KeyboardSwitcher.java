@@ -523,6 +523,9 @@ public final class KeyboardSwitcher {
         }
         if (mEmojiPalettesView != null) {
             mEmojiPalettesView.stopEmojiPalettes();
+            // The IME is hidden for at least the deallocation delay. Drop emoji page keyboards
+            // and the optional emoji-description dictionary; both are rebuilt lazily on demand.
+            mEmojiPalettesView.clearKeyboardCache();
         }
         if (mClipboardHistoryView != null) {
             mClipboardHistoryView.stopClipboardHistory();
