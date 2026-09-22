@@ -773,6 +773,7 @@ public class LatinIME extends InputMethodService implements
         mInputView = view;
         mInsetsUpdater = ViewOutlineProviderUtilsKt.setInsetsOutlineProvider(view);
         KtxKt.updateSoftInputWindowLayoutParameters(this, mInputView);
+        IosGlassController.prepareWindow(this, mInputView);
         updateSuggestionStripView(view);
     }
 
