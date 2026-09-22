@@ -12,7 +12,7 @@ public final class IosGlassPreferences {
     public static final int DEFAULT_BLUR_INTENSITY = 50;
     private static final int MIN_BLUR_INTENSITY = 0;
     private static final int MAX_BLUR_INTENSITY = 100;
-    private static final int MIN_BLUR_RADIUS_DP = 16;
+    private static final int MIN_BLUR_RADIUS_DP = 0;
     private static final int MAX_BLUR_RADIUS_DP = 160;
 
     private IosGlassPreferences() {}
@@ -22,7 +22,7 @@ public final class IosGlassPreferences {
         return Math.max(MIN_BLUR_INTENSITY, Math.min(MAX_BLUR_INTENSITY, value));
     }
 
-    /** Maps the user-facing 0..100 control to a useful cross-window blur radius. */
+    /** Maps the user-facing 0..100 control to 0..160dp cross-window blur; 0% is truly off. */
     public static int resolveBlurRadiusDp(final SharedPreferences prefs) {
         final float fraction = getBlurIntensity(prefs) / 100.0f;
         return Math.round(MIN_BLUR_RADIUS_DP
