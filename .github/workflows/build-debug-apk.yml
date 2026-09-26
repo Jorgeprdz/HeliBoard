@@ -44,8 +44,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run unit tests and build iOS Glass debug APK
-        run: ./gradlew clean :app:testDebugUnitTest :app:assembleDebug
+      - name: Run app theme and dynamic color tests, then build iOS Glass debug APK
+        run: ./gradlew clean :app:testDebugUnitTest --tests 'helium314.keyboard.latin.utils.AppThemeColorsTest' --tests 'helium314.keyboard.latin.common.dynamic.DynamicColorSchemesTest' :app:assembleDebug
 
       - name: SHA-256 APK
         run: sha256sum app/build/outputs/apk/debug/*-debug*.apk | tee app/build/outputs/apk/debug/SHA256SUMS.txt

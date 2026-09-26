@@ -3,6 +3,7 @@ package helium314.keyboard.latin.utils
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import androidx.compose.ui.graphics.toArgb
 import helium314.keyboard.latin.R
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -20,8 +21,8 @@ class AppThemeColorsTest {
         val light = resolveAppColorScheme(context, dark = false)
         val dark = resolveAppColorScheme(context, dark = true)
 
-        assertEquals(context.getColor(R.color.accent), light.primary)
-        assertEquals(context.getColor(R.color.accent), dark.primary)
+        assertEquals(context.getColor(R.color.accent), light.primary.toArgb())
+        assertEquals(context.getColor(R.color.accent), dark.primary.toArgb())
         assertEquals(false, light == dark)
     }
 
@@ -33,7 +34,7 @@ class AppThemeColorsTest {
         val light = resolveAppColorScheme(context, dark = false)
         val dark = resolveAppColorScheme(context, dark = true)
 
-        assertEquals(context.getColor(android.R.color.system_accent1_600), light.primary)
-        assertEquals(context.getColor(android.R.color.system_accent1_200), dark.primary)
+        assertEquals(context.getColor(android.R.color.system_accent1_600), light.primary.toArgb())
+        assertEquals(context.getColor(android.R.color.system_accent1_200), dark.primary.toArgb())
     }
 }
