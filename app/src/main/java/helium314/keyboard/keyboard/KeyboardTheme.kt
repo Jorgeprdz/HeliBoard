@@ -20,6 +20,8 @@ import helium314.keyboard.latin.common.ColorType
 import helium314.keyboard.latin.common.Colors
 import helium314.keyboard.latin.common.DefaultColors
 import helium314.keyboard.latin.common.DynamicColors
+import helium314.keyboard.latin.common.dynamic.DynamicSchemeType
+import helium314.keyboard.latin.common.dynamic.MonetKeyboardColors
 import helium314.keyboard.latin.settings.Defaults
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.ResourceUtils
@@ -54,7 +56,19 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         const val THEME_DARK = "dark"
         const val THEME_DARKER = "darker"
         const val THEME_BLACK = "black"
+        /** Legacy dynamic theme id. Kept indefinitely so existing preferences remain valid. */
         const val THEME_DYNAMIC = "dynamic"
+        const val THEME_DYNAMIC_SYSTEM = "dynamic_system"
+        const val THEME_DYNAMIC_NEUTRAL = "dynamic_neutral"
+        const val THEME_DYNAMIC_MONOCHROME = "dynamic_monochrome"
+        const val THEME_DYNAMIC_TONAL_SPOT = "dynamic_tonal_spot"
+        const val THEME_DYNAMIC_VIBRANT = "dynamic_vibrant"
+        const val THEME_DYNAMIC_RAINBOW = "dynamic_rainbow"
+        const val THEME_DYNAMIC_EXPRESSIVE = "dynamic_expressive"
+        const val THEME_DYNAMIC_FIDELITY = "dynamic_fidelity"
+        const val THEME_DYNAMIC_CONTENT = "dynamic_content"
+        const val THEME_DYNAMIC_FRUIT_SALAD = "dynamic_fruit_salad"
+        const val THEME_DYNAMIC_CMF = "dynamic_cmf"
         const val THEME_BLUE_GRAY = "blue_gray"
         const val THEME_BROWN = "brown"
         const val THEME_CHOCOLATE = "chocolate"
@@ -67,7 +81,17 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         const val THEME_VIOLETTE = "violette"
         fun getAvailableDefaultColors(prefs: SharedPreferences, isNight: Boolean) = listOfNotNull(
             if (!isNight) THEME_LIGHT else null, THEME_DARK,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) THEME_DYNAMIC else null,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) THEME_DYNAMIC_SYSTEM else null,
+            THEME_DYNAMIC_NEUTRAL,
+            THEME_DYNAMIC_MONOCHROME,
+            THEME_DYNAMIC_TONAL_SPOT,
+            THEME_DYNAMIC_VIBRANT,
+            THEME_DYNAMIC_RAINBOW,
+            THEME_DYNAMIC_EXPRESSIVE,
+            THEME_DYNAMIC_FIDELITY,
+            THEME_DYNAMIC_CONTENT,
+            THEME_DYNAMIC_FRUIT_SALAD,
+            THEME_DYNAMIC_CMF,
             if (prefs.getString(Settings.PREF_THEME_STYLE, Defaults.PREF_THEME_STYLE) == STYLE_HOLO) THEME_HOLO_WHITE else null,
             THEME_DARKER,
             THEME_BLACK,
@@ -83,6 +107,29 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
             THEME_VIOLETTE
         )
         val STYLES = arrayOf(STYLE_MATERIAL, STYLE_HOLO, STYLE_ROUNDED)
+
+        val DYNAMIC_THEMES = listOf(
+            THEME_DYNAMIC_SYSTEM,
+            THEME_DYNAMIC_NEUTRAL,
+            THEME_DYNAMIC_MONOCHROME,
+            THEME_DYNAMIC_TONAL_SPOT,
+            THEME_DYNAMIC_VIBRANT,
+            THEME_DYNAMIC_RAINBOW,
+            THEME_DYNAMIC_EXPRESSIVE,
+            THEME_DYNAMIC_FIDELITY,
+            THEME_DYNAMIC_CONTENT,
+            THEME_DYNAMIC_FRUIT_SALAD,
+            THEME_DYNAMIC_CMF,
+        )
+
+        fun normalizeThemeName(themeName: String): String =
+            if (themeName == THEME_DYNAMIC) THEME_DYNAMIC_SYSTEM else themeName
+
+        fun isDynamicTheme(themeName: String): Boolean =
+            normalizeThemeName(themeName) in DYNAMIC_THEMES
+
+        fun localDynamicSchemeType(themeName: String): DynamicSchemeType? =
+            DynamicSchemeType.fromThemeName(normalizeThemeName(themeName))
 
         // These should be aligned with Keyboard.themeId and Keyboard.Case.keyboardTheme
         // attributes' values in attrs.xml.
@@ -141,16 +188,27 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                 prefs.getString(Settings.PREF_THEME_COLORS, Defaults.PREF_THEME_COLORS)
             val themeStyle = prefs.getString(Settings.PREF_THEME_STYLE, Defaults.PREF_THEME_STYLE)
 
-            return getThemeColors(themeName!!, themeStyle!!, context, prefs, isNight)
+            return getThemeColors(normalizeThemeName(themeName!!), themeStyle!!, context, prefs, isNight)
         }
 
         private fun getThemeColors(themeName: String, themeStyle: String, context: Context, prefs: SharedPreferences, isNight: Boolean): Colors {
             val hasBorders = prefs.getBoolean(Settings.PREF_THEME_KEY_BORDERS, Defaults.PREF_THEME_KEY_BORDERS)
             val backgroundImage = Settings.readUserBackgroundImage(context, isNight)
-            return when (themeName) {
-                THEME_DYNAMIC -> {
+            val normalizedThemeName = normalizeThemeName(themeName)
+            localDynamicSchemeType(normalizedThemeName)?.let { schemeType ->
+                return MonetKeyboardColors(
+                    context = context,
+                    themeStyle = themeStyle,
+                    hasKeyBorders = hasBorders,
+                    schemeType = schemeType,
+                    isDark = isNight,
+                    backgroundImage = backgroundImage,
+                )
+            }
+            return when (normalizedThemeName) {
+                THEME_DYNAMIC_SYSTEM -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) DynamicColors(context, themeStyle, hasBorders, backgroundImage)
-                    else getThemeColors(THEME_LIGHT, themeStyle, context, prefs, isNight)
+                    else getThemeColors(if (isNight) THEME_DARK else THEME_LIGHT, themeStyle, context, prefs, isNight)
                 }
                 THEME_LIGHT -> DefaultColors(
                     themeStyle,

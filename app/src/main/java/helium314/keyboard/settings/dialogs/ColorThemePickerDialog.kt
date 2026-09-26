@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -91,11 +92,12 @@ fun ColorThemePickerDialog(
             else -> null
         }
     }.toSortedSet() // we don't want duplicates, and we want a consistent order
-    val selectedColor = prefs.getString(setting.key, default)!!
-    if (selectedColor !in defaultColors)
+    val selectedColor = KeyboardTheme.normalizeThemeName(prefs.getString(setting.key, default)!!)
+    if (selectedColor !in defaultColors && !KeyboardTheme.isDynamicTheme(selectedColor))
         userColors.add(selectedColor) // there are cases where we have no settings for a user theme
 
     val colors = listOf("") + userColors + defaultColors
+    val firstDynamicColor = defaultColors.firstOrNull(KeyboardTheme::isDynamicTheme)
     val state = rememberLazyListState()
     LaunchedEffect(selectedColor) {
         val index = colors.indexOf(selectedColor)
@@ -119,6 +121,16 @@ fun ColorThemePickerDialog(
                     items(colors) { item ->
                         if (item == "") {
                             AddColorRow(onDismissRequest, userColors, targetScreen, setting.key)
+                        } else if (item == firstDynamicColor) {
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.dynamic_colors_section),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
+                                )
+                                ColorItemRow(onDismissRequest, item, item == selectedColor, false, targetScreen, setting.key)
+                            }
                         } else {
                             ColorItemRow(onDismissRequest, item, item == selectedColor, item in userColors, targetScreen, setting.key)
                         }

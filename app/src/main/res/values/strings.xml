@@ -731,6 +731,18 @@ New dictionary:
     <string name="theme_name_black" tools:keep="@string/theme_name_black">Black</string>
     <!-- Theme name for dynamic colors light theme -->
     <string name="theme_name_dynamic" tools:keep="@string/theme_name_dynamic">Dynamic colors</string>
+    <string name="dynamic_colors_section">Dynamic Colors</string>
+    <string name="theme_name_dynamic_system" tools:keep="@string/theme_name_dynamic_system">Dynamic · System</string>
+    <string name="theme_name_dynamic_neutral" tools:keep="@string/theme_name_dynamic_neutral">Dynamic · Neutral</string>
+    <string name="theme_name_dynamic_monochrome" tools:keep="@string/theme_name_dynamic_monochrome">Dynamic · Monochrome</string>
+    <string name="theme_name_dynamic_tonal_spot" tools:keep="@string/theme_name_dynamic_tonal_spot">Dynamic · Tonal Spot</string>
+    <string name="theme_name_dynamic_vibrant" tools:keep="@string/theme_name_dynamic_vibrant">Dynamic · Vibrant</string>
+    <string name="theme_name_dynamic_rainbow" tools:keep="@string/theme_name_dynamic_rainbow">Dynamic · Rainbow</string>
+    <string name="theme_name_dynamic_expressive" tools:keep="@string/theme_name_dynamic_expressive">Dynamic · Expressive</string>
+    <string name="theme_name_dynamic_fidelity" tools:keep="@string/theme_name_dynamic_fidelity">Dynamic · Fidelity</string>
+    <string name="theme_name_dynamic_content" tools:keep="@string/theme_name_dynamic_content">Dynamic · Content</string>
+    <string name="theme_name_dynamic_fruit_salad" tools:keep="@string/theme_name_dynamic_fruit_salad">Dynamic · Fruit Salad</string>
+    <string name="theme_name_dynamic_cmf" tools:keep="@string/theme_name_dynamic_cmf">Dynamic · CMF</string>
     <!-- Theme name for blue-gray theme -->
     <string name="theme_name_blue_gray" tools:keep="@string/theme_name_blue_gray">Blue Gray</string>
     <!-- Theme name for brown theme -->

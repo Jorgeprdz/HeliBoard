@@ -1,0 +1,49 @@
+name: Dynamic color schemes CI
+
+on:
+  push:
+    branches:
+      - feature/dynamic-color-schemes
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Clean, test, and build debug APK
+        run: ./gradlew clean testRunTestsUnitTest assembleDebug
+
+      - name: Calculate APK SHA-256
+        run: |
+          sha256sum app/build/outputs/apk/debug/*-debug*.apk | tee apk-sha256.txt
+          cat apk-sha256.txt
+
+      - name: Upload debug APK and checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: HeliBoard-dynamic-colors-debug
+          path: |
+            app/build/outputs/apk/debug/*-debug*.apk
+            apk-sha256.txt
+          if-no-files-found: error
+
+      - name: Archive reports for failed job
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+          name: dynamic-color-schemes-reports
+          path: '*/build/reports'
