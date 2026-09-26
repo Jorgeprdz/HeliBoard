@@ -15,6 +15,7 @@ import helium314.keyboard.latin.AudioAndHapticFeedbackManager
 import helium314.keyboard.latin.R
 import helium314.keyboard.latin.database.ClipboardDao
 import helium314.keyboard.latin.settings.Defaults
+import helium314.keyboard.latin.settings.IosGlassPreferences
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.Log
 import helium314.keyboard.latin.utils.SubtypeSettings
@@ -55,6 +56,8 @@ fun PreferencesScreen(
             Settings.PREF_VIBRATE_ON else null,
         if (prefs.getBoolean(Settings.PREF_VIBRATE_ON, Defaults.PREF_VIBRATE_ON))
             Settings.PREF_VIBRATION_DURATION_SETTINGS else null,
+        if (prefs.getBoolean(Settings.PREF_VIBRATE_ON, Defaults.PREF_VIBRATE_ON))
+            IosGlassPreferences.PREF_HAPTIC_STRENGTH else null,
         if (prefs.getBoolean(Settings.PREF_VIBRATE_ON, Defaults.PREF_VIBRATE_ON))
             Settings.PREF_VIBRATE_IN_DND_MODE else null,
         Settings.PREF_SOUND_ON,
@@ -220,6 +223,23 @@ fun createPreferencesSettings(context: Context) = listOf(
             },
             range = -1f..100f,
             onValueChanged = { it?.let { AudioAndHapticFeedbackManager.getInstance().vibrate(it.toLong()) } }
+        )
+    },
+    Setting(
+        context,
+        IosGlassPreferences.PREF_HAPTIC_STRENGTH,
+        R.string.ios_glass_haptic_strength,
+        R.string.ios_glass_haptic_strength_summary
+    ) { setting ->
+        SliderPreference(
+            name = setting.title,
+            key = setting.key,
+            default = IosGlassPreferences.DEFAULT_HAPTIC_STRENGTH,
+            description = { "${it.toInt()}%" },
+            range = 1f..100f,
+            onValueChanged = { value ->
+                value?.let { AudioAndHapticFeedbackManager.getInstance().previewHapticStrength(it.toInt()) }
+            }
         )
     },
     Setting(context, Settings.PREF_KEYPRESS_SOUND_VOLUME, R.string.prefs_keypress_sound_volume_settings) { setting ->

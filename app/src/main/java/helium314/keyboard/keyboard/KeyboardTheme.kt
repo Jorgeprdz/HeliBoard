@@ -21,8 +21,8 @@ import helium314.keyboard.latin.common.ColorType
 import helium314.keyboard.latin.common.Colors
 import helium314.keyboard.latin.common.DefaultColors
 import helium314.keyboard.latin.common.DynamicColors
-import helium314.keyboard.latin.common.KeyboardDynamicSchemeType
-import helium314.keyboard.latin.common.MonetKeyboardColors
+import helium314.keyboard.latin.common.dynamic.DynamicSchemeType
+import helium314.keyboard.latin.common.dynamic.MonetKeyboardColors
 import helium314.keyboard.latin.settings.Defaults
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.ResourceUtils
@@ -102,16 +102,16 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         const val THEME_VIOLETTE = "violette"
 
         private val LOCAL_DYNAMIC_SCHEMES = linkedMapOf(
-            THEME_DYNAMIC_NEUTRAL to KeyboardDynamicSchemeType.NEUTRAL,
-            THEME_DYNAMIC_MONOCHROME to KeyboardDynamicSchemeType.MONOCHROME,
-            THEME_DYNAMIC_TONAL_SPOT to KeyboardDynamicSchemeType.TONAL_SPOT,
-            THEME_DYNAMIC_VIBRANT to KeyboardDynamicSchemeType.VIBRANT,
-            THEME_DYNAMIC_RAINBOW to KeyboardDynamicSchemeType.RAINBOW,
-            THEME_DYNAMIC_EXPRESSIVE to KeyboardDynamicSchemeType.EXPRESSIVE,
-            THEME_DYNAMIC_FIDELITY to KeyboardDynamicSchemeType.FIDELITY,
-            THEME_DYNAMIC_CONTENT to KeyboardDynamicSchemeType.CONTENT,
-            THEME_DYNAMIC_FRUIT_SALAD to KeyboardDynamicSchemeType.FRUIT_SALAD,
-            THEME_DYNAMIC_CMF to KeyboardDynamicSchemeType.CMF,
+            THEME_DYNAMIC_NEUTRAL to DynamicSchemeType.NEUTRAL,
+            THEME_DYNAMIC_MONOCHROME to DynamicSchemeType.MONOCHROME,
+            THEME_DYNAMIC_TONAL_SPOT to DynamicSchemeType.TONAL_SPOT,
+            THEME_DYNAMIC_VIBRANT to DynamicSchemeType.VIBRANT,
+            THEME_DYNAMIC_RAINBOW to DynamicSchemeType.RAINBOW,
+            THEME_DYNAMIC_EXPRESSIVE to DynamicSchemeType.EXPRESSIVE,
+            THEME_DYNAMIC_FIDELITY to DynamicSchemeType.FIDELITY,
+            THEME_DYNAMIC_CONTENT to DynamicSchemeType.CONTENT,
+            THEME_DYNAMIC_FRUIT_SALAD to DynamicSchemeType.FRUIT_SALAD,
+            THEME_DYNAMIC_CMF to DynamicSchemeType.CMF,
         )
 
         fun getAvailableDefaultColors(prefs: SharedPreferences, isNight: Boolean) = listOfNotNull(
@@ -199,7 +199,14 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
             val hasBorders = prefs.getBoolean(Settings.PREF_THEME_KEY_BORDERS, Defaults.PREF_THEME_KEY_BORDERS)
             val backgroundImage = Settings.readUserBackgroundImage(context, isNight)
             LOCAL_DYNAMIC_SCHEMES[themeName]?.let { schemeType ->
-                return MonetKeyboardColors(context, schemeType, themeStyle, hasBorders, isNight, backgroundImage)
+                return MonetKeyboardColors(
+                    context = context,
+                    themeStyle = themeStyle,
+                    hasKeyBorders = hasBorders,
+                    schemeType = schemeType,
+                    isDark = isNight,
+                    backgroundImage = backgroundImage,
+                )
             }
             return when (themeName) {
                 THEME_DYNAMIC_SYSTEM -> {

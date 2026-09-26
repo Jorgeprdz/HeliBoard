@@ -33,6 +33,10 @@ public final class LanguageOnSpacebarUtils {
     }
 
     public static int getLanguageOnSpacebarFormatType(@NonNull final RichInputMethodSubtype subtype) {
+        // Jorge personal build: keep multilingual dictionaries active, but never render
+        // language / locale / confidence text on the spacebar.
+        return FORMAT_TYPE_NONE;
+        /*
         if (!Settings.getValues().mSpaceBarText.isEmpty())
             return FORMAT_TYPE_FULL_LOCALE;
         if (subtype.isNoLanguage()) {
@@ -56,6 +60,7 @@ public final class LanguageOnSpacebarUtils {
         // locale and keyboard layout. Otherwise displaying language name is enough.
         return sameLanguageAndLayoutCount > 1 ? FORMAT_TYPE_FULL_LOCALE
                 : FORMAT_TYPE_LANGUAGE_ONLY;
+        */
     }
 
     public static void setEnabledSubtypes(@NonNull final List<InputMethodSubtype> enabledSubtypes) {

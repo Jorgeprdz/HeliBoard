@@ -10,11 +10,11 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "helium314.keyboard"
+        applicationId = "com.jorgeprdz.ioskeyboard"
         minSdk = 21
         targetSdk = 37
-        versionCode = 4101
-        versionName = "4.1"
+        versionCode = 4104
+        versionName = "4.1-iosglass.4"
         ndk {
             abiFilters.clear()
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
@@ -65,7 +65,7 @@ android {
             }
             variant.outputs.forEach { output ->
                 if (output is com.android.build.api.variant.impl.VariantOutputImpl) {
-                    output.outputFileName = "HeliBoard_${defaultConfig.versionName}-${variant.buildType}.apk"
+                    output.outputFileName = "iOSKeyboard_${defaultConfig.versionName}-${variant.buildType}.apk"
                 }
             }
         }
@@ -123,9 +123,6 @@ dependencies {
 
     // kotlin
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
-
-    // Material Color Utilities / Monet-compatible local dynamic schemes
-    implementation("com.materialkolor:material-color-utilities:5.0.1")
 
     // compose
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")

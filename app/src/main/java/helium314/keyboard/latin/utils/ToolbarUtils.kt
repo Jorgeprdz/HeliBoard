@@ -19,9 +19,6 @@ import helium314.keyboard.latin.common.Constants.Separators
 import helium314.keyboard.latin.settings.Defaults
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.ToolbarKey.*
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.util.EnumMap
 import java.util.Locale
 
@@ -44,10 +41,9 @@ fun setToolbarButtonsActivatedStateOnPrefChange(buttonsGroup: ViewGroup, key: St
         && key?.startsWith(Settings.PREF_ONE_HANDED_MODE_PREFIX) == false)
         return
 
-    GlobalScope.launch {
-        delay(10) // need to wait until SettingsValues are reloaded
+    buttonsGroup.postDelayed({
         buttonsGroup.forEach { if (it is ImageButton) setToolbarButtonActivatedState(it) }
-    }
+    }, 10L) // wait until SettingsValues are reloaded
 }
 
 private fun setToolbarButtonActivatedState(button: ImageButton) {
@@ -252,7 +248,8 @@ fun clearCustomToolbarKeyCodes() {
 
 fun onClickToolbarKey(view: View, onCodeInput: (Int) -> Unit) {
     AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, view, HapticEvent.KEY_PRESS)
-    val code = getCodeForToolbarKey(view.tag as ToolbarKey)
+    val key = view.tag as ToolbarKey
+    val code = getCodeForToolbarKey(key)
     if (code != KeyCode.UNSPECIFIED) {
         onCodeInput(code)
     }
