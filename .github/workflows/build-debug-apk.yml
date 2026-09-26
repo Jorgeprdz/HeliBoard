@@ -2,6 +2,16 @@ name: Build debug APK
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/dynamic-color-schemes
+    paths:
+      - 'app/**'
+      - '.github/workflows/build-debug-apk.yml'
+      - 'build.gradle.kts'
+      - 'gradle/**'
+      - 'gradlew'
+      - 'gradle.properties'
 
 jobs:
   build:
@@ -22,14 +32,19 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew assembleDebug
+      - name: Test and build with Gradle
+        run: ./gradlew clean testRunTestsUnitTest assembleDebug
+
+      - name: SHA-256 APK
+        run: sha256sum app/build/outputs/apk/debug/*-debug*.apk | tee app/build/outputs/apk/debug/SHA256SUMS.txt
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: HeliBoard-debug
-          path: app/build/outputs/apk/debug/*-debug*.apk
+          name: HeliBoard-dynamic-color-schemes-debug
+          path: |
+            app/build/outputs/apk/debug/*-debug*.apk
+            app/build/outputs/apk/debug/SHA256SUMS.txt
 
       - name: Archive reports for failed job
         uses: actions/upload-artifact@v4
