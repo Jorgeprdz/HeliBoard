@@ -14,10 +14,12 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -106,6 +108,11 @@ open class SettingsActivity : ComponentActivity(), SharedPreferences.OnSharedPre
                             Column(Modifier.padding(innerPadding)) {
                                 TopAppBar(
                                     title = { Text(stringResource(R.string.android_spell_checker_settings)) },
+                                    colors = TopAppBarDefaults.topAppBarColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                                        navigationIconContentColor = MaterialTheme.colorScheme.primary,
+                                    ),
                                     windowInsets = WindowInsets(0),
                                     navigationIcon = {
                                         BackButton { this@SettingsActivity.finish() }

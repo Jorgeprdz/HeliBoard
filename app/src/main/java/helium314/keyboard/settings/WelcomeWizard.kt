@@ -10,6 +10,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -37,7 +40,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -45,7 +47,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import helium314.keyboard.latin.R
 import helium314.keyboard.latin.utils.JniUtils
 import helium314.keyboard.latin.utils.Theme
@@ -79,10 +80,10 @@ fun WelcomeWizard(
             }
     }
     val useWideLayout = isWideScreen()
-    val stepBackgroundColor = Color(ContextCompat.getColor(ctx, R.color.setup_step_background))
-    val textColor = Color(ContextCompat.getColor(ctx, R.color.setup_text_action))
+    val stepBackgroundColor = MaterialTheme.colorScheme.secondaryContainer
+    val textColor = MaterialTheme.colorScheme.onSecondaryContainer
     val textColorDim = textColor.copy(alpha = 0.5f)
-    val titleColor = Color(ContextCompat.getColor(ctx, R.color.setup_text_title))
+    val titleColor = MaterialTheme.colorScheme.primary
     val appName = stringResource(ctx.applicationInfo.labelRes)
     @Composable fun bigText() {
         val resource = if (step == 0) R.string.setup_welcome_title else R.string.setup_steps_title
@@ -106,22 +107,34 @@ fun WelcomeWizard(
     @Composable
     fun ColumnScope.Step(step: Int, title: String, instruction: String, actionText: String, icon: Painter, action: () -> Unit) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("1", color = if (step == 1) titleColor else textColorDim)
-            Text("2", color = if (step == 2) titleColor else textColorDim)
-            Text("3", color = if (step == 3) titleColor else textColorDim)
+            (1..3).forEach { number ->
+                val active = step == number
+                Text(
+                    number.toString(),
+                    modifier = Modifier
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(if (active) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .padding(horizontal = 18.dp, vertical = 10.dp),
+                    color = if (active) MaterialTheme.colorScheme.onPrimaryContainer else textColorDim,
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
         }
         Column(Modifier
+            .clip(MaterialTheme.shapes.large)
             .background(color = stepBackgroundColor)
-            .padding(16.dp)
+            .padding(20.dp)
         ) {
-            Text(title)
+            Text(title, style = MaterialTheme.typography.titleLarge)
             Text(instruction, style = MaterialTheme.typography.bodyLarge.merge(color = textColor))
         }
         Spacer(Modifier.height(4.dp))
         Row(
-            Modifier.clickable { action() }
+            Modifier.fillMaxWidth().heightIn(min = 64.dp)
+                .clip(MaterialTheme.shapes.large)
                 .background(color = stepBackgroundColor)
-                .padding(16.dp),
+                .clickable { action() }
+                .padding(horizontal = 20.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(icon, null, Modifier.padding(end = 6.dp).size(32.dp), tint = textColor)
@@ -160,9 +173,11 @@ fun WelcomeWizard(
                     )
                     Spacer(Modifier.height(4.dp))
                     Row(
-                        Modifier.clickable { close() }
+                        Modifier.fillMaxWidth().heightIn(min = 64.dp)
+                            .clip(MaterialTheme.shapes.large)
                             .background(color = stepBackgroundColor)
-                            .padding(16.dp),
+                            .clickable { close() }
+                            .padding(horizontal = 20.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
@@ -184,9 +199,11 @@ fun WelcomeWizard(
                     )
                     Spacer(Modifier.height(4.dp))
                     Row(
-                        Modifier.clickable { finish() }
+                        Modifier.fillMaxWidth().heightIn(min = 64.dp)
+                            .clip(MaterialTheme.shapes.large)
                             .background(color = stepBackgroundColor)
-                            .padding(16.dp),
+                            .clickable { finish() }
+                            .padding(horizontal = 20.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
@@ -232,16 +249,11 @@ fun WelcomeWizard(
 fun Step0(onClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Image(painterResource(R.drawable.setup_welcome_image), null)
-        Row(Modifier.clickable { onClick() }
-            .padding(top = 4.dp, start = 4.dp, end = 4.dp)
-            //.background(color = MaterialTheme.colorScheme.primary)
-        ) {
-            Spacer(Modifier.weight(1f))
-            Text(
-                stringResource(R.string.setup_start_action),
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-        }
+        FilledTonalButton(
+            onClick = onClick,
+            shape = MaterialTheme.shapes.large,
+            modifier = Modifier.padding(top = 8.dp),
+        ) { Text(stringResource(R.string.setup_start_action)) }
     }
 }
 
