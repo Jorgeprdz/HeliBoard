@@ -1,43 +1,36 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package helium314.keyboard.latin.utils
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
-import helium314.keyboard.latin.R
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun Theme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     val material3 = Typography()
-    val colorScheme = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        if (dark) dynamicDarkColorScheme(LocalContext.current)
-        else dynamicLightColorScheme(LocalContext.current)
-    } else {
-        // todo (later): more colors
-        if (dark) darkColorScheme(
-            primary = colorResource(R.color.accent),
-        )
-        else lightColorScheme(
-            primary = colorResource(R.color.accent)
-        )
-    }
+    val colorScheme = resolveAppColorScheme(androidx.compose.ui.platform.LocalContext.current, dark)
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography(
+            displayLarge = material3.displayLarge.copy(fontWeight = FontWeight.Bold),
+            headlineLarge = material3.headlineLarge.copy(fontWeight = FontWeight.Bold),
+            headlineMedium = material3.headlineMedium.copy(fontWeight = FontWeight.Bold),
             titleLarge = material3.titleLarge.copy(fontWeight = FontWeight.Bold),
-            titleMedium = material3.titleMedium.copy(fontWeight = FontWeight.Bold),
-            titleSmall = material3.titleSmall.copy(fontWeight = FontWeight.Bold)
+            titleMedium = material3.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            titleSmall = material3.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+            labelLarge = material3.labelLarge.copy(fontWeight = FontWeight.SemiBold),
         ),
-        //shapes = Shapes(),
+        shapes = Shapes(
+            extraSmall = AppShapes.compact,
+            small = AppShapes.compact,
+            medium = AppShapes.medium,
+            large = AppShapes.large,
+            extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(32.dp),
+        ),
         content = content
     )
 }
