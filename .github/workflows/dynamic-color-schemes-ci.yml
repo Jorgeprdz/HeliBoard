@@ -25,7 +25,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Clean, test, and build debug APK
-        run: ./gradlew clean testRunTestsUnitTest assembleDebug
+        run: ./gradlew clean :app:testDebugUnitTest :app:assembleDebug
 
       - name: Calculate APK SHA-256
         run: |

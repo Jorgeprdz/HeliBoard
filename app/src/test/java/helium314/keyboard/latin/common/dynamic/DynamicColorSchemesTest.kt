@@ -11,7 +11,12 @@ import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35])
 class DynamicColorSchemesTest {
     private val seedA = 0xFF6750A4.toInt()
     private val seedB = 0xFF006C4C.toInt()
