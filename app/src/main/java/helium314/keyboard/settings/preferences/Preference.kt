@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
@@ -28,8 +27,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import helium314.keyboard.latin.R
-import helium314.keyboard.settings.IconOrImage
+import helium314.keyboard.settings.components.SettingsCategoryIcon
+import helium314.keyboard.settings.components.SettingsSectionHeader
 import helium314.keyboard.latin.utils.Theme
+import helium314.keyboard.latin.utils.AppSpacing
 import helium314.keyboard.latin.utils.previewDark
 
 // partially taken from StreetComplete / SCEE
@@ -39,15 +40,7 @@ fun PreferenceCategory(
     title: String,
     modifier: Modifier = Modifier,
 ) {
-    Column {
-        HorizontalDivider()
-        Text(
-            text = title,
-            modifier = modifier.padding(top = 12.dp, start = 16.dp, end = 8.dp, bottom = 8.dp),
-            color = MaterialTheme.colorScheme.secondary,
-            style = MaterialTheme.typography.titleSmall
-        )
-    }
+    SettingsSectionHeader(title, modifier)
 }
 
 @Composable
@@ -63,13 +56,12 @@ fun Preference(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .heightIn(min = 44.dp)
-            .padding(vertical = 10.dp, horizontal = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+            .heightIn(min = if (description == null) 64.dp else 76.dp)
+            .padding(vertical = AppSpacing.medium, horizontal = AppSpacing.large),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.large),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (icon != null)
-            IconOrImage(icon, name, 32)
+        if (icon != null) SettingsCategoryIcon(icon, name)
         Column(modifier = Modifier.weight(1f)) {
             Text(text = name, style = MaterialTheme.typography.bodyLarge)
             if (description != null) {

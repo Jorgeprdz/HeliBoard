@@ -32,6 +32,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -139,11 +140,17 @@ fun <T: Any?> SearchScreen(
                 else onClickBack()
             }
             Surface(
-                color = MaterialTheme.colorScheme.surfaceContainer,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
             ) {
                 Column {
                     TopAppBar(
                         title = title,
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            titleContentColor = MaterialTheme.colorScheme.onSurface,
+                            navigationIconContentColor = MaterialTheme.colorScheme.primary,
+                            actionIconContentColor = MaterialTheme.colorScheme.primary,
+                        ),
                         windowInsets = WindowInsets(0),
                         navigationIcon = {
                             BackButton {
@@ -185,7 +192,10 @@ fun <T: Any?> SearchScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                         colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surface
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
                         )
                     )
                 }
@@ -233,6 +243,7 @@ fun ExpandableSearchField(
             value = search,
             onValueChange = onSearchChange,
             modifier = modifier.focusRequester(focusRequester),
+            shape = MaterialTheme.shapes.large,
             leadingIcon = { SearchIcon() },
             trailingIcon = { IconButton(onClick = {
                 if (search.text.isBlank()) onDismiss()

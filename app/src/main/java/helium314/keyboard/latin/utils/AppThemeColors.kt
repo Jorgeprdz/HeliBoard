@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import helium314.keyboard.latin.R
 
 /** Resolves colors for HeliBoard's app surfaces only; keyboard colors are managed separately. */
@@ -19,7 +20,7 @@ internal fun resolveAppColorScheme(context: Context, dark: Boolean): ColorScheme
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else {
-        val accent = context.resources.getColor(R.color.accent, context.theme)
+        val accent = ContextCompat.getColor(context, R.color.accent)
         if (dark) darkColorScheme(primary = androidx.compose.ui.graphics.Color(accent))
         else lightColorScheme(primary = androidx.compose.ui.graphics.Color(accent))
     }
