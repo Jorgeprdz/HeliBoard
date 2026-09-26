@@ -4,7 +4,6 @@ package helium314.keyboard.latin.common
 import com.materialkolor.dynamiccolor.MaterialDynamicColors
 import com.materialkolor.hct.Hct
 import com.materialkolor.scheme.DynamicScheme
-import com.materialkolor.scheme.SchemeCmf
 import com.materialkolor.scheme.SchemeContent
 import com.materialkolor.scheme.SchemeExpressive
 import com.materialkolor.scheme.SchemeFidelity
