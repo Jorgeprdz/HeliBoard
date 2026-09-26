@@ -8,7 +8,6 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -26,9 +25,9 @@ internal fun resolveAppColorScheme(context: Context, dark: Boolean): ColorScheme
     }
 
 internal object AppShapes {
-    val compact: Shape = RoundedCornerShape(12.dp)
-    val medium: Shape = RoundedCornerShape(20.dp)
-    val large: Shape = RoundedCornerShape(28.dp)
+    val compact = RoundedCornerShape(12.dp)
+    val medium = RoundedCornerShape(20.dp)
+    val large = RoundedCornerShape(28.dp)
 }
 
 internal object AppSpacing {
