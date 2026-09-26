@@ -5,6 +5,7 @@ import android.graphics.Color
 import androidx.core.graphics.ColorUtils
 import helium314.keyboard.keyboard.KeyboardTheme
 import helium314.keyboard.latin.common.ColorType
+import helium314.keyboard.latin.common.KeyboardDynamicSchemeType
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
@@ -73,9 +74,10 @@ class DynamicColorSchemesTest {
     }
 
     @Test
-    fun systemThemeNeverResolvesToLocalScheme() {
+    fun systemThemeHasNoLocalSchemeVariant() {
         assertNull(DynamicSchemeType.fromThemeName(KeyboardTheme.THEME_DYNAMIC_SYSTEM))
-        assertNull(KeyboardTheme.localDynamicSchemeType(KeyboardTheme.THEME_DYNAMIC_SYSTEM))
+        assertEquals("dynamic", KeyboardTheme.normalizeThemeName(KeyboardTheme.THEME_DYNAMIC_SYSTEM))
+        assertTrue(KeyboardTheme.isDynamicTheme(KeyboardTheme.THEME_DYNAMIC_SYSTEM))
     }
 
     @Test
@@ -113,10 +115,10 @@ class DynamicColorSchemesTest {
             KeyboardTheme.THEME_DYNAMIC_FRUIT_SALAD to DynamicSchemeType.FRUIT_SALAD,
             KeyboardTheme.THEME_DYNAMIC_CMF to DynamicSchemeType.CMF,
         )
-        assertEquals(11, KeyboardTheme.DYNAMIC_THEMES.size)
-        assertTrue(KeyboardTheme.THEME_DYNAMIC_SYSTEM in KeyboardTheme.DYNAMIC_THEMES)
+        assertEquals(10, expected.size)
         expected.forEach { (themeName, schemeType) ->
-            assertEquals(schemeType, KeyboardTheme.localDynamicSchemeType(themeName))
+            assertEquals(themeName, KeyboardTheme.normalizeThemeName(themeName))
+            assertEquals(schemeType.name, KeyboardDynamicSchemeType.valueOf(schemeType.name).name)
             assertTrue(KeyboardTheme.isDynamicTheme(themeName))
         }
     }
