@@ -3,6 +3,8 @@ package helium314.keyboard.settings.preferences
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -60,7 +62,11 @@ fun ReorderSwitchPreference(setting: Setting, default: String) {
                     Text(actualText, Modifier.weight(1f))
                     Switch(
                         checked = checked,
-                        onCheckedChange = { item.state = it; checked = it }
+                        onCheckedChange = { item.state = it; checked = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary,
+                        ),
                     )
                 }
             },

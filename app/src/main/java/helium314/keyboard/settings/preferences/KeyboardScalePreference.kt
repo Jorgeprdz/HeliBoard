@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -162,7 +163,11 @@ private fun DimensionCheckbox(checked: Boolean, dimension: String, onCheckedChan
     ) {
         Checkbox(
             checked = checked,
-            onCheckedChange = { onCheckedChange(it) }
+            onCheckedChange = { onCheckedChange(it) },
+            colors = CheckboxDefaults.colors(
+                checkedColor = MaterialTheme.colorScheme.primary,
+                checkmarkColor = MaterialTheme.colorScheme.onPrimary,
+            ),
         )
         Text(dimension)
     }
