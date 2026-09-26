@@ -14,14 +14,15 @@ import android.util.TypedValue
 import android.view.ContextThemeWrapper
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.graphics.toColorInt
 import helium314.keyboard.latin.R
 import helium314.keyboard.latin.common.AllColors
 import helium314.keyboard.latin.common.ColorType
 import helium314.keyboard.latin.common.Colors
 import helium314.keyboard.latin.common.DefaultColors
 import helium314.keyboard.latin.common.DynamicColors
-import helium314.keyboard.latin.common.dynamic.DynamicSchemeType
-import helium314.keyboard.latin.common.dynamic.MonetKeyboardColors
+import helium314.keyboard.latin.common.KeyboardDynamicSchemeType
+import helium314.keyboard.latin.common.MonetKeyboardColors
 import helium314.keyboard.latin.settings.Defaults
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.ResourceUtils
@@ -33,16 +34,13 @@ import helium314.keyboard.settings.SettingsActivity
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.EnumMap
-import androidx.core.graphics.toColorInt
 
 class KeyboardTheme // Note: The themeId should be aligned with "themeId" attribute of Keyboard style in values/themes-<style>.xml.
 private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
     override fun equals(other: Any?) = if (other === this) true
         else (other as? KeyboardTheme)?.themeId == themeId
 
-    override fun hashCode(): Int {
-        return themeId
-    }
+    override fun hashCode(): Int = themeId
 
     companion object {
         // old themes, now called styles
@@ -56,9 +54,10 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         const val THEME_DARK = "dark"
         const val THEME_DARKER = "darker"
         const val THEME_BLACK = "black"
-        /** Legacy dynamic theme id. Kept indefinitely so existing preferences remain valid. */
-        const val THEME_DYNAMIC = "dynamic"
-        const val THEME_DYNAMIC_SYSTEM = "dynamic_system"
+
+        // Legacy dynamic id. Keep the value unchanged so existing preferences continue to resolve.
+        const val THEME_DYNAMIC_SYSTEM = "dynamic"
+        const val THEME_DYNAMIC = THEME_DYNAMIC_SYSTEM
         const val THEME_DYNAMIC_NEUTRAL = "dynamic_neutral"
         const val THEME_DYNAMIC_MONOCHROME = "dynamic_monochrome"
         const val THEME_DYNAMIC_TONAL_SPOT = "dynamic_tonal_spot"
@@ -69,6 +68,7 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         const val THEME_DYNAMIC_CONTENT = "dynamic_content"
         const val THEME_DYNAMIC_FRUIT_SALAD = "dynamic_fruit_salad"
         const val THEME_DYNAMIC_CMF = "dynamic_cmf"
+
         const val THEME_BLUE_GRAY = "blue_gray"
         const val THEME_BROWN = "brown"
         const val THEME_CHOCOLATE = "chocolate"
@@ -79,19 +79,25 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         const val THEME_PINK = "pink"
         const val THEME_SAND = "sand"
         const val THEME_VIOLETTE = "violette"
+
+        private val LOCAL_DYNAMIC_SCHEMES = linkedMapOf(
+            THEME_DYNAMIC_NEUTRAL to KeyboardDynamicSchemeType.NEUTRAL,
+            THEME_DYNAMIC_MONOCHROME to KeyboardDynamicSchemeType.MONOCHROME,
+            THEME_DYNAMIC_TONAL_SPOT to KeyboardDynamicSchemeType.TONAL_SPOT,
+            THEME_DYNAMIC_VIBRANT to KeyboardDynamicSchemeType.VIBRANT,
+            THEME_DYNAMIC_RAINBOW to KeyboardDynamicSchemeType.RAINBOW,
+            THEME_DYNAMIC_EXPRESSIVE to KeyboardDynamicSchemeType.EXPRESSIVE,
+            THEME_DYNAMIC_FIDELITY to KeyboardDynamicSchemeType.FIDELITY,
+            THEME_DYNAMIC_CONTENT to KeyboardDynamicSchemeType.CONTENT,
+            THEME_DYNAMIC_FRUIT_SALAD to KeyboardDynamicSchemeType.FRUIT_SALAD,
+            THEME_DYNAMIC_CMF to KeyboardDynamicSchemeType.CMF,
+        )
+
         fun getAvailableDefaultColors(prefs: SharedPreferences, isNight: Boolean) = listOfNotNull(
-            if (!isNight) THEME_LIGHT else null, THEME_DARK,
+            if (!isNight) THEME_LIGHT else null,
+            THEME_DARK,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) THEME_DYNAMIC_SYSTEM else null,
-            THEME_DYNAMIC_NEUTRAL,
-            THEME_DYNAMIC_MONOCHROME,
-            THEME_DYNAMIC_TONAL_SPOT,
-            THEME_DYNAMIC_VIBRANT,
-            THEME_DYNAMIC_RAINBOW,
-            THEME_DYNAMIC_EXPRESSIVE,
-            THEME_DYNAMIC_FIDELITY,
-            THEME_DYNAMIC_CONTENT,
-            THEME_DYNAMIC_FRUIT_SALAD,
-            THEME_DYNAMIC_CMF,
+            *LOCAL_DYNAMIC_SCHEMES.keys.toTypedArray(),
             if (prefs.getString(Settings.PREF_THEME_STYLE, Defaults.PREF_THEME_STYLE) == STYLE_HOLO) THEME_HOLO_WHITE else null,
             THEME_DARKER,
             THEME_BLACK,
@@ -107,29 +113,6 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
             THEME_VIOLETTE
         )
         val STYLES = arrayOf(STYLE_MATERIAL, STYLE_HOLO, STYLE_ROUNDED)
-
-        val DYNAMIC_THEMES = listOf(
-            THEME_DYNAMIC_SYSTEM,
-            THEME_DYNAMIC_NEUTRAL,
-            THEME_DYNAMIC_MONOCHROME,
-            THEME_DYNAMIC_TONAL_SPOT,
-            THEME_DYNAMIC_VIBRANT,
-            THEME_DYNAMIC_RAINBOW,
-            THEME_DYNAMIC_EXPRESSIVE,
-            THEME_DYNAMIC_FIDELITY,
-            THEME_DYNAMIC_CONTENT,
-            THEME_DYNAMIC_FRUIT_SALAD,
-            THEME_DYNAMIC_CMF,
-        )
-
-        fun normalizeThemeName(themeName: String): String =
-            if (themeName == THEME_DYNAMIC) THEME_DYNAMIC_SYSTEM else themeName
-
-        fun isDynamicTheme(themeName: String): Boolean =
-            normalizeThemeName(themeName) in DYNAMIC_THEMES
-
-        fun localDynamicSchemeType(themeName: String): DynamicSchemeType? =
-            DynamicSchemeType.fromThemeName(normalizeThemeName(themeName))
 
         // These should be aligned with Keyboard.themeId and Keyboard.Case.keyboardTheme
         // attributes' values in attrs.xml.
@@ -188,24 +171,16 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                 prefs.getString(Settings.PREF_THEME_COLORS, Defaults.PREF_THEME_COLORS)
             val themeStyle = prefs.getString(Settings.PREF_THEME_STYLE, Defaults.PREF_THEME_STYLE)
 
-            return getThemeColors(normalizeThemeName(themeName!!), themeStyle!!, context, prefs, isNight)
+            return getThemeColors(themeName!!, themeStyle!!, context, prefs, isNight)
         }
 
         private fun getThemeColors(themeName: String, themeStyle: String, context: Context, prefs: SharedPreferences, isNight: Boolean): Colors {
             val hasBorders = prefs.getBoolean(Settings.PREF_THEME_KEY_BORDERS, Defaults.PREF_THEME_KEY_BORDERS)
             val backgroundImage = Settings.readUserBackgroundImage(context, isNight)
-            val normalizedThemeName = normalizeThemeName(themeName)
-            localDynamicSchemeType(normalizedThemeName)?.let { schemeType ->
-                return MonetKeyboardColors(
-                    context = context,
-                    themeStyle = themeStyle,
-                    hasKeyBorders = hasBorders,
-                    schemeType = schemeType,
-                    isDark = isNight,
-                    backgroundImage = backgroundImage,
-                )
+            LOCAL_DYNAMIC_SCHEMES[themeName]?.let { schemeType ->
+                return MonetKeyboardColors(context, schemeType, themeStyle, hasBorders, isNight, backgroundImage)
             }
-            return when (normalizedThemeName) {
+            return when (themeName) {
                 THEME_DYNAMIC_SYSTEM -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) DynamicColors(context, themeStyle, hasBorders, backgroundImage)
                     else getThemeColors(if (isNight) THEME_DARK else THEME_LIGHT, themeStyle, context, prefs, isNight)
@@ -234,182 +209,32 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                     ContextCompat.getColor(context, R.color.key_hint_letter_color_lxx_dark),
                     keyboardBackground = backgroundImage
                 )
-                THEME_HOLO_WHITE -> DefaultColors(
-                    themeStyle,
-                    hasBorders,
-                    Color.WHITE,
-                    "#282828".toColorInt(),
-                    Color.WHITE, // drawable is transparent
-                    "#444444".toColorInt(), // should be 222222, but the key drawable is already grey
-                    Color.WHITE,
-                    Color.WHITE,
-                    "#282828".toColorInt(),
-                    Color.WHITE,
-                    "#80FFFFFF".toColorInt(),
-                    keyboardBackground = backgroundImage
-                )
-                THEME_DARKER -> DefaultColors(
-                    themeStyle,
-                    hasBorders,
-                    ContextCompat.getColor(context, R.color.gesture_trail_color_lxx_dark),
-                    ContextCompat.getColor(context, R.color.keyboard_background_lxx_dark_border),
-                    ContextCompat.getColor(context, R.color.key_background_normal_lxx_dark_border),
-                    ContextCompat.getColor(context, R.color.key_background_functional_lxx_dark_border),
-                    ContextCompat.getColor(context, R.color.key_background_normal_lxx_dark_border),
-                    ContextCompat.getColor(context, R.color.key_text_color_lxx_dark),
-                    ContextCompat.getColor(context, R.color.key_hint_letter_color_lxx_dark),
-                    keyboardBackground = backgroundImage
-                )
-                THEME_BLACK -> DefaultColors(
-                    themeStyle,
-                    hasBorders,
-                    ContextCompat.getColor(context, R.color.gesture_trail_color_lxx_dark),
-                    ContextCompat.getColor(context, R.color.background_amoled_black),
-                    ContextCompat.getColor(context, R.color.background_amoled_dark),
-                    ContextCompat.getColor(context, R.color.background_amoled_dark),
-                    ContextCompat.getColor(context, R.color.background_amoled_dark),
-                    ContextCompat.getColor(context, R.color.key_text_color_lxx_dark),
-                    ContextCompat.getColor(context, R.color.key_hint_letter_color_lxx_dark),
-                    keyboardBackground = backgroundImage
-                )
-                THEME_BLUE_GRAY -> DefaultColors(
-                    themeStyle,
-                    hasBorders,
-                    Color.rgb(120, 144, 156),
-                    Color.rgb(236, 239, 241),
-                    Color.WHITE,
-                    Color.rgb(207, 216, 220),
-                    Color.WHITE,
-                    Color.BLACK,
-                    Color.BLACK,
-                    keyboardBackground = backgroundImage
-                )
-                THEME_BROWN -> DefaultColors(
-                    themeStyle,
-                    hasBorders,
-                    Color.rgb(141, 110, 99),
-                    Color.rgb(239, 235, 233),
-                    Color.WHITE,
-                    Color.rgb(215, 204, 200),
-                    Color.WHITE,
-                    Color.BLACK,
-                    Color.BLACK,
-                    keyboardBackground = backgroundImage
-                )
-                THEME_CHOCOLATE -> DefaultColors(
-                    themeStyle,
-                    hasBorders,
-                    Color.rgb(80, 128, 255),
-                    Color.rgb(140, 112, 94),
-                    Color.rgb(193, 163, 146),
-                    Color.rgb(168, 127, 103),
-                    Color.rgb(193, 163, 146),
-                    Color.WHITE,
-                    Color.WHITE,
-                    keyboardBackground = backgroundImage
-                )
-                THEME_CLOUDY -> DefaultColors(
-                    themeStyle,
-                    hasBorders,
-                    Color.rgb(255, 113, 129),
-                    Color.rgb(81, 97, 113),
-                    Color.rgb(117, 128, 142),
-                    Color.rgb(99, 109, 121),
-                    Color.rgb(117, 128, 142),
-                    Color.WHITE,
-                    Color.WHITE,
-                    keyboardBackground = backgroundImage
-                )
-                THEME_FOREST -> DefaultColors(
-                    themeStyle,
-                    hasBorders,
-                    Color.rgb(75, 110, 75),
-                    Color.rgb(181, 125, 88),
-                    Color.rgb(228, 212, 191),
-                    Color.rgb(212, 186, 153),
-                    Color.rgb(228, 212, 191),
-                    Color.rgb(0, 50, 0),
-                    Color.rgb(0, 50, 0),
-                    Color.rgb(0, 50, 0),
-                    Color.rgb(0, 80, 0),
-                    keyboardBackground = backgroundImage
-                )
-                THEME_INDIGO -> DefaultColors(
-                    themeStyle,
-                    hasBorders,
-                    Color.rgb(92, 107, 192),
-                    Color.rgb(232, 234, 246),
-                    Color.WHITE,
-                    Color.rgb(197, 202, 233),
-                    Color.WHITE,
-                    Color.BLACK,
-                    Color.BLACK,
-                    keyboardBackground = backgroundImage
-                )
-                THEME_OCEAN -> DefaultColors(
-                    themeStyle,
-                    hasBorders,
-                    Color.rgb(255, 124, 0),
-                    Color.rgb(89, 109, 155),
-                    Color.rgb(132, 157, 212),
-                    Color.rgb(81, 116, 194),
-                    Color.rgb(132, 157, 212),
-                    Color.WHITE,
-                    Color.WHITE,
-                    keyboardBackground = backgroundImage
-                )
-                THEME_PINK -> DefaultColors(
-                    themeStyle,
-                    hasBorders,
-                    Color.rgb(236, 64, 122),
-                    Color.rgb(252, 228, 236),
-                    Color.WHITE,
-                    Color.rgb(248, 187, 208),
-                    Color.WHITE,
-                    Color.BLACK,
-                    Color.BLACK,
-                    keyboardBackground = backgroundImage
-                )
-                THEME_SAND -> DefaultColors(
-                    themeStyle,
-                    hasBorders,
-                    Color.rgb(110, 155, 255),
-                    Color.rgb(242, 232, 218),
-                    Color.WHITE,
-                    Color.rgb(234, 211, 185),
-                    Color.WHITE,
-                    Color.BLACK,
-                    Color.BLACK,
-                    keyboardBackground = backgroundImage
-                )
-                THEME_VIOLETTE -> DefaultColors(
-                    themeStyle,
-                    hasBorders,
-                    Color.rgb(255, 96, 255),
-                    Color.rgb(112, 112, 174),
-                    Color.rgb(150, 150, 216),
-                    Color.rgb(123, 123, 206),
-                    Color.rgb(150, 150, 216),
-                    Color.WHITE,
-                    Color.WHITE,
-                    keyboardBackground = backgroundImage
-                )
-                else -> { // user-defined theme
+                THEME_HOLO_WHITE -> DefaultColors(themeStyle, hasBorders, Color.WHITE, "#282828".toColorInt(), Color.WHITE, "#444444".toColorInt(), Color.WHITE, Color.WHITE, "#282828".toColorInt(), Color.WHITE, "#80FFFFFF".toColorInt(), keyboardBackground = backgroundImage)
+                THEME_DARKER -> DefaultColors(themeStyle, hasBorders, ContextCompat.getColor(context, R.color.gesture_trail_color_lxx_dark), ContextCompat.getColor(context, R.color.keyboard_background_lxx_dark_border), ContextCompat.getColor(context, R.color.key_background_normal_lxx_dark_border), ContextCompat.getColor(context, R.color.key_background_functional_lxx_dark_border), ContextCompat.getColor(context, R.color.key_background_normal_lxx_dark_border), ContextCompat.getColor(context, R.color.key_text_color_lxx_dark), ContextCompat.getColor(context, R.color.key_hint_letter_color_lxx_dark), keyboardBackground = backgroundImage)
+                THEME_BLACK -> DefaultColors(themeStyle, hasBorders, ContextCompat.getColor(context, R.color.gesture_trail_color_lxx_dark), ContextCompat.getColor(context, R.color.background_amoled_black), ContextCompat.getColor(context, R.color.background_amoled_dark), ContextCompat.getColor(context, R.color.background_amoled_dark), ContextCompat.getColor(context, R.color.background_amoled_dark), ContextCompat.getColor(context, R.color.key_text_color_lxx_dark), ContextCompat.getColor(context, R.color.key_hint_letter_color_lxx_dark), keyboardBackground = backgroundImage)
+                THEME_BLUE_GRAY -> DefaultColors(themeStyle, hasBorders, Color.rgb(120, 144, 156), Color.rgb(236, 239, 241), Color.WHITE, Color.rgb(207, 216, 220), Color.WHITE, Color.BLACK, Color.BLACK, keyboardBackground = backgroundImage)
+                THEME_BROWN -> DefaultColors(themeStyle, hasBorders, Color.rgb(141, 110, 99), Color.rgb(239, 235, 233), Color.WHITE, Color.rgb(215, 204, 200), Color.WHITE, Color.BLACK, Color.BLACK, keyboardBackground = backgroundImage)
+                THEME_CHOCOLATE -> DefaultColors(themeStyle, hasBorders, Color.rgb(80, 128, 255), Color.rgb(140, 112, 94), Color.rgb(193, 163, 146), Color.rgb(168, 127, 103), Color.rgb(193, 163, 146), Color.WHITE, Color.WHITE, keyboardBackground = backgroundImage)
+                THEME_CLOUDY -> DefaultColors(themeStyle, hasBorders, Color.rgb(255, 113, 129), Color.rgb(81, 97, 113), Color.rgb(117, 128, 142), Color.rgb(99, 109, 121), Color.rgb(117, 128, 142), Color.WHITE, Color.WHITE, keyboardBackground = backgroundImage)
+                THEME_FOREST -> DefaultColors(themeStyle, hasBorders, Color.rgb(75, 110, 75), Color.rgb(181, 125, 88), Color.rgb(228, 212, 191), Color.rgb(212, 186, 153), Color.rgb(228, 212, 191), Color.rgb(0, 50, 0), Color.rgb(0, 50, 0), Color.rgb(0, 50, 0), Color.rgb(0, 80, 0), keyboardBackground = backgroundImage)
+                THEME_INDIGO -> DefaultColors(themeStyle, hasBorders, Color.rgb(92, 107, 192), Color.rgb(232, 234, 246), Color.WHITE, Color.rgb(197, 202, 233), Color.WHITE, Color.BLACK, Color.BLACK, keyboardBackground = backgroundImage)
+                THEME_OCEAN -> DefaultColors(themeStyle, hasBorders, Color.rgb(255, 124, 0), Color.rgb(89, 109, 155), Color.rgb(132, 157, 212), Color.rgb(81, 116, 194), Color.rgb(132, 157, 212), Color.WHITE, Color.WHITE, keyboardBackground = backgroundImage)
+                THEME_PINK -> DefaultColors(themeStyle, hasBorders, Color.rgb(236, 64, 122), Color.rgb(252, 228, 236), Color.WHITE, Color.rgb(248, 187, 208), Color.WHITE, Color.BLACK, Color.BLACK, keyboardBackground = backgroundImage)
+                THEME_SAND -> DefaultColors(themeStyle, hasBorders, Color.rgb(110, 155, 255), Color.rgb(242, 232, 218), Color.WHITE, Color.rgb(234, 211, 185), Color.WHITE, Color.BLACK, Color.BLACK, keyboardBackground = backgroundImage)
+                THEME_VIOLETTE -> DefaultColors(themeStyle, hasBorders, Color.rgb(255, 96, 255), Color.rgb(112, 112, 174), Color.rgb(150, 150, 216), Color.rgb(123, 123, 206), Color.rgb(150, 150, 216), Color.WHITE, Color.WHITE, keyboardBackground = backgroundImage)
+                else -> {
                     val colorSettings = readUserColors(prefs, themeName)
                     val colors = readUserColorTheme(themeStyle, hasBorders, colorSettings, context, isNight, backgroundImage)
                     if (readUserMoreColors(prefs, themeName) == 2)
                         AllColors(readUserAllColors(prefs, themeName, colors), themeStyle, hasBorders, backgroundImage)
-                    else {
-                        colors
-                    }
+                    else colors
                 }
             }
         }
 
         fun readUserColorTheme(themeStyle: String, hasBorders: Boolean, colorSettings: List<ColorSetting>, context: Context, isNight: Boolean, backgroundImage: Drawable?): Colors {
             return DefaultColors(
-                themeStyle,
-                hasBorders,
+                themeStyle, hasBorders,
                 determineUserColor(colorSettings, context, COLOR_ACCENT, isNight),
                 determineUserColor(colorSettings, context, COLOR_BACKGROUND, isNight),
                 determineUserColor(colorSettings, context, COLOR_KEYS, isNight),
@@ -431,38 +256,27 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
             KeyboardSwitcher.getInstance().setThemeNeedsReload()
         }
 
-        fun readUserColors(prefs: SharedPreferences, themeName: String): List<ColorSetting> {
-            val key = Settings.PREF_USER_COLORS_PREFIX + themeName
-            return Json.decodeFromString(prefs.getString(key, Defaults.PREF_USER_COLORS)!!)
-        }
+        fun readUserColors(prefs: SharedPreferences, themeName: String): List<ColorSetting> =
+            Json.decodeFromString(prefs.getString(Settings.PREF_USER_COLORS_PREFIX + themeName, Defaults.PREF_USER_COLORS)!!)
 
         fun writeUserMoreColors(prefs: SharedPreferences, themeName: String, value: Int) {
-            val key = Settings.PREF_USER_MORE_COLORS_PREFIX + themeName
-            prefs.edit { putInt(key, value) }
+            prefs.edit { putInt(Settings.PREF_USER_MORE_COLORS_PREFIX + themeName, value) }
             KeyboardSwitcher.getInstance().setThemeNeedsReload()
         }
 
-        fun readUserMoreColors(prefs: SharedPreferences, themeName: String): Int {
-            val key = Settings.PREF_USER_MORE_COLORS_PREFIX + themeName
-            return prefs.getInt(key, Defaults.PREF_USER_MORE_COLORS)
-        }
+        fun readUserMoreColors(prefs: SharedPreferences, themeName: String): Int =
+            prefs.getInt(Settings.PREF_USER_MORE_COLORS_PREFIX + themeName, Defaults.PREF_USER_MORE_COLORS)
 
         fun writeUserAllColors(prefs: SharedPreferences, themeName: String, colorMap: EnumMap<ColorType, Int>) {
-            val key = Settings.PREF_USER_ALL_COLORS_PREFIX + themeName
-            prefs.edit { putString(key, colorMap.map { "${it.key},${it.value}" }.joinToString(";")) }
+            prefs.edit { putString(Settings.PREF_USER_ALL_COLORS_PREFIX + themeName, colorMap.map { "${it.key},${it.value}" }.joinToString(";")) }
             KeyboardSwitcher.getInstance().setThemeNeedsReload()
         }
 
         fun readUserAllColors(prefs: SharedPreferences, themeName: String, fallback: Colors?): EnumMap<ColorType, Int> {
-            val key = Settings.PREF_USER_ALL_COLORS_PREFIX + themeName
-            val colorsString = prefs.getString(key, Defaults.PREF_USER_ALL_COLORS)!!
+            val colorsString = prefs.getString(Settings.PREF_USER_ALL_COLORS_PREFIX + themeName, Defaults.PREF_USER_ALL_COLORS)!!
             val colorMap = EnumMap<ColorType, Int>(ColorType::class.java)
             colorsString.split(";").forEach {
-                val ct = try {
-                    ColorType.valueOf(it.substringBefore(",").uppercase())
-                } catch (_: IllegalArgumentException) {
-                    return@forEach
-                }
+                val ct = try { ColorType.valueOf(it.substringBefore(",").uppercase()) } catch (_: IllegalArgumentException) { return@forEach }
                 val i = it.substringAfter(",").toIntOrNull() ?: return@forEach
                 colorMap[ct] = i
             }
@@ -479,8 +293,7 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
             val existingNames = getExistingThemeNames(prefs)
             if (initialName !in existingNames) return initialName
             var i = 1
-            while ("$initialName$i" in existingNames)
-                i++
+            while ("$initialName$i" in existingNames) i++
             return "$initialName$i"
         }
 
@@ -494,13 +307,10 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                 }
             }.toSortedSet()
 
-        // returns false if not renamed due to invalid name or collision
         fun renameUserColors(from: String, to: String, prefs: SharedPreferences): Boolean {
-            if (to.isBlank()) return false // don't want that
-            if (to == from) return true // nothing to do
-            val existingNames = getExistingThemeNames(prefs)
-            if (to in existingNames) return false
-            // all good, now rename
+            if (to.isBlank()) return false
+            if (to == from) return true
+            if (to in getExistingThemeNames(prefs)) return false
             prefs.edit {
                 if (prefs.contains(Settings.PREF_USER_COLORS_PREFIX + from)) {
                     putString(Settings.PREF_USER_COLORS_PREFIX + to, prefs.getString(Settings.PREF_USER_COLORS_PREFIX + from, ""))
@@ -514,10 +324,8 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                     putInt(Settings.PREF_USER_MORE_COLORS_PREFIX + to, prefs.getInt(Settings.PREF_USER_MORE_COLORS_PREFIX + from, 0))
                     remove(Settings.PREF_USER_MORE_COLORS_PREFIX + from)
                 }
-                if (prefs.getString(Settings.PREF_THEME_COLORS, Defaults.PREF_THEME_COLORS) == from)
-                    putString(Settings.PREF_THEME_COLORS, to)
-                if (prefs.getString(Settings.PREF_THEME_COLORS_NIGHT, Defaults.PREF_THEME_COLORS_NIGHT) == from)
-                    putString(Settings.PREF_THEME_COLORS_NIGHT, to)
+                if (prefs.getString(Settings.PREF_THEME_COLORS, Defaults.PREF_THEME_COLORS) == from) putString(Settings.PREF_THEME_COLORS, to)
+                if (prefs.getString(Settings.PREF_THEME_COLORS_NIGHT, Defaults.PREF_THEME_COLORS_NIGHT) == from) putString(Settings.PREF_THEME_COLORS_NIGHT, to)
             }
             return true
         }
@@ -526,16 +334,13 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
             val c = colors.firstOrNull { it.name == colorName }
             val color = c?.color
             val auto = c?.auto ?: true
-            return if (auto || color == null)
-                determineAutoColor(colors, colorName, isNight, context)
-            else color
+            return if (auto || color == null) determineAutoColor(colors, colorName, isNight, context) else color
         }
 
         private fun determineAutoColor(colors: List<ColorSetting>, colorName: String, isNight: Boolean, context: Context): Int {
             when (colorName) {
                 COLOR_ACCENT -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-                        // try determining accent color on Android 10 & 11, accent is not available in resources
                         val wrapper: Context = ContextThemeWrapper(context, android.R.style.Theme_DeviceDefault)
                         val value = TypedValue()
                         if (wrapper.theme.resolveAttribute(android.R.attr.colorAccent, value, true)) return value.data
@@ -543,41 +348,28 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                     return ContextCompat.getColor(Settings.getDayNightContext(context, isNight), R.color.accent)
                 }
                 COLOR_GESTURE -> return determineUserColor(colors, context, COLOR_ACCENT, isNight)
-                COLOR_SUGGESTION_TEXT ->
-                    return determineUserColor(colors, context, COLOR_TEXT, isNight)
+                COLOR_SUGGESTION_TEXT -> return determineUserColor(colors, context, COLOR_TEXT, isNight)
                 COLOR_TEXT -> {
-                    // base it on background color, and not key, because it's also used for suggestions
                     val background = determineUserColor(colors, context, COLOR_BACKGROUND, isNight)
                     return if (isBrightColor(background)) {
-                        // but if key borders are enabled, we still want reasonable contrast
                         if (!context.prefs().getBoolean(Settings.PREF_THEME_KEY_BORDERS, Defaults.PREF_THEME_KEY_BORDERS)
                             || isGoodContrast(Color.BLACK, determineUserColor(colors, context, COLOR_KEYS, isNight))
-                        ) Color.BLACK
-                        else Color.GRAY
+                        ) Color.BLACK else Color.GRAY
                     } else Color.WHITE
                 }
-                COLOR_HINT_TEXT -> {
-                    return if (isBrightColor(determineUserColor(colors, context, COLOR_KEYS, isNight))) Color.DKGRAY
-                    else determineUserColor(colors, context, COLOR_TEXT, isNight)
-                }
-                COLOR_KEYS ->
-                    return brightenOrDarken(determineUserColor(colors, context, COLOR_BACKGROUND, isNight), isNight)
-                COLOR_FUNCTIONAL_KEYS ->
-                    return brightenOrDarken(determineUserColor(colors, context, COLOR_KEYS, isNight), true)
+                COLOR_HINT_TEXT -> return if (isBrightColor(determineUserColor(colors, context, COLOR_KEYS, isNight))) Color.DKGRAY else determineUserColor(colors, context, COLOR_TEXT, isNight)
+                COLOR_KEYS -> return brightenOrDarken(determineUserColor(colors, context, COLOR_BACKGROUND, isNight), isNight)
+                COLOR_FUNCTIONAL_KEYS -> return brightenOrDarken(determineUserColor(colors, context, COLOR_KEYS, isNight), true)
                 COLOR_SPACEBAR -> return determineUserColor(colors, context, COLOR_KEYS, isNight)
                 COLOR_SPACEBAR_TEXT -> {
                     val spacebar = determineUserColor(colors, context, COLOR_SPACEBAR, isNight)
                     val hintText = determineUserColor(colors, context, COLOR_HINT_TEXT, isNight)
-                    if (isGoodContrast(hintText, spacebar)) return hintText and -0x7f000001 // add some transparency
+                    if (isGoodContrast(hintText, spacebar)) return hintText and -0x7f000001
                     val text = determineUserColor(colors, context, COLOR_TEXT, isNight)
                     if (isGoodContrast(text, spacebar)) return text and -0x7f000001
-                    return if (isBrightColor(spacebar)) Color.BLACK and -0x7f000001
-                    else Color.WHITE and -0x7f000001
+                    return if (isBrightColor(spacebar)) Color.BLACK and -0x7f000001 else Color.WHITE and -0x7f000001
                 }
-                COLOR_BACKGROUND -> return ContextCompat.getColor(
-                    Settings.getDayNightContext(context, isNight),
-                    R.color.keyboard_background
-                )
+                COLOR_BACKGROUND -> return ContextCompat.getColor(Settings.getDayNightContext(context, isNight), R.color.keyboard_background)
                 else -> return ContextCompat.getColor(Settings.getDayNightContext(context, isNight), R.color.keyboard_background)
             }
         }
