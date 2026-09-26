@@ -58,8 +58,10 @@ fun ThreeButtonAlertDialog(
         ) {
             Surface(
                 shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surface,
-                contentColor = contentColorFor(MaterialTheme.colorScheme.surface),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHigh),
+                tonalElevation = 2.dp,
+                shadowElevation = 8.dp,
             ) {
                 Column(modifier = Modifier.padding(
                     start = if (reducePadding) 8.dp else 16.dp,

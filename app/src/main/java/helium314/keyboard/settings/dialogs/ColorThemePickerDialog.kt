@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,6 +33,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -197,6 +200,7 @@ private fun AddColorRow(onDismissRequest: () -> Unit, userColors: Collection<Str
             value = textValue,
             onValueChange = { textValue = it },
             modifier = Modifier.weight(1f),
+            shape = MaterialTheme.shapes.medium,
             singleLine = true,
             label = label,
             textStyle = contentTextDirectionStyle,
@@ -219,13 +223,17 @@ private fun ColorItemRow(onDismissRequest: () -> Unit, item: String, isSelected:
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 2.dp)
+            .clip(MaterialTheme.shapes.medium)
+            .background(if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface)
             .clickable {
                 onDismissRequest()
                 prefs.edit {putString(prefKey, item)}
                 KeyboardSwitcher.getInstance().setThemeNeedsReload()
             }
             .padding(start = 6.dp)
-            .heightIn(min = 40.dp)
+            .heightIn(min = 52.dp)
     ) {
         RadioButton(
             selected = isSelected,
@@ -309,5 +317,3 @@ private fun Preview() {
         )
     }
 }
-
-
