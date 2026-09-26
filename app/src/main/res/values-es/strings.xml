@@ -12,6 +12,9 @@
     <string name="settings_screen_gesture">"Escritura gestual"</string>
     <string name="settings_screen_correction">Corrección de texto</string>
     <string name="settings_screen_advanced">Avanzado</string>
+    <string name="settings_category_keyboard">Teclado</string>
+    <string name="settings_category_writing">Escritura e idiomas</string>
+    <string name="settings_category_app">Aplicación</string>
     <string name="settings_screen_theme">"Tema"</string>
     <string name="enable_split_keyboard">"Habilitar teclado dividido"</string>
     <string name="language_switch_key_switch_input_method">Cambiar a otros métodos de entrada</string>

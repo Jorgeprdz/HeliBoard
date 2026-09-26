@@ -46,6 +46,9 @@
     <string name="settings_screen_correction">Text correction</string>
     <!-- Settings screen title for advanced settings -->
     <string name="settings_screen_advanced">Advanced</string>
+    <string name="settings_category_keyboard">Keyboard</string>
+    <string name="settings_category_writing">Writing &amp; languages</string>
+    <string name="settings_category_app">App</string>
     <!-- Settings screen title for keyboard theme settings -->
     <string name="settings_screen_theme">Theme</string>
     <!-- Settings category title for Preference/Input settings -->

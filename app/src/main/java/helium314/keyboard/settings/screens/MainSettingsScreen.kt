@@ -25,6 +25,7 @@ import helium314.keyboard.settings.SearchSettingsScreen
 import helium314.keyboard.latin.utils.Theme
 import helium314.keyboard.settings.initPreview
 import helium314.keyboard.settings.preferences.Preference
+import helium314.keyboard.settings.preferences.PreferenceCategory
 import helium314.keyboard.latin.utils.previewDark
 import helium314.keyboard.settings.screens.gesturedata.END_DATE_EPOCH_MILLIS
 import helium314.keyboard.settings.screens.gesturedata.TWO_WEEKS_IN_MILLIS
@@ -54,6 +55,7 @@ fun MainSettingsScreen(
             Column(
                 Modifier.verticalScroll(rememberScrollState()).then(Modifier.padding(innerPadding))
             ) {
+                PreferenceCategory(stringResource(R.string.settings_category_keyboard))
                 Preference(
                     name = stringResource(R.string.language_and_layouts_title),
                     description = enabledSubtypes.joinToString(", ") { it.displayName() },
@@ -88,6 +90,7 @@ fun MainSettingsScreen(
                         onClick = onClickDataGathering,
                         icon = R.drawable.ic_settings_gesture
                     ) { NextScreenIcon() }
+                PreferenceCategory(stringResource(R.string.settings_category_writing))
                 Preference(
                     name = stringResource(R.string.settings_screen_correction),
                     onClick = onClickTextCorrection,
@@ -103,6 +106,7 @@ fun MainSettingsScreen(
                     onClick = onClickDictionaries,
                     icon = R.drawable.ic_dictionary
                 ) { NextScreenIcon() }
+                PreferenceCategory(stringResource(R.string.settings_category_app))
                 Preference(
                     name = stringResource(R.string.settings_screen_advanced),
                     onClick = onClickAdvanced,
