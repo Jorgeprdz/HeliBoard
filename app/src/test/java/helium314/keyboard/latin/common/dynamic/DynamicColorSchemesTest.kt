@@ -5,7 +5,6 @@ import android.graphics.Color
 import androidx.core.graphics.ColorUtils
 import helium314.keyboard.keyboard.KeyboardTheme
 import helium314.keyboard.latin.common.ColorType
-import helium314.keyboard.latin.common.KeyboardDynamicSchemeType
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
@@ -118,7 +117,7 @@ class DynamicColorSchemesTest {
         assertEquals(10, expected.size)
         expected.forEach { (themeName, schemeType) ->
             assertEquals(themeName, KeyboardTheme.normalizeThemeName(themeName))
-            assertEquals(schemeType.name, KeyboardDynamicSchemeType.valueOf(schemeType.name).name)
+            assertEquals(schemeType.name, DynamicSchemeType.valueOf(schemeType.name).name)
             assertTrue(KeyboardTheme.isDynamicTheme(themeName))
         }
     }

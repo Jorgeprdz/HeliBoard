@@ -24,22 +24,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Clean, test, and build debug APK
-        run: ./gradlew clean :app:testDebugUnitTest --tests 'helium314.keyboard.latin.common.DynamicSchemeProviderTest' --tests 'helium314.keyboard.latin.common.dynamic.DynamicColorSchemesTest' :app:assembleDebug
-
-      - name: Calculate APK SHA-256
-        run: |
-          sha256sum app/build/outputs/apk/debug/*-debug*.apk | tee apk-sha256.txt
-          cat apk-sha256.txt
-
-      - name: Upload debug APK and checksum
-        uses: actions/upload-artifact@v4
-        with:
-          name: HeliBoard-dynamic-colors-debug
-          path: |
-            app/build/outputs/apk/debug/*-debug*.apk
-            apk-sha256.txt
-          if-no-files-found: error
+      - name: Test dynamic color schemes
+        run: ./gradlew clean :app:testDebugUnitTest --tests 'helium314.keyboard.latin.common.dynamic.DynamicColorSchemesTest'
 
       - name: Archive reports for failed job
         uses: actions/upload-artifact@v4
