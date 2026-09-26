@@ -33,7 +33,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Test and build with Gradle
-        run: ./gradlew clean testRunTestsUnitTest assembleDebug
+        run: ./gradlew clean :app:testDebugUnitTest :app:assembleDebug
 
       - name: SHA-256 APK
         run: sha256sum app/build/outputs/apk/debug/*-debug*.apk | tee app/build/outputs/apk/debug/SHA256SUMS.txt
