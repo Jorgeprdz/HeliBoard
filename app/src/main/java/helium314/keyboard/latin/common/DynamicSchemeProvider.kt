@@ -95,7 +95,7 @@ object DynamicSchemeProvider {
             KeyboardDynamicSchemeType.FIDELITY -> SchemeFidelity(source, isDark, CONTRAST_LEVEL)
             KeyboardDynamicSchemeType.CONTENT -> SchemeContent(source, isDark, CONTRAST_LEVEL)
             KeyboardDynamicSchemeType.FRUIT_SALAD -> SchemeFruitSalad(source, isDark, CONTRAST_LEVEL)
-            KeyboardDynamicSchemeType.CMF -> SchemeCmf(source, isDark, CONTRAST_LEVEL)
+            KeyboardDynamicSchemeType.CMF -> SchemeContent(source, isDark, CONTRAST_LEVEL)
             KeyboardDynamicSchemeType.SYSTEM -> error("SYSTEM is not a local scheme")
         }
         val colors = MaterialDynamicColors()

@@ -34,6 +34,7 @@ import helium314.keyboard.settings.SettingsActivity
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.EnumMap
+import java.util.Locale
 
 class KeyboardTheme // Note: The themeId should be aligned with "themeId" attribute of Keyboard style in values/themes-<style>.xml.
 private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
@@ -43,6 +44,26 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
     override fun hashCode(): Int = themeId
 
     companion object {
+
+        fun normalizeThemeName(themeName: String): String {
+            return themeName
+                .trim()
+                .lowercase(Locale.ROOT)
+                .replace(Regex("[^a-z0-9]+"), "_")
+                .trim('_')
+        }
+
+        fun isDynamicTheme(themeName: String): Boolean {
+            val normalized = normalizeThemeName(themeName)
+            return normalized == "dynamic" ||
+                normalized.startsWith("dynamic_") ||
+                normalized.startsWith("theme_dynamic") ||
+                normalized.contains("_dynamic_") ||
+                normalized.contains("monet") ||
+                normalized.contains("colorblendr")
+        }
+
+
         // old themes, now called styles
         const val STYLE_MATERIAL = "Material"
         const val STYLE_HOLO = "Holo"

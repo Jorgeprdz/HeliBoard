@@ -67,6 +67,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import java.util.EnumMap
 import androidx.core.content.edit
+import java.util.Locale
 
 @Composable
 fun ColorThemePickerDialog(
@@ -308,3 +309,5 @@ private fun Preview() {
         )
     }
 }
+
+
