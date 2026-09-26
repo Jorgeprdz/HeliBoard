@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="theme_name_dynamic">Dynamic · System</string>
+    <string name="theme_name_dynamic_neutral">Dynamic · Neutral</string>
+    <string name="theme_name_dynamic_monochrome">Dynamic · Monochrome</string>
+    <string name="theme_name_dynamic_tonal_spot">Dynamic · Tonal Spot</string>
+    <string name="theme_name_dynamic_vibrant">Dynamic · Vibrant</string>
+    <string name="theme_name_dynamic_rainbow">Dynamic · Rainbow</string>
+    <string name="theme_name_dynamic_expressive">Dynamic · Expressive</string>
+    <string name="theme_name_dynamic_fidelity">Dynamic · Fidelity</string>
+    <string name="theme_name_dynamic_content">Dynamic · Content</string>
+    <string name="theme_name_dynamic_fruit_salad">Dynamic · Fruit Salad</string>
+    <string name="theme_name_dynamic_cmf">Dynamic · CMF</string>
+</resources>
