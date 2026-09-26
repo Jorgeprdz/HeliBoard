@@ -52,6 +52,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
@@ -290,12 +291,17 @@ private fun GestureDataEntry(
     )
     Column(modifier
         .fillMaxWidth()
-        .background(MaterialTheme.colorScheme.background)
-        .padding(vertical = 6.dp, horizontal = 12.dp)
+        .padding(horizontal = 12.dp, vertical = 4.dp)
+        .clip(MaterialTheme.shapes.medium)
+        .background(
+            if (selected) MaterialTheme.colorScheme.secondaryContainer
+            else MaterialTheme.colorScheme.surfaceContainerLow
+        )
+        .padding(vertical = 12.dp, horizontal = 16.dp)
     ) {
         Text(
             text = gestureDataInfo.targetWord,
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+            color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
         )
         val infos = listOfNotNull(
             DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM)
@@ -305,7 +311,7 @@ private fun GestureDataEntry(
         ).joinToString(", ")
         CompositionLocalProvider(
             LocalTextStyle provides MaterialTheme.typography.bodySmall,
-            LocalContentColor provides if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            LocalContentColor provides if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
         ) {
             Text(text = infos, modifier = Modifier.padding(top = 2.dp))
         }

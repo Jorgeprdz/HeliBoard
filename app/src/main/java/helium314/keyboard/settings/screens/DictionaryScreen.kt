@@ -4,10 +4,12 @@ package helium314.keyboard.settings.screens
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -20,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
@@ -79,21 +82,34 @@ fun DictionaryScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier
-                        .clickable { showAddDictDialog = true }
-                        .padding(vertical = 4.dp, horizontal = 16.dp)
                         .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .clickable { showAddDictDialog = true }
+                        .heightIn(min = 64.dp)
+                        .padding(vertical = 12.dp, horizontal = 16.dp)
                 ) {
                     Text(
                         stringResource(R.string.add_new_dictionary_title),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
-                    Icon(painterResource(R.drawable.ic_plus), stringResource(R.string.add_new_dictionary_title))
+                    Icon(
+                        painterResource(R.drawable.ic_plus),
+                        stringResource(R.string.add_new_dictionary_title),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
                 }
             } else {
                 Column(
                     Modifier
-                        .clickable { selectedLocale = locale }
-                        .padding(vertical = 6.dp, horizontal = 16.dp)
                         .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                        .clickable { selectedLocale = locale }
+                        .heightIn(min = 64.dp)
+                        .padding(vertical = 12.dp, horizontal = 16.dp)
                 ) {
                     val (dicts, hasInternal) = getUserAndInternalDictionaries(ctx, locale)
                     val types = dicts.mapTo(mutableListOf()) { it.name.substringBefore("_${DictionaryInfoUtils.USER_DICTIONARY_SUFFIX}") }
