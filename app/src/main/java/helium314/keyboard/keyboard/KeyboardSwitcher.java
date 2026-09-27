@@ -35,6 +35,7 @@ import androidx.annotation.Nullable;
 import helium314.keyboard.event.Event;
 import helium314.keyboard.keyboard.clipboard.ClipboardHistoryView;
 import helium314.keyboard.keyboard.emoji.EmojiPalettesView;
+import helium314.keyboard.keyboard.internal.KeyboardIconsSet;
 import helium314.keyboard.keyboard.internal.KeyboardState;
 import helium314.keyboard.keyboard.internal.LayoutDirective;
 import helium314.keyboard.keyboard.internal.ShiftMode;
@@ -145,6 +146,11 @@ public final class KeyboardSwitcher {
             mCurrentUiMode = res.getConfiguration().uiMode;
             mCurrentOrientation = res.getConfiguration().orientation;
             mCurrentDpi = res.getDisplayMetrics().densityDpi;
+            // Icon drawables are cached and may still carry tint/color state from the previous palette.
+            // Recreate them whenever the keyboard theme or dynamic colors change so icon colors follow
+            // the active palette immediately instead of waiting for an IME/process restart.
+            KeyboardIconsSet.Companion.setNeedsReload(true);
+            KeyboardIconsSet.Companion.getInstance().loadIcons(mThemeContext);
             KeyboardLayoutSet.Companion.onKeyboardThemeChanged();
             return true;
         }
