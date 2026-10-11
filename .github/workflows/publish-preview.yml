@@ -1,0 +1,120 @@
+name: Publish HeliBoard iOS Glass preview
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-preview.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: heliboard-preview-v4.1-iosglass.4
+  cancel-in-progress: false
+
+jobs:
+  verify-build-and-release:
+    runs-on: ubuntu-latest
+    env:
+      SOURCE_SHA: 0c57f0ce2d7ffdc0ee1773029d3bf793b227eb84
+      RELEASE_TAG: v4.1-iosglass.4-preview.1
+
+    steps:
+      - name: Checkout verified latest iOS Glass + dynamic color code
+        uses: actions/checkout@v4
+        with:
+          ref: 0c57f0ce2d7ffdc0ee1773029d3bf793b227eb84
+          persist-credentials: false
+
+      - name: Verify source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          git show -s --format='Building %h — %s (%ci)' HEAD
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Configure Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run verified test suite and assemble preview APK
+        run: |
+          chmod +x gradlew
+          ./gradlew clean :app:testDebugUnitTest --tests 'helium314.keyboard.latin.utils.AppThemeColorsTest' --tests 'helium314.keyboard.latin.common.dynamic.DynamicColorSchemesTest' :app:assembleDebug
+
+      - name: Validate and checksum APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd app/build/outputs/apk/debug
+          shopt -s nullglob
+          apks=( *-debug*.apk )
+          test "${#apks[@]}" -eq 1
+          test -s "${apks[0]}"
+          sha256sum "${apks[0]}" > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          keytool -printcert -jarfile "${apks[0]}" | grep -E 'Owner:|SHA256:' || true
+
+      - name: Retain preview APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HeliBoard-iOS-Glass-v4.1-iosglass.4-preview
+          path: |
+            app/build/outputs/apk/debug/*-debug*.apk
+            app/build/outputs/apk/debug/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish GitHub prerelease with actual APK
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists; not overwriting it."
+            exit 0
+          fi
+
+          cat > RELEASE_NOTES.md <<'EOF'
+          ## HeliBoard · iOS Glass + Dynamic Monet
+
+          **Preview / debug build**, based on the latest verified successful iOS Glass + dynamic-color source revision.
+
+          ### Included
+          - Experimental iOS Glass-themed Android keyboard.
+          - Dynamic Monet color palettes with multiple Material scheme variants.
+          - Dynamic keyboard icon refresh fix.
+          - Original HeliBoard offline keyboard functionality.
+
+          ### Build provenance
+          - **Source:** `feature/dynamic-color-schemes`
+          - **Commit:** `0c57f0ce2d7ffdc0ee1773029d3bf793b227eb84` (2026-09-27).
+          - **App version:** `4.1-iosglass.4`, code `4104`.
+          - **Type:** debug-signed testing build, **not** a production-signed stable release.
+          - **Application ID:** `com.jorgeprdz.ioskeyboard.debug` (separate from original HeliBoard).
+          - **Integrity:** check the attached `SHA256SUMS.txt`.
+
+          ### Install
+          Download the attached `.apk` in Assets, not the auto-generated source ZIP. Android 5.0+ is the configured minimum. This is an independent fork of [HeliBoard](https://github.com/HeliBorg/HeliBoard), not an official upstream release.
+
+          ### Español
+          Versión de prueba con estilo iOS Glass y paletas dinámicas Material/Monet. APK firmada para depuración, no equivalente a una versión estable. Comprueba el SHA-256 antes de instalarla.
+          EOF
+
+          APK="$(find app/build/outputs/apk/debug -maxdepth 1 -type f -name '*-debug*.apk' -print -quit)"
+          test -n "$APK"
+          test -s "$APK"
+          gh release create "$RELEASE_TAG" "$APK" app/build/outputs/apk/debug/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$SOURCE_SHA" \
+            --title "HeliBoard iOS Glass + Dynamic Monet · v4.1 Preview" \
+            --notes-file RELEASE_NOTES.md \
+            --prerelease
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json name,tagName,isPrerelease,assets,url
