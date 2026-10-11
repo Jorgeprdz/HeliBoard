@@ -1,0 +1,44 @@
+name: Feature HeliBoard Preview in Repository Releases
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/feature-preview-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  feature-existing-release:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: v4.1-iosglass.4-preview.1
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check release exists with actual APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets,isDraft,isPrerelease,tagName \
+            --jq 'select(.isDraft == false and ([.assets[].name] | index("iOSKeyboard_4.1-iosglass.4-debug.apk") != null) and ([.assets[].name] | index("SHA256SUMS.txt") != null)) | .tagName' | grep -Fx "$RELEASE_TAG"
+
+      - name: Show existing debug preview on repository homepage
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --title 'HeliBoard iOS Glass + Dynamic Monet · Preview (Debug APK)' \
+            --prerelease=false \
+            --latest
+
+      - name: Verify latest-release listing and attachments
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest_tag="$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name')"
+          test "$latest_tag" = "$RELEASE_TAG"
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --json tagName,isPrerelease,assets,url \
+            --jq '{tag: .tagName, prerelease: .isPrerelease, assets: [.assets[].name], url: .url}'
