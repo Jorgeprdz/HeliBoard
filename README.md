@@ -1,139 +1,87 @@
-# HeliBoard
-HeliBoard is a privacy-conscious and customizable open-source keyboard, based on AOSP / OpenBoard.
-Does not use internet permission, and thus is 100% offline.
+<div align="center">
 
-[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/helium314.keyboard/)
-[<img src="https://user-images.githubusercontent.com/663460/26973090-f8fdc986-4d14-11e7-995a-e7c5e79ed925.png" alt="Get APK from GitHub" height="80">](https://github.com/HeliBorg/HeliBoard/releases/latest)
-[<img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" alt="Get it on IzzyOnDroid" height="80">](https://apt.izzysoft.de/fdroid/index/apk/helium314.keyboard)
+<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" alt="HeliBoard icon" width="104" />
 
-## Table of Contents
+# HeliBoard · iOS Glass + Dynamic Monet
 
-- [Features](#features)
-- [Contributing](#contributing-)
-   * [Reporting Issues](#reporting-issues)
-   * [Translations](#translations)
-   * [To Community](#to-community)
-   * [Code Contribution](CONTRIBUTING.md)
-- [Links](#links)
-- [License](#license)
-- [Credits](#credits)
-  * [Funding](#funding)
+### Tu teclado. Tus colores. Tu privacidad.
 
-# Features
-<ul>
-  <li>Add dictionaries for suggestions and spell check</li>
-  <ul>
-    <li>build your own, or get them  <a href="https://codeberg.org/Helium314/aosp-dictionaries#dictionaries">here</a> (quality may vary)</li>
-    <li>additional dictionaries for emojis or scientific symbols can be used to provide suggestions (similar to "emoji search")</li>
-    <li>note that for Korean layouts, suggestions only work using <a href="https://github.com/openboard-team/openboard/commit/83fca9533c03b9fecc009fc632577226bbd6301f">this dictionary</a>, the tools in the dictionary repository are not able to create working dictionaries</li>
-  </ul>
-  <li>Customize keyboard themes (style, colors and background image)</li>
-  <li>Emoji search (inline and separate, requires <a href="https://codeberg.org/Helium314/aosp-dictionaries">emoji dictionary</a>)</li>
-  <ul>
-    <li>can follow the system's day/night setting on Android 10+ (and on some versions of Android 9)</li>
-    <li>can follow dynamic colors for Android 12+</li>
-  </ul>
-  <li>Customize keyboard <a href="https://github.com/HeliBorg/HeliBoard/blob/main/layouts.md">layouts</a> (only available when disabling <i>use system languages</i>)</li>
-  <li>Customize special layouts, like symbols, number,  or functional key layout</li>
-  <li>Multilingual typing</li>
-  <li>Glide typing (<i>only with closed source library</i> ☹️)</li>
-  <ul>
-    <li>library not included in the app, as there is no compatible open source library available</li>
-    <li>can be extracted from GApps packages ("<i>swypelibs</i>"), or downloaded <a href="https://github.com/erkserkserks/openboard/tree/46fdf2b550035ca69299ce312fa158e7ade36967/app/src/main/jniLibs">here</a> (click on the file and then "raw" or the tiny download button)</li>
-  </ul>
-  <li>Clipboard history</li>
-  <li>One-handed mode</li>
-  <li>Split keyboard</li>
-  <li>Number pad</li>
-  <li>Backup and restore your settings and learned word / history data</li>
-</ul>
+Una edición experimental de **HeliBoard para Android**, centrada en la personalización visual, los esquemas de color dinámico y una experiencia de escritura sin conexión.
 
-For [FAQ](https://github.com/HeliBorg/HeliBoard/wiki/FAQ), [hidden features](https://github.com/HeliBorg/HeliBoard/wiki/9.-Hidden-features) and more information about the app and features, please visit the [wiki](https://github.com/HeliBorg/HeliBoard/wiki)
+**An experimental HeliBoard fork focused on iOS Glass styling, Android dynamic color and offline typing.**
 
-# Contributing ❤
+[![Android](https://img.shields.io/badge/Android-5.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/Jorgeprdz/HeliBoard)
+[![GPL v3](https://img.shields.io/badge/License-GPL--3.0-64748B?style=for-the-badge)](LICENSE)
+[![Offline](https://img.shields.io/badge/Keyboard-offline-2563EB?style=for-the-badge)](#privacidad)
+[![Preview release](https://img.shields.io/badge/Download-preview_APK-8B5CF6?style=for-the-badge&logo=github)](https://github.com/Jorgeprdz/HeliBoard/releases)
 
-## Reporting Issues
+**[Descargar APK](https://github.com/Jorgeprdz/HeliBoard/releases)** · **[Novedades](#qué-incluye-esta-edición)** · **[Código experimental](https://github.com/Jorgeprdz/HeliBoard/tree/feature/dynamic-color-schemes)** · **[HeliBoard original](https://github.com/HeliBorg/HeliBoard)**
 
-Whether you encountered a bug, or want to see a new feature in HeliBoard, you can contribute to the project by opening a new issue [here](https://github.com/HeliBorg/HeliBoard/issues). Your help is always welcome!
+</div>
 
-Before opening a new issue, be sure to check the following:
- - **Does the issue already exist?** Make sure a similar issue has not been reported by browsing [existing issues](https://github.com/HeliBorg/HeliBoard/issues?q=). Please search open and closed issues. In case of feature requests you could also check the [FAQ](https://github.com/HeliBorg/HeliBoard/wiki/FAQ) and [hidden features](https://github.com/HeliBorg/HeliBoard/wiki/9.-Hidden-features).
- - **Is the issue still relevant?** Make sure your issue is not already fixed in the latest version of HeliBoard.
- - **Is it a single topic?** If you want to suggest multiple things, open multiple issues.
- - **Did you use the issue template?** It is important to make life of our kind contributors easier by avoiding issues that miss key information to their resolution.
- - **Is it written by a human?** Do not use LLMs or similar to generate issues. Having LLMs help with translation or similar is acceptable, but must be disclosed. See also [AI_USAGE.md](AI_USAGE.md)
-Note that issues that that ignore part of the issue template will likely get treated with very low priority, as often they are needlessly hard to read or understand (e.g. huge screenshots, not providing a proper description, or addressing multiple topics). Blatant violation of the guidelines may result in the issue getting closed.
+---
 
-If you're interested, you can read the following useful text about effective bug reporting (a bit longer read): https://www.chiark.greenend.org.uk/~sgtatham/bugs.html
+## ✨ Qué incluye esta edición
 
-## Translations
-Translations can be added using [Weblate](https://translate.codeberg.org/projects/heliboard/). You will need an account to update translations and add languages. Add the language you want to translate to in Languages -> Manage translated languages in the top menu bar.
-Updating translations in a PR will not be accepted, as it may cause conflicts with Weblate translations.
+| Experiencia | Descripción |
+| :--- | :--- |
+| 🎨 **Dynamic Monet** | Esquemas que usan colores dinámicos de Android, con variantes como Neutral, Tonal Spot, Vibrant, Expressive, Fidelity, Rainbow, Monochrome y otras. |
+| 🫧 **iOS Glass** | Rama experimental dedicada a una apariencia de teclado inspirada en superficies translúcidas. La implementación visual está en evolución. |
+| 🌗 **Claro y oscuro** | Generación de paletas para ambos modos. |
+| ⌨️ **Base HeliBoard** | Predicción, diccionarios, teclado multilingüe, portapapeles, diseños personalizables y más capacidades del proyecto original. |
+| 🔐 **Privacidad** | Sin permiso de acceso a Internet declarado en el manifiesto de la aplicación de esta rama. |
 
-Some notes on translations
-* when translating metadata, translating the changelogs is rather useless. It's available as it was requested by translators.
-* the `hidden_features_message` is horrible to translate with Weblate, and serves little benefit as it's just a copy of what's already in the wiki: https://github.com/HeliBorg/HeliBoard/wiki/9.-Hidden-features. It's been made available in the app on user request/contribution.
+> **Estado: preview / versión de prueba.** La edición experimental se desarrolla en [`feature/dynamic-color-schemes`](https://github.com/Jorgeprdz/HeliBoard/tree/feature/dynamic-color-schemes). La rama `main` puede tener código anterior; consulta la fuente específica indicada en cada release. No es una distribución oficial del equipo HeliBoard.
 
-## To Community
-There is the [discussions on GitHub](https://github.com/HeliBorg/HeliBoard/discussions), or if you prefer a more open network there is [Lemmy](https://lemmy.world/c/Heliboard).
-You can share your themes, layouts and dictionaries with other people:
-* Themes can be saved and loaded using the menu on top-right in the _adjust colors_ screen
-  * you can share custom colors in a separate [discussion section](https://github.com/HeliBorg/HeliBoard/discussions/categories/custom-colors)
-  * there are theme collections available at [Star-Trowa/heliboard-themes](https://github.com/Star-Trowa/heliboard-themes) and [PickleHik3/droid-tings](https://github.com/PickleHik3/droid-tings)
-* Custom keyboard layouts are text files whose content you can edit, copy and share
-  * this applies to main keyboard layouts and to special layouts adjustable in advanced settings
-  * see [layouts.md](layouts.md) for details
-  * you can share custom layouts in a separate [discussion section](https://github.com/HeliBorg/HeliBoard/discussions/categories/custom-layout)
-  * [Roccobot's Layout Maker](https://roccobot.github.io/HeliBoard-RLM/) is a browser-based editor for json layout files
-* Creating dictionaries is a little more work
-  * first you will need a wordlist, as described [here](https://codeberg.org/Helium314/aosp-dictionaries/src/branch/main/wordlists/sample.combined) and in the repository readme
-  * the you need to compile the dictionary using [external tools](https://github.com/remi0s/aosp-dictionary-tools)
-  * the resulting file (and ideally the wordlist too) can be shared with other users
-  * note that there will not be any further dictionaries added to this app, but you can add dictionaries to the [dictionaries repository](https://codeberg.org/Helium314/aosp-dictionaries)
+## 📲 Descargar e instalar
 
-## Code Contribution
-See [Contribution Guidelines](CONTRIBUTING.md)
+1. Abre **[Releases](https://github.com/Jorgeprdz/HeliBoard/releases)** y elige la publicación más reciente.
+2. Descarga el archivo **.apk** adjunto a la publicación (no `Source code.zip`).
+3. Instala la APK en Android y activa el teclado desde los ajustes del sistema.
+4. Comprueba la suma **SHA-256** con el archivo `SHA256SUMS.txt` de esa misma publicación, si está disponible.
 
-# Links
-* Info
-  * [Wiki](https://github.com/HeliBorg/HeliBoard/wiki), including FAQ, help on customizing layouts, and gesture data gathering
-  * [Layout documentation](layouts.md) (more technical info regarding layout customization)
-  * [For creating custom dictionaries](https://codeberg.org/Helium314/aosp-dictionaries#wordlist-information) (see also top of the linked readme)
-* Community
-  * [Lemmy](https://lemmy.world/c/Heliboard)
-  * [Reddit](https://www.reddit.com/r/HeliBoard)
-  * GitHub [discussions](https://github.com/HeliBorg/HeliBoard/discussions)
-* Other
-  * [Translations](https://translate.codeberg.org/projects/heliboard/)
-  * [Dictionaries](https://codeberg.org/Helium314/aosp-dictionaries)
-  * [k3lp](https://codeberg.org/k3lp/k3lp) is a WIP library for keyboard layout parsing that will be implemented in HeliBoard when ready (created by [FlorisBoard](https://github.com/florisboard/florisboard/) maintainers)
-  * [swipe-o-scope](https://codeberg.org/eclexic/swipe-o-scope) for visualizing gesture data as created when using gesture data gathering
+**Importante:** Las versiones etiquetadas como **debug / preview** están firmadas para pruebas y usan un identificador de paquete distinto del HeliBoard oficial. No son actualizaciones de F-Droid ni versiones estables. No introduzcas información sensible mientras estés evaluando una compilación experimental que no hayas verificado.
 
-# License
+## 🎨 Color dinámico
 
-HeliBoard (as a fork of OpenBoard) is licensed under GNU General Public License v3.0.
+Los modos experimentales usan una implementación de esquemas Material con fuentes de color de Android. Las opciones disponibles, su apariencia y el resultado final dependen de la versión de Android y de la configuración del sistema.
 
- > Permissions of this strong copyleft license are conditioned on making available complete source code of licensed works and modifications, which include larger works using a licensed work, under the same license. Copyright and license notices must be preserved. Contributors provide an express grant of patent rights.
+**Código y pruebas:** [DynamicSchemeProvider](app/src/main/java/helium314/keyboard/latin/common/dynamic/DynamicSchemeProvider.kt) · [Workflows](.github/workflows)
 
-See repo's [LICENSE](/LICENSE) file.
+## 🔐 Privacidad
 
-Since the app is based on Apache 2.0 licensed AOSP Keyboard, an [Apache 2.0](LICENSE-Apache-2.0) license file is provided.
-The icon is licensed under [Creative Commons BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). A [license file](LICENSE-CC-BY-SA-4.0) is also included.
+La experiencia de teclado está diseñada para funcionar **sin conexión**. La rama de la preview no declara `android.permission.INTERNET`. Como con cualquier teclado, revisa los permisos y el código antes de utilizarlo para contraseñas o datos privados.
 
-# Credits
-- Icon by [Fabian OvrWrt](https://github.com/FabianOvrWrt) with contributions from [The Eclectic Dyslexic](https://github.com/the-eclectic-dyslexic)
-- [OpenBoard](https://github.com/openboard-team/openboard)
-- [AOSP Keyboard](https://android.googlesource.com/platform/packages/inputmethods/LatinIME/)
-- [LineageOS](https://review.lineageos.org/admin/repos/LineageOS/android_packages_inputmethods_LatinIME)
-- [Simple Keyboard](https://github.com/rkkr/simple-keyboard)
-- [Indic Keyboard](https://gitlab.com/indicproject/indic-keyboard)
-- [FlorisBoard](https://github.com/florisboard/florisboard/)
-- Our [contributors](https://github.com/HeliBorg/HeliBoard/graphs/contributors)
+## 🧰 Compilar desde código
 
-## Funding
+Consulta el código asociado a la release o usa la rama experimental:
 
-This project is funded through [NGI Mobifree Fund](https://nlnet.nl/mobifree), a fund established by [NLnet](https://nlnet.nl) with financial support from the European Commission's [Next Generation Internet](https://ngi.eu) program. Learn more at the [NLnet project page](https://nlnet.nl/project/GestureTyping).
+```bash
+git clone https://github.com/Jorgeprdz/HeliBoard.git
+cd HeliBoard
+git checkout feature/dynamic-color-schemes
+./gradlew :app:assembleDebug
+```
 
-[<img src="https://nlnet.nl/logo/banner.png" alt="NLnet foundation logo" width="20%" />](https://nlnet.nl)
+Requiere el entorno Android SDK / JDK correspondiente al proyecto. Las compilaciones de prueba usan la variante `debug`; su salida está en `app/build/outputs/apk/debug/`.
 
-Further the project benefits from donations provided by many users (thank you all!).
+## 🤝 Proyecto original y licencias
+
+Este repositorio es un **fork** del proyecto libre [HeliBoard](https://github.com/HeliBorg/HeliBoard), basado a su vez en [OpenBoard](https://github.com/openboard-team/openboard) y AOSP Keyboard. El crédito por el proyecto base, el icono y las contribuciones corresponde a sus autores originales y colaboradores.
+
+- Licencia del código: **[GPL-3.0](LICENSE)**.
+- Componentes AOSP: **[Apache 2.0](LICENSE-Apache-2.0)**.
+- Icono original: **[CC BY-SA 4.0](LICENSE-CC-BY-SA-4.0)**.
+- Guía original: [Wiki HeliBoard](https://github.com/HeliBorg/HeliBoard/wiki) · [Contribución](CONTRIBUTING.md) · [Créditos del upstream](https://github.com/HeliBorg/HeliBoard#credits).
+
+---
+
+<div align="center">
+
+**HeliBoard · iOS Glass + Dynamic Monet**
+
+Hecho para explorar hasta dónde puede llegar un teclado Android personalizable. 💜
+
+[Reportar problema](https://github.com/Jorgeprdz/HeliBoard/issues) · [Releases](https://github.com/Jorgeprdz/HeliBoard/releases)
+
+</div>
