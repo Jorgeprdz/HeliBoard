@@ -46,7 +46,7 @@ Una edición experimental de **HeliBoard para Android**, centrada en la personal
 
 Los modos experimentales usan una implementación de esquemas Material con fuentes de color de Android. Las opciones disponibles, su apariencia y el resultado final dependen de la versión de Android y de la configuración del sistema.
 
-**Código y pruebas:** [DynamicSchemeProvider](app/src/main/java/helium314/keyboard/latin/common/dynamic/DynamicSchemeProvider.kt) · [Workflows](.github/workflows)
+**Código y pruebas:** [DynamicSchemeProvider](https://github.com/Jorgeprdz/HeliBoard/blob/feature/dynamic-color-schemes/app/src/main/java/helium314/keyboard/latin/common/dynamic/DynamicSchemeProvider.kt) · [Workflows](.github/workflows)
 
 ## 🔐 Privacidad
 
