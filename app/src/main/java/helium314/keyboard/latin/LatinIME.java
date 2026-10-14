@@ -68,6 +68,7 @@ import helium314.keyboard.latin.personalization.PersonalizationHelper;
 import helium314.keyboard.latin.settings.Settings;
 import helium314.keyboard.latin.settings.SettingsValues;
 import helium314.keyboard.latin.suggestions.SuggestionStripView;
+import helium314.keyboard.latin.ai.AiKeyboardAssistant;
 import helium314.keyboard.latin.suggestions.SuggestionStripViewAccessor;
 import helium314.keyboard.latin.touchinputconsumer.GestureConsumer;
 import helium314.keyboard.latin.utils.ColorUtilKt;
@@ -143,6 +144,7 @@ public class LatinIME extends InputMethodService implements
     private View mInputView;
     private InsetsOutlineProvider mInsetsUpdater;
     private SuggestionStripView mSuggestionStripView;
+    private AiKeyboardAssistant mAiKeyboardAssistant;
 
     private RichInputMethodManager mRichImm;
     final KeyboardSwitcher mKeyboardSwitcher;
@@ -867,6 +869,7 @@ public class LatinIME extends InputMethodService implements
 
     void onStartInputViewInternal(final EditorInfo editorInfo, final boolean restarting) {
         super.onStartInputView(editorInfo, restarting);
+        if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();
 
         setGestureDataGatheringMode(editorInfo, restarting);
 
@@ -1415,6 +1418,13 @@ public class LatinIME extends InputMethodService implements
             }
         }
         mSubtypeState.switchSubtype(mRichImm);
+    }
+
+    @Override
+    public void onAiAction(final String action) {
+        if (mSuggestionStripView == null) return;
+        if (mAiKeyboardAssistant == null) mAiKeyboardAssistant = new AiKeyboardAssistant(this);
+        mAiKeyboardAssistant.onAction(action, mSuggestionStripView);
     }
 
     // Implementation of {@link SuggestionStripView.Listener}.
