@@ -24,6 +24,7 @@ import android.view.View.OnLongClickListener
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityEvent
 import android.widget.ImageButton
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
@@ -81,6 +82,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         fun removeSuggestion(word: String?)
         fun removeExternalSuggestions()
         fun onSwipeDownOnToolbar()
+        fun onAiAction(action: String)
     }
 
     private val moreSuggestionsContainer: View
@@ -159,12 +161,20 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             val button = createToolbarKey(context, key)
             button.layoutParams = toolbarKeyLayoutParams
             setupKey(button, colors)
+            if (key == ToolbarKey.CLIPBOARD) {
+                button.setImageResource(R.drawable.ic_ai_sparkles)
+                button.contentDescription = "Asistente IA (mantener para portapapeles)"
+            }
             toolbar.addView(button)
         }
         for (pinnedKey in getPinnedToolbarKeys(context.prefs())) {
             val button = createToolbarKey(context, pinnedKey)
             button.layoutParams = toolbarKeyLayoutParams
             setupKey(button, colors)
+            if (pinnedKey == ToolbarKey.CLIPBOARD) {
+                button.setImageResource(R.drawable.ic_ai_sparkles)
+                button.contentDescription = "Asistente IA (mantener para portapapeles)"
+            }
             pinnedKeys.addView(button)
             val pinnedKeyInToolbar = toolbar.findViewWithTag<View>(pinnedKey)
             if (pinnedKeyInToolbar != null && Settings.getValues().mQuickPinToolbarKeys)
@@ -278,6 +288,35 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         if (Settings.getValues().mAutoHideToolbar) setToolbarVisibility(false)
     }
 
+    /** AI content reuses the existing suggestion strip without changing keyboard geometry. */
+    fun setAiChoices(choices: Array<String>) {
+        val horizontal = HorizontalScrollView(context)
+        horizontal.isHorizontalScrollBarEnabled = false
+        val container = LinearLayout(context)
+        container.orientation = LinearLayout.HORIZONTAL
+        val pad = (8 * resources.displayMetrics.density).toInt()
+        val textColor = Settings.getValues().mColors.get(ColorType.KEY_TEXT)
+        for (choice in choices) {
+            val item = TextView(context, null, R.attr.suggestionWordStyle)
+            item.text = choice
+            item.setTextColor(textColor)
+            item.gravity = android.view.Gravity.CENTER
+            item.isSingleLine = true
+            item.setPadding(pad, 0, pad, 0)
+            item.setOnClickListener { listener.onAiAction(choice) }
+            container.addView(item, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT))
+        }
+        horizontal.addView(container)
+        setExternalSuggestionView(horizontal, false)
+        setToolbarVisibility(false)
+    }
+
+    fun closeAiChoices() {
+        clear()
+        setToolbarVisibility(true)
+    }
+
     fun setMoreSuggestionsHeight(remainingHeight: Int) {
         layoutHelper.setMoreSuggestionsHeight(remainingHeight)
     }
@@ -330,6 +369,10 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
 
     override fun onClick(view: View) {
         val tag = view.tag
+        if (tag == ToolbarKey.CLIPBOARD) {
+            listener.onAiAction("IA")
+            return
+        }
         if (tag is ToolbarKey) {
             onClickToolbarKey(view) { listener.onCodeInput(it, Constants.SUGGESTION_STRIP_COORDINATE, Constants.SUGGESTION_STRIP_COORDINATE, false) }
             return
@@ -350,6 +393,10 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     override fun onLongClick(view: View): Boolean {
+        if (view.tag == ToolbarKey.CLIPBOARD) {
+            listener.onCodeInput(KeyCode.CLIPBOARD, Constants.SUGGESTION_STRIP_COORDINATE, Constants.SUGGESTION_STRIP_COORDINATE, false)
+            return true
+        }
         if (view.tag is ToolbarKey) {
             onLongClickToolbarKey(view)
             return true
