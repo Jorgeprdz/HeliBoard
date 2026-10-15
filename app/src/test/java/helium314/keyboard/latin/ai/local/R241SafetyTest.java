@@ -4,6 +4,10 @@ import org.junit.Test;import java.util.*;import java.util.concurrent.atomic.Atom
 import static org.junit.Assert.*;
 public class R241SafetyTest {
  private final LocalContextReviewer reviewer=new LocalContextReviewer();
+ @Test public void initialProperNameDoesNotProduceContextualReplacement(){
+  for(String text:Arrays.asList("Poryectos ","Poryectos es importante ","Edta trabaja "))
+   assertTrue(text,reviewer.review(text,new R241WritingTest.Vocabulary(),Collections.emptySet(),()->false).isEmpty());
+ }
  @Test public void ambiguousInitialCandidateRemainsSuggestion(){
   List<LocalContextReviewer.Correction> result=reviewer.review("Slll estoy escribiendo ",new R241WritingTest.Vocabulary(),Collections.emptySet(),()->false);
   assertEquals(1,result.size());assertEquals("Solo",result.get(0).replacement);assertFalse(result.get(0).automaticAllowed);

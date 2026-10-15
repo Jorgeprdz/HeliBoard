@@ -179,6 +179,11 @@ public final class LocalContextReviewer {
         if(choice==null)return null;
         boolean safe=Arrays.asList("esta","este","estas","estos","esa","ese","esas","esos").contains(choice.word)
             &&Arrays.asList("es","son","era","eran").contains(next)&&choice.cost<=.7&&choice.margin>=.3&&lexicon.knownInvalid(t.lower);
+        boolean adverbSuggestion=Arrays.asList("solo","sólo","solamente","simplemente","también","apenas","todavía").contains(choice.word)
+            &&Arrays.asList("estoy","estás","está","estamos","están","estaba","estaban").contains(next)&&choice.margin>=.3;
+        // A generic initial capital may be a proper name. Do not even offer a replacement
+        // without this narrow grammatical licensing; native suggestions remain available.
+        if(!safe&&!adverbSuggestion)return null;
         String replacement=Character.toUpperCase(choice.word.charAt(0))+choice.word.substring(1);
         return correction(t,replacement,"sentence-initial-dictionary-candidate",.9,safe);
     }
