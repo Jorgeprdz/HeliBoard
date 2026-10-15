@@ -1,34 +1,44 @@
-# HeliBoard R2.3 execution record
+# HeliBoard R2.3 execution ledger
 
 Base: 19c0926cf26b3a328bc388e3f7d7bb87544f329b.
-Scope authorized by the owner's master prompt and certificate annex.
+Owner master prompt, certificate annex and Reddit HTTP403 exception authorize this branch.
 
-Design: preserve the keyboard rendering and native undo; add a bounded, locale-aware
-SQLite learning store behind an in-memory cache and background writer. Learn only explicit
-candidate acceptance and attributable rejection. Use learned alternatives at word boundaries
-after native correction, with conservative invalid-word and margin gates. No keystroke log.
-Local dictation uses Android's on-device SpeechRecognizer; Ramblr remains optional audio capture.
-Final local recognition applies a versioned transaction automatically, with one native-dispatch undo.
-Gemini operations authorize their requests, and a single full result dialog contains Apply/Copy/Cancel.
-Temporary AI surfaces resolve keyboard brightness independently of system night mode.
-Cloud backups contain only an allowlisted schema, encrypted AES-256-GCM before Drive appDataFolder.
-PBKDF2-HMAC-SHA256 (600,000 iterations, random salt) supports recovery across devices.
-WorkManager batches sync; per-device monotonic components merge by maximum, never sum duplicates.
-Google OAuth configuration/consent and recovery unlock are initial external prerequisites.
+Implementation:
+- SQLite evidence keyed by word pair, locale and device, with in-memory automatic lookup.
+- Explicit candidate acceptance and attributable Backspace rejection. Arbitrary edits are never inferred.
+- Minimum five acceptances, dominance margin and known-invalid dictionary gate. A rejection vetoes auto.
+- AES-256-GCM envelope, random 128-bit salt/96-bit nonce, authenticated version/KDF header.
+- PBKDF2-HMAC-SHA256 600000 iterations; recovery phrase wrapped locally by Android Keystore.
+- Google Identity AuthorizationClient, Drive appDataFolder only; initial account/OAuth/recovery UI.
+- Android JobScheduler persists periodic/network/battery constrained jobs across restarts.
+- Android on-device recognizer supplies local dictation; Ramblr only supplies optional audio capture.
+- Local results apply automatically through the existing versioned transaction and Backspace dispatch.
+- Gemini operation starts the consented request; full-result Apply/Copy/Cancel replaces extra confirmations.
+- Material Components 1.14.0-alpha04 Expressive Views, scoped to temporary AI UI (preserves minSdk 21).
+- GitHub push workflow, gated APK build and persistent signing; historical identity differences warn.
+- Termux downloads/verifies artifacts and installed signer; no clone, Gradle or source checkout.
 
-Execution: inline, GitHub API commits only; no source checkout or Gradle on the phone.
-1. Publish failing behavioral tests and automatic cloud workflow; inspect RED.
-2. Implement bounded personal learning and persistent schema; integrate candidate/boundary/undo.
-3. Implement local one-tap dictation and unified Gemini review; verify lifecycle and themes.
-4. Implement encrypted backup, OAuth setup, background retries and conflict merge.
-5. Harden CI manifests and Termux update agent; preserve signing secrets and installed package.
-6. Run complete tests/lint, repair failures, verify APK, compare installed signature, update only
-   if compatible. Record all physical-device limitations as NOT VERIFIED.
+Rulings:
+- Use JobScheduler instead of WorkManager: HeliBoard defaults to device-protected storage and must
+  retain Direct Boot keyboard behavior. No global storage migration or hidden storage APIs.
+- Use the current app-private storage with unlocked-user and protected-editor gates for learning.
+- Use Google Identity 21.4.0: 21.3.0 lacks the revocation API; Android minSdk remains 21.
+- A rejected pair remains available for explicit use but cannot automatically replace again.
+- Cloud currently contains learned associations only. Manual dictionary and compatible visual-preference
+  synchronization are not yet implemented; no unfiltered preference or history dump is permitted.
+- Initial Google Cloud Android OAuth package/certificate registration, Drive API enablement, account
+  consent and recovery phrase are external prerequisites. No user phrase or OAuth session was supplied.
+- Reddit HTTP403 alone is an owner-authorized documentation WARNING. Functional/security gates stay blocking.
 
-Review focus: stale editor/cursor callbacks; accepted-word false positives; replayed cloud counters;
-corrupt/foreign backup; duplicate speech results. Test these before publishing an installable APK.
+Evidence:
+- RED run 38759491119: six failures for missing persistent learning/cipher classes; duplicate-result gate passes.
+- Run 38760704065: compilation fails on unsupported credential-context method and missing identity revocation.
+- Run 38761443846: installer test catches malformed fallback loop; fixed with shell syntax verification.
+- Installed R2.2 versionCode 4106, package com.jorgeprdz.ioskeyboard.debug, Android 17.
+- Installed signing SHA256 cfea5c3e180245ec7db199a1d8d799a4a91e0454fef7d02c5313b6d923b66ba2
+  matches the configured persistent signer. New APK verification/installation still pending.
+- Real speech, theme screenshots, DeX, hardware keyboard, OAuth, restoration on second device,
+  and latency percentiles remain NOT VERIFIED until measured.
 
-Progress: branch created; installed versionCode 4106 on Android 17 identified.
-Known baseline bug: certificate parser ignores "V2 Signer"; prior report has empty identity.
-Known baseline failure: documentation readmeLinks; it must be investigated, not hidden.
-Initial OAuth and physical speech/DeX acceptance have not been performed.
+Next: run installer gates, R2.3 tests, full functional suite, documentation audit and Android lint;
+repair concrete failures, publish signed APK, verify on-device compatibility before any update.

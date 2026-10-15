@@ -138,56 +138,7 @@ compatible_fallback() {
  say "Buscando hasta 5 artifacts anteriores con firma instalada $old_cert."
  local runs prior prior_sha
  runs=$(gh api "repos/$repo/actions/workflows/$workflow/runs?branch=$branch&status=success&per_page=5") || return 1
- while IFS=
-say "Gate, SHA, firma, paquete y versión verificados. Run $run, Galaxy $model."
-$dry && { say "DRY-RUN PASS: instalación no ejecutada."; exit 0; }
-if ! timeout 180 adb -s "$serial" install -r "$apk" > "$work/install-result.txt" 2>&1; then
- cat "$work/install-result.txt"
- if grep -Eq 'INSTALL_FAILED_UPDATE_INCOMPATIBLE|signatures.*match|INCONSISTENT_CERTIFICATES' "$work/install-result.txt"; then
-  printf '%s\n' "$expected" > "$logdir/blocked-sha"
-  compatible_fallback && exit 0
- fi
- fail "DEVICE INSTALL: FAILED. Android rechazó actualización; datos conservados."
-fi
-post=$(adb -s "$serial" shell pm path "$package" | tr -d '\r' | sed -n 's/^package://p' | head -1)
-[[ -n "$post" ]] || fail "Postinstalación: paquete ausente."
-adb -s "$serial" pull "$post" "$work/post.apk" >/dev/null
-[[ $(sha256sum "$work/post.apk" | cut -d' ' -f1) == "$hash" ]] || fail "Postinstalación: hash diferente."
-printf '%s\n' "$expected" > "$logdir/last-installed-sha"
-say "INSTALL COMPATIBILITY: PASS; DEVICE INSTALL: SUCCESS"
-say "INSTALLED & VERIFIED: $package versionCode=$version run=$run SHA=$hash"
-say "Pendiente aceptación física: Gemini claro/oscuro, Backspace, escritura y DeX."
-\t' read -r prior prior_sha; do
-  [[ "$prior" == "$run" ]] && continue
-  if bash "$0" --run-id "$prior" --sha "$prior_sha" --serial "$serial" --once --dry-run --no-fallback > "$logdir/fallback.log" 2>&1; then
-   say "Artifact compatible identificado: run $prior; aplicando verificación completa."
-   bash "$0" --run-id "$prior" --sha "$prior_sha" --serial "$serial" --once --no-fallback
-   return $?
-  fi
- done < <(jq -r '.workflow_runs[] | [.id,.head_sha] | @tsv' <<< "$runs")
- return 1
-}
-if [[ "$old_cert" != "$cert" ]]; then
- say "CERTIFICATE_MISMATCH: instalado=$old_cert artifact=$cert. INSTALL COMPATIBILITY: BLOCKED."
- if ! $dry; then printf '%s\n' "$expected" > "$logdir/blocked-sha"; fi
- compatible_fallback && exit 0
- fail "No hay actualización compatible disponible. Se necesita la firma instalada $old_cert."
-fi
-if [[ "$(sha256sum "$work/installed.apk" | cut -d' ' -f1)" == "$hash" ]]; then
- $dry || printf '%s\n' "$expected" > "$logdir/last-installed-sha"
- say "APK ya instalado; identidad e integridad verificadas."; exit 0
-fi
-[[ "$version" -gt "$old_version" ]] || fail "No se reinstala una versión igual o anterior con contenido diferente."
-
-say "Gate, SHA, firma, paquete y versión verificados. Run $run, Galaxy $model."
-$dry && { say "DRY-RUN PASS: instalación no ejecutada."; exit 0; }
-timeout 180 adb -s "$serial" install -r "$apk" || fail "ADB rechazó actualización. No se desinstaló ni borró datos."
-post=$(adb -s "$serial" shell pm path "$package" | tr -d '\r' | sed -n 's/^package://p' | head -1)
-[[ -n "$post" ]] || fail "Postinstalación: paquete ausente."
-adb -s "$serial" pull "$post" "$work/post.apk" >/dev/null
-[[ $(sha256sum "$work/post.apk" | cut -d' ' -f1) == "$hash" ]] || fail "Postinstalación: hash diferente."
-say "INSTALLED & VERIFIED: $package versionCode=$version run=$run SHA=$hash"
-say "Pendiente aceptación física: Gemini claro/oscuro, Backspace, escritura y DeX."  while read -r prior prior_sha; do
+  while read -r prior prior_sha; do
   [[ "$prior" == "$run" ]] && continue
   if bash "$0" --run-id "$prior" --sha "$prior_sha" --serial "$serial" --once --dry-run --no-fallback > "$logdir/fallback.log" 2>&1; then
    say "Artifact compatible identificado: run $prior; aplicando verificación completa."
