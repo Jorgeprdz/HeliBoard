@@ -146,6 +146,23 @@ class InputLogicTest {
         checkConnectionConsistency()
     }
 
+    @Test fun R23GeminiApplyUsesSameBackspaceTransactionWithoutExtraReviewActions() {
+        r22Enable("Antes hola después")
+        setCursorPosition(6, 10)
+        val assistant = r23Assistant()
+        val capture = assistant.javaClass.getDeclaredMethod("capture").apply { isAccessible = true }
+        val snapshot = capture.invoke(assistant) as helium314.keyboard.latin.ai.EditorSnapshot
+        val field = assistant.javaClass.getDeclaredField("review").apply { isAccessible = true }
+        val review = field.get(assistant) as helium314.keyboard.latin.ai.AiResultReview
+        review.offer(snapshot, "Hola", true)
+        kotlin.test.assertTrue(review.reviewed(snapshot))
+        assistant.onAction("Usar", null)
+        assertEquals("Antes Hola después", text)
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("Antes hola después", text)
+        checkConnectionConsistency()
+    }
+
     @Test fun R23DictationTransactionAndImmediateBackspaceRestoreWholeInsertion() {
         r22Enable("Antes ")
         val assistant = r23Assistant()

@@ -86,7 +86,7 @@ public final class AiKeyboardAssistant {
             if(privateField()||!AiSettingsActivity.networkAllowed(ime)||!AiSettingsActivity.dictationEnabled(ime)||!base.matches(capture()))return;
             if(error!=null){dictation.cancel();show(providerError(error),"Cancelar");return;}
             if(!dictation.result(ticket,capture(),value)){reset(false);return;}
-            review.offer(base,value,complete[0]);show(complete[0]?"Dictado listo":"Transcripción incompleta","Revisar resultado","Mejorar dictado","Copiar resultado","Cancelar");
+            review.offer(base,value,complete[0]);fullReview();
         },35000);
     }
     private void improveDictation(){
@@ -96,7 +96,7 @@ public final class AiKeyboardAssistant {
         final boolean[] complete={false};show("Mejorando dictado con Gemini…","Cancelar");
         session.submit(cancel->{helium314.keyboard.latin.ai.provider.GeminiProvider.Result response=new helium314.keyboard.latin.ai.provider.GeminiProvider().generate(key,model,helium314.keyboard.latin.ai.provider.GeminiOperation.CLARITY,"casual",null,text,
             new helium314.keyboard.latin.ai.provider.GeminiProvider.Cancellation(){public boolean cancelled(){return cancel.cancelled();}public void onCancel(Runnable abort){cancel.onCancel(abort);}});complete[0]=response.complete;return response.text;
-        },(value,error)->{if(privateField()||!AiSettingsActivity.networkAllowed(ime)||!base.matches(capture()))return;if(error!=null){show(providerError(error),"Cancelar");return;}review.offer(base,value,complete[0]);show(complete[0]?"Dictado mejorado":"Resultado incompleto","Revisar resultado","Copiar resultado","Cancelar");},35000);
+        },(value,error)->{if(privateField()||!AiSettingsActivity.networkAllowed(ime)||!base.matches(capture()))return;if(error!=null){show(providerError(error),"Cancelar");return;}review.offer(base,value,complete[0]);fullReview();},35000);
     }
     private long dictationTicket;
     private EditorSnapshot dictationBase;
@@ -131,16 +131,18 @@ public final class AiKeyboardAssistant {
     public void onExplicitCandidate(String typed,String chosen){
         if(AiSettingsActivity.contextualEnabled(ime)&&!privateField())personal.accept(typed,chosen,typingLanguage());
     }
-    private void finishAutomatic(EditorSnapshot base,String value){
+    private boolean finishAutomatic(EditorSnapshot base,String value){
+        automaticOriginal="";automaticLanguage="";
         boolean accepted=base.hasSelection()?automaticEdits.apply(base,value,target(base.original)):
             automaticEdits.applySpan(base,base.start,base.end,"",value,target(""));
         dictation.cancel();dictationBase=null;
         if(speech!=null){speech.close();speech=null;}
-        if(!accepted){show("El editor rechazó el dictado","Cerrar");return;}
+        if(!accepted){show("El editor rechazó el cambio","Cerrar");return false;}
         automaticReplacement=value;automaticAfter=capture();
         CharSequence after=ime.getAiInputConnection().getTextBeforeCursor(2048,0);
         automaticContext=after==null?"":after.toString();
         if(strip!=null)strip.closeAiChoices();
+        return true;
     }
     private long revision;
     private boolean ownEdit;
@@ -389,6 +391,7 @@ public final class AiKeyboardAssistant {
         if("Configurar voz local".equals(action)){launch(new Intent(android.provider.Settings.ACTION_VOICE_INPUT_SETTINGS));return;}
         if("Mejorar dictado".equals(action)){show("Enviar texto dictado a Gemini","Cancelar");return;}
         if("Enviar texto dictado a Gemini".equals(action)){improveDictation();return;}
+        if("Avanzado".equals(action)){show("Grabar audio para Gemini","Configurar","Cerrar");return;}
         if("Grabar audio para Gemini".equals(action)){startAudioCapture();return;}
         if("Detener grabación".equals(action)){if(audioCapture!=null)audioCapture.stop();dictation.stop(dictationTicket);return;}
         if("Enviar audio a Gemini".equals(action)){transcribeAudio();return;}
@@ -397,7 +400,7 @@ public final class AiKeyboardAssistant {
         if ("IA".equals(action)) {
             reset(false);strip=view;
             if (!AiSettingsActivity.isEnabled(ime)) { show("Configurar", "Cerrar"); return; }
-            show("Corregir", "Gramática", "Reescribir", "Resumir", "Traducir", "Acortar", "Expandir", "Claridad", "Respuesta", "Leer texto", "Configurar", "Cerrar");
+            show("Corregir", "Gramática", "Reescribir", "Resumir", "Traducir", "Acortar", "Expandir", "Claridad", "Respuesta", "Leer texto", "Avanzado", "Configurar", "Cerrar");
             return;
         }
         if ("Cerrar".equals(action) || "Cancelar".equals(action)) {
@@ -433,7 +436,7 @@ public final class AiKeyboardAssistant {
             EditorSnapshot now=capture();
             if(!review.canApply(now)){show("Revisa el resultado y conserva la selección","Revisar resultado","Cancelar");return;}
             String replacement=review.result();EditorSnapshot original=review.snapshot();
-            if(!(original.hasSelection()?edits.apply(original,replacement,target(original.original)):edits.applySpan(original,original.start,original.end,"",replacement,target("")))){show("El editor rechazó el cambio","Cancelar");return;}
+            if(!finishAutomatic(original,replacement))return;
             undoText=replacement;selected="";proposed="";review.clear();dictation.cancel();dictationBase=null;
             if(strip!=null)strip.closeAiChoices();return;
         }

@@ -66,3 +66,8 @@ AI mode resolves the keyboard MAIN_BACKGROUND rather than translucent key RGB; t
 by a real-IME light/dark palette regression. UI keys/layout and original keyboard rendering stay unchanged.
 Physical visual and microphone acceptance currently blocked by Android Keyguard (showing=true);
 no unlock bypass is attempted. APK update can still be verified through authorized ADB.
+
+Final interaction repair: optional Gemini audio remains reachable under temporary Advanced choices.
+Audio and text provider results share the single full-result dialog. Explicit Gemini Apply now shares
+the existing automatic transaction/Backspace dispatcher with local dictation; no competing undo consumer.
+A real-IME selected-span apply/Backspace regression verifies surrounding text survives.
