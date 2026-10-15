@@ -126,6 +126,7 @@ public final class IosGlassController {
     }
 
     private static void applyCrossWindowBlur(final View inputView) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return;
         try {
             final View root = inputView.getRootView();
             final ViewGroup.LayoutParams rawParams = root.getLayoutParams();

@@ -23,18 +23,15 @@ class PcmFileBuffer(private val file: File, private val maxBytes: Long) : AutoCl
      * false — keeping the last complete 16-bit samples at the two-minute duration cap.
      */
     fun write(buf: ByteArray, offset: Int, len: Int): Boolean {
-        if (bytesWritten + len > maxBytes) {
-            val remaining = (maxBytes - bytesWritten).coerceAtLeast(0L).toInt()
-            val fits = minOf(len, remaining).let { it - (it % 2) }
-            if (fits > 0) {
-                out.write(buf, offset, fits)
-                bytesWritten += fits
-            }
-            return false
+        require(offset >= 0 && len >= 0 && offset <= buf.size - len) { "Invalid PCM slice" }
+        val completeSamples = len - (len % 2)
+        val remaining = (maxBytes - bytesWritten).coerceAtLeast(0L)
+        val fits = minOf(completeSamples.toLong(), remaining).toInt().let { it - (it % 2) }
+        if (fits > 0) {
+            out.write(buf, offset, fits)
+            bytesWritten += fits
         }
-        out.write(buf, offset, len)
-        bytesWritten += len
-        return true
+        return fits == len
     }
 
     override fun close() { out.close() }

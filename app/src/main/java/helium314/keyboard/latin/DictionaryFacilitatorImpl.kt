@@ -505,7 +505,9 @@ class DictionaryFacilitatorImpl : DictionaryFacilitator {
             SuggestedWords.MAX_SUGGESTIONS, ngramContext.isBeginningOfSentenceContext, false
         )
         // Secondary languages are useful, but must never freeze the primary typing path.
-        helium314.keyboard.latin.ai.SecondaryDictionaryQuery.await(waitForOtherDicts, 150)
+        helium314.keyboard.latin.ai.SecondaryDictionaryQuery.await(
+            waitForOtherDicts, helium314.keyboard.latin.ai.SecondaryDictionaryQuery.TYPING_WAIT_MILLIS
+        )
 
         suggestionsArray.forEach {
             if (it == null) return@forEach
