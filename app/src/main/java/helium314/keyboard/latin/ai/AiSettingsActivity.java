@@ -53,7 +53,7 @@ public class AiSettingsActivity extends Activity {
     }
     public static void rejectCorrection(Context ctx,String correction) {
         if(correction==null||correction.length()>100||SensitiveInputPolicy.sensitiveText(correction))return;
-        java.util.Set<String> values=rejectedCorrections(ctx);if(values.size()>=128)values.clear();values.add(correction);
+        java.util.Set<String> values=rejectedCorrections(ctx);if(values.size()>=128&&!values.contains(correction))values.remove(values.iterator().next());values.add(correction);
         ctx.getSharedPreferences(PREF,MODE_PRIVATE).edit().putStringSet("rejected_corrections",values).apply();
     }
     /** Clears automatically learned history and AI rejection preferences, not manual dictionaries. */

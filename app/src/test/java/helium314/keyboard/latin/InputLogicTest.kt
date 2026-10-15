@@ -109,6 +109,24 @@ class InputLogicTest {
         return field.get(latinIME) as helium314.keyboard.latin.ai.AiKeyboardAssistant
     }
 
+    @Test fun R23TemporaryThemeFollowsKeyboardBackgroundInsteadOfTransparentKeyColor() {
+        r22Enable("")
+        val field = settingsValues.javaClass.getField("mColors").apply { isAccessible = true }
+        val original = field.get(settingsValues)
+        val palette = Mockito.mock(helium314.keyboard.latin.common.Colors::class.java)
+        field.set(settingsValues, palette)
+        try {
+            Mockito.`when`(palette.get(helium314.keyboard.latin.common.ColorType.MAIN_BACKGROUND)).thenReturn(android.graphics.Color.WHITE)
+            Mockito.`when`(palette.get(helium314.keyboard.latin.common.ColorType.KEY_BACKGROUND)).thenReturn(0x18000000)
+            assertEquals(helium314.keyboard.latin.ai.AiMenuTheme.resolve(latinIME, false).surface,
+                helium314.keyboard.latin.ai.AiMenuTheme.resolveKeyboard(latinIME).surface)
+            Mockito.`when`(palette.get(helium314.keyboard.latin.common.ColorType.MAIN_BACKGROUND)).thenReturn(android.graphics.Color.BLACK)
+            Mockito.`when`(palette.get(helium314.keyboard.latin.common.ColorType.KEY_BACKGROUND)).thenReturn(0x18ffffff)
+            assertEquals(helium314.keyboard.latin.ai.AiMenuTheme.resolve(latinIME, true).surface,
+                helium314.keyboard.latin.ai.AiMenuTheme.resolveKeyboard(latinIME).surface)
+        } finally { field.set(settingsValues, original) }
+    }
+
     @Test fun R23PersonalBoundaryAndSingleBackspaceUseRealIme() {
         r22Enable("teh ")
         val assistant = r23Assistant()

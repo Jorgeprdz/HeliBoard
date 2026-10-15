@@ -38,4 +38,14 @@ public class R23PayloadTest {
   catch(IllegalArgumentException expected){}
   BackupPayload.validate(before,store);
  }
+ @Test public void contextualPairRejectionSurvivesCloudRecovery()throws Exception{
+  Context c=ApplicationProvider.getApplicationContext();PersonalTypingStore store=PersonalTypingStore.get(c);store.erase();
+  AiSettingsActivity.rejectCorrection(c,"haber→a ver");
+  byte[] backup=BackupPayload.export(c,store);
+  c.getSharedPreferences("keyboard_ai_private",0).edit().remove("rejected_corrections").commit();
+  c.getSharedPreferences("typing_cloud",0).edit().putBoolean("enabled",true).commit();
+  try{BackupPayload.merge(c,store,backup,store.generation());assertTrue(AiSettingsActivity.rejectedCorrections(c).contains("haber→a ver"));}
+  finally{c.getSharedPreferences("typing_cloud",0).edit().putBoolean("enabled",false).commit();}
+ }
+
 }

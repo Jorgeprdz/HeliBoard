@@ -60,3 +60,9 @@ protected tokens. Remaining failure is the HTTP fixture inheriting desktop Java'
 Android's HTTP implementation explicitly supports PATCH. Fixture now implements its transport boundary.
 Android lint PASS in this run. Pending rerun includes all gates, no exclusions.
 R2.3 CI now derives increasing versionCode from workflow run_number to permit recurring compatible updates.
+
+Follow-up: sync allowlists contextual word-pair rejections (never surrounding context).
+AI mode resolves the keyboard MAIN_BACKGROUND rather than translucent key RGB; this is covered
+by a real-IME light/dark palette regression. UI keys/layout and original keyboard rendering stay unchanged.
+Physical visual and microphone acceptance currently blocked by Android Keyguard (showing=true);
+no unlock bypass is attempted. APK update can still be verified through authorized ADB.

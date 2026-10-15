@@ -22,6 +22,10 @@ public final class BackupPayload {
   return value instanceof Boolean;
  }
  private static android.content.SharedPreferences visual(Context c){return helium314.keyboard.latin.utils.DeviceProtectedUtils.getSharedPreferences(c);}
+ private static boolean safeRejection(String value){
+  return value!=null&&value.length()<=100&&value.matches("[\\p{Ll}\\p{M}]{2,48}→[\\p{Ll}\\p{M}]+(?: [\\p{Ll}\\p{M}]+)?")
+   &&!SensitiveInputPolicy.sensitiveText(value);
+ }
  private static boolean safeWord(String word){return word!=null&&word.length()>=2&&word.length()<=48
   &&word.matches("[\\p{L}\\p{M}]+")&&!SensitiveInputPolicy.sensitiveText(word);}
  private static boolean language(String value){return Arrays.asList("","es","es_MX","en","en_US","es-MX","en-US").contains(value);}
@@ -42,7 +46,10 @@ public final class BackupPayload {
    }}
   }catch(SecurityException|IllegalArgumentException unavailable){available=false;}
   for(JSONObject entry:unique.values())words.put(entry);
-  JSONObject result=new JSONObject().put("schema",2).put("learning",new JSONObject(new String(learning.exportData(),StandardCharsets.UTF_8)))
+  JSONArray rejections=new JSONArray();
+  for(String rejection:helium314.keyboard.latin.ai.AiSettingsActivity.rejectedCorrections(c))
+   if(safeRejection(rejection))rejections.put(rejection);
+  JSONObject result=new JSONObject().put("schema",2).put("rejections",rejections).put("learning",new JSONObject(new String(learning.exportData(),StandardCharsets.UTF_8)))
    .put("dictionary",words).put("dictionaryAvailable",available).put("visual",preferences).put("updated",System.currentTimeMillis());
   return result.toString().getBytes(StandardCharsets.UTF_8);
  }
@@ -51,6 +58,11 @@ public final class BackupPayload {
   JSONObject root=new JSONObject(new String(bytes,StandardCharsets.UTF_8));int schema=root.getInt("schema");
   if(schema==1)return root; // Original learning-only snapshots remain readable.
   if(schema!=2)throw new IllegalArgumentException("Unsupported cloud schema");
+  JSONArray rejections=root.optJSONArray("rejections");
+  if(rejections!=null){
+   if(rejections.length()>128)throw new IllegalArgumentException("Rejection limit");
+   for(int i=0;i<rejections.length();i++)if(!safeRejection(rejections.getString(i)))throw new IllegalArgumentException("Unsafe rejection");
+  }
   JSONArray dictionary=root.getJSONArray("dictionary");if(dictionary.length()>1024)throw new IllegalArgumentException("Dictionary limit");
   for(int i=0;i<dictionary.length();i++){JSONObject word=dictionary.getJSONObject(i);
    if(!safeWord(word.getString("word"))||!language(word.getString("locale"))||word.getInt("frequency")<0||word.getInt("frequency")>255)
@@ -68,6 +80,11 @@ public final class BackupPayload {
  public static void validate(byte[] bytes,PersonalTypingStore store)throws Exception{JSONObject root=decode(bytes);store.validate(learning(root));}
  public static void merge(Context c,PersonalTypingStore store,byte[] bytes,long generation)throws Exception{
   JSONObject root=decode(bytes);store.merge(learning(root),generation);if(root.getInt("schema")==1)return;
+  JSONArray rejections=root.optJSONArray("rejections");
+  if(rejections!=null)for(int i=0;i<rejections.length();i++){
+   if(store.generation()!=generation||!TypingSync.prefs(c).getBoolean("enabled",false))return;
+   helium314.keyboard.latin.ai.AiSettingsActivity.rejectCorrection(c,rejections.getString(i));
+  }
   JSONArray dictionary=root.getJSONArray("dictionary");
   for(int i=0;i<dictionary.length();i++){
    if(store.generation()!=generation||!TypingSync.prefs(c).getBoolean("enabled",false))return;
