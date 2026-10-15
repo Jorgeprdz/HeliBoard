@@ -37,6 +37,7 @@ jobs:
       - name: Complete regression including local documentation paths and live dictionaries
         run: ./gradlew :app:testDebugUnitTest
       - name: Android lint gate
+        if: always()
         run: ./gradlew :app:lintDebug
       - name: Restore existing persistent signing identity securely
         env:

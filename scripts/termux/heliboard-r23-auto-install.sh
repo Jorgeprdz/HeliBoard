@@ -29,8 +29,13 @@ if $disable; then
  say "Actualizaciones automáticas desactivadas."
  exit 0
 fi
+for tool in gh adb jq sha256sum unzip aapt apksigner timeout flock realpath; do
+ command -v "$tool" >/dev/null || fail "Falta $tool. Instala gh, android-tools, jq, coreutils, unzip, aapt, apksigner y util-linux."
+done
+gh auth status >/dev/null 2>&1 || fail "Ejecuta gh auth login una vez."
 if $enable; then
  [[ -n "$serial" ]] || fail "La activación inicial requiere --serial del ADB autorizado."
+ [[ "$(adb -s "$serial" get-state 2>/dev/null)" == device ]] || fail "ADB no está autorizado para el serial seleccionado."
  mkdir -p "${XDG_DATA_HOME:-$HOME/.local/share}/heliboard-r23"
  agent="${XDG_DATA_HOME:-$HOME/.local/share}/heliboard-r23/update-agent.sh"
  [[ "$(realpath "$0")" == "$(realpath -m "$agent")" ]] || cp -- "$0" "$agent"

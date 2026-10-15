@@ -61,10 +61,10 @@ public class R23LearningTest {
  }
  @Test public void actualSqliteReopenRetainsAcceptedPair() throws Exception {
   Object s=store();for(int i=0;i<5;i++)accept(s,"siemore","siempre","es-MX");
-  s.getClass().getMethod("exportData").invoke(s);
+  byte[] persisted=(byte[])s.getClass().getMethod("exportData").invoke(s);
   java.lang.reflect.Constructor<?> constructor=s.getClass().getDeclaredConstructor(Context.class);constructor.setAccessible(true);
   Object reopened=constructor.newInstance(ApplicationProvider.getApplicationContext());
-  reopened.getClass().getMethod("exportData").invoke(reopened);
+  assertEquals(new String(persisted,"UTF-8"),new String((byte[])reopened.getClass().getMethod("exportData").invoke(reopened),"UTF-8"));
   assertEquals("siempre",candidate(reopened,"siemore","es-MX",false));
  }
  @Test public void corruptOrFutureSchemaLeavesOriginalEvidenceUnchanged() throws Exception {

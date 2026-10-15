@@ -23,6 +23,7 @@ public final class PersonalTypingStore {
  private final Map<String,Row> rows=new TreeMap<>();
  private final Context context;private Database database;private String device;
  private volatile boolean ready,loading;
+ private volatile RuntimeException storageFailure;
  private long epoch;
  public static synchronized PersonalTypingStore get(Context context){
   if(instance==null)instance=new PersonalTypingStore(context);else instance.ensureLoaded();return instance;
@@ -50,8 +51,8 @@ public final class PersonalTypingStore {
        c.getLong(c.getColumnIndexOrThrow("accepts")),c.getLong(c.getColumnIndexOrThrow("rejects")),c.getLong(c.getColumnIndexOrThrow("updated")));
       rows.put(r.key(),r);
      }}
-    }ready=true;
-   }catch(RuntimeException unavailable){ready=false;}finally{loading=false;}
+    }storageFailure=null;ready=true;
+   }catch(RuntimeException unavailable){storageFailure=unavailable;ready=false;}finally{loading=false;}
   });
  }
  private static String normalized(String value){return value==null?"":java.text.Normalizer.normalize(value,java.text.Normalizer.Form.NFC).toLowerCase(Locale.ROOT);}
@@ -86,7 +87,7 @@ public final class PersonalTypingStore {
      Math.min(1_000_000,(r==null?0:r.r)+(rejected?1:0)),System.currentTimeMillis());
    rows.put(next.key(),next);prune();
   }
-  writer.execute(()->{try{Row latest;synchronized(rows){latest=rows.get(next.key());}if(latest!=null)save(latest);helium314.keyboard.latin.ai.cloud.TypingSync.scheduleChanges(context);}catch(RuntimeException unavailable){ready=false;}});
+  writer.execute(()->{try{Row latest;synchronized(rows){latest=rows.get(next.key());}if(latest!=null)save(latest);helium314.keyboard.latin.ai.cloud.TypingSync.scheduleChanges(context);}catch(RuntimeException unavailable){storageFailure=unavailable;ready=false;}});
  }
  /** A known legitimate word is always protected. Any rejection vetoes auto-replacement. */
  public String automatic(String word,String language,boolean dictionaryValid){
@@ -112,6 +113,7 @@ public final class PersonalTypingStore {
  private <T>T io(Callable<T> task){try{return writer.submit(task).get(30,TimeUnit.SECONDS);}catch(Exception e){throw new IllegalStateException("Learning storage unavailable",e);}}
  /** Background-only API. An authenticated allowlisted, bounded schema; no settings/key dumps. */
  public byte[] exportData(){ensureLoaded();return io(()->{
+  if(storageFailure!=null)throw new IllegalStateException("SQLite persistence failed",storageFailure);
   JSONArray all=new JSONArray();synchronized(rows){for(Row r:rows.values())all.put(r.json());}
   return new JSONObject().put("schema",1).put("rows",all).toString().getBytes(StandardCharsets.UTF_8);
  });}

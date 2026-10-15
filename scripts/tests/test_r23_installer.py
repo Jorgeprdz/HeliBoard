@@ -67,11 +67,14 @@ elif tool=="adb":
             apk(dest)
             with zipfile.ZipFile(dest,"a") as z: z.writestr("old-version","4106")
     elif "install" in args:
+        if mode=="androidincompatible":
+            print("Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE]")
+            sys.exit(1)
         assert args[-2]=="-r"
         shutil.copyfile(args[-1],root/"installed")
 '''
 class R23InstallerTest(unittest.TestCase):
-    def run_case(self, mode, dry=False):
+    def run_case(self, mode, dry=False, repeat=False):
         with tempfile.TemporaryDirectory(prefix="r23-test-") as d:
             root=Path(d)
             bin=root/"bin";bin.mkdir()
@@ -82,6 +85,8 @@ class R23InstallerTest(unittest.TestCase):
             args=["bash",str(SCRIPT),"--run-id","123","--sha",SHA,"--once","--no-fallback"]
             if dry: args.append("--dry-run")
             result=subprocess.run(args,env=env,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,timeout=10)
+            if repeat:
+                result=subprocess.run(args,env=env,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,timeout=10)
             return result, (root/"installed").exists(), (root/"downloaded").exists(), list(root.glob("heliboard-r23.*"))
     def test_success_and_cleanup(self):
         result,installed,_,temps=self.run_case("good")
@@ -93,6 +98,13 @@ class R23InstallerTest(unittest.TestCase):
         result,installed,_,temps=self.run_case("v2")
         self.assertEqual(0,result.returncode,result.stdout)
         self.assertTrue(installed);self.assertEqual([],temps)
+
+    def test_android_rejection_is_preserved_and_same_apk_is_not_retried(self):
+        result,installed,_,temps=self.run_case("androidincompatible",repeat=True)
+        self.assertNotEqual(0,result.returncode,result.stdout)
+        self.assertFalse(installed)
+        self.assertIn("ya fue bloqueado",result.stdout)
+        self.assertEqual([],temps)
 
     def test_dry_run_never_installs(self):
         result,installed,_,temps=self.run_case("good",True)
