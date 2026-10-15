@@ -1085,7 +1085,7 @@ public class LatinIME extends InputMethodService implements
                                   final int composingSpanStart, final int composingSpanEnd) {
         super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd,
                 composingSpanStart, composingSpanEnd);
-        if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onSelectionChanged(newSelStart, newSelEnd);
+        if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onSelectionChanged(newSelStart, newSelEnd, composingSpanStart, composingSpanEnd);
         if (DebugFlags.DEBUG_ENABLED) {
             Log.i(TAG, "onUpdateSelection: oss=" + oldSelStart + ", ose=" + oldSelEnd
                     + ", nss=" + newSelStart + ", nse=" + newSelEnd

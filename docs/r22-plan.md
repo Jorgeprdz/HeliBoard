@@ -14,3 +14,9 @@ Status: RED tests committed before production changes. Local baseline did not ex
 
 RED evidence: run 38737582352 executed 152 tests; seven expected failures (four real IME assertions, spelling automatic policy, two missing Gemini theme behaviors). Stable editor metadata and Send snapshot now modeled in the test InputConnection. Production changes follow these assertions.
 Device signing audit: installed D67CB026A39E6E7D3A332551F35E34B27C8EB94DAC309020F3401767CC31F3A0 differs from securely available persistent CFEA5C3E180245EC7DB199A1D8D799A4A91E0454FEF7D02C5313B6D923B66BA2. In-place installation BLOCKED unless a matching original identity is recovered. Never uninstall or clear data.
+
+Review rulings:
+- Boundary computation is capped at eight milliseconds, but Android InputConnection IPC itself has platform-controlled latency. The slow-connection gate now precedes snapshot reads; no claim of an eight-millisecond end-to-end latency. Phone p50/p95 NOT VERIFIED.
+- A prefix beyond 512 UTF-16 units is deliberately ineligible for automatic contextual replacement because quote/token state at a truncated start is unknown. This trades long-message coverage for fail-closed protection; regression pins the limit.
+- Device rendering, DeX, latency and original installed-key recovery remain device acceptance/signing gates, not inferred from Linux CI.
+Review fixes: use fresh editor reads for apply/undo context, invalidate on composition span changes, handle multiline Enter, audit repository metadata before cleanup. Build sentinel represented as (char)1 to avoid API terminal control-character rendering.

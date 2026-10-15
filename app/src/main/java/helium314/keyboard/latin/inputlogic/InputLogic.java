@@ -552,7 +552,6 @@ public final class InputLogic {
         }
         mConnection.endBatchEdit();
         if (!processedEvent.isFunctionalKeyEvent()
-                && processedEvent.getCodePoint()!=Constants.CODE_ENTER
                 && settingsValues.mSpacingAndPunctuations.isWordSeparator(processedEvent.getCodePoint())) {
             mLatinIME.onLocalWordBoundary();
         }

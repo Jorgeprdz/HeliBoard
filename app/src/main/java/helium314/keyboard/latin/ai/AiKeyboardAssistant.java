@@ -183,7 +183,7 @@ public final class AiKeyboardAssistant {
     /** Runs only at an IME word boundary, after native autocorrection; no network/dictionary IO. */
     public void onWordBoundary() {
         if(!AiSettingsActivity.contextualEnabled(ime)||privateField()
-                ||(strip!=null&&strip.isAiActive()))return;
+                ||(strip!=null&&strip.isAiActive())||ime.getAiInputConnection().hasSlowInputConnection())return;
         EditorSnapshot base=capture();
         if(base==null||base.start!=base.end||base.start<0
                 ||ime.getAiInputConnection().hasSlowInputConnection())return;
@@ -203,14 +203,14 @@ public final class AiKeyboardAssistant {
         for(helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction correction:corrections) {
             if(!correction.automaticAllowed)continue;
             if(!base.matches(capture()))return;
-            CharSequence latest=ime.getAiInputConnection().getTextBeforeCursor(512,InputConnection.GET_TEXT_WITH_STYLES);
+            CharSequence latest=ime.getCurrentInputConnection().getTextBeforeCursor(512,InputConnection.GET_TEXT_WITH_STYLES);
             if(latest==null||!context.contentEquals(latest))return;
             CharSequence original=SpannedString.valueOf(latest.subSequence(correction.start,correction.end));
             if(automaticEdits.applySpan(base,offset+correction.start,offset+correction.end,
                     original,correction.replacement,target(original))) {
                 automaticReplacement=correction.replacement;
                 automaticAfter=capture();
-                CharSequence after=ime.getAiInputConnection().getTextBeforeCursor(512,0);
+                CharSequence after=ime.getCurrentInputConnection().getTextBeforeCursor(2048,0);
                 automaticContext=after==null?"":after.toString();
                 localSession.cancel();main.removeCallbacks(localDebounce);
                 localBase=null;localCorrection=null;
@@ -221,7 +221,7 @@ public final class AiKeyboardAssistant {
 
     public boolean undoAutomaticOnBackspace() {
         if(!automaticEdits.hasUndo())return false;
-        CharSequence before=ime.getAiInputConnection().getTextBeforeCursor(512,0);
+        CharSequence before=ime.getCurrentInputConnection()==null?null:ime.getCurrentInputConnection().getTextBeforeCursor(2048,0);
         boolean valid=!privateField()&&automaticAfter!=null&&automaticAfter.matches(capture())
             &&before!=null&&automaticContext.contentEquals(before);
         boolean undone=valid&&automaticEdits.undo(target(automaticReplacement));
@@ -316,6 +316,10 @@ public final class AiKeyboardAssistant {
     public void onUserInput(boolean backspace) {
         if(backspace&&automaticEdits.hasUndo())return;
         reset(false);
+    }
+    public void onSelectionChanged(int start,int end,int composingStart,int composingEnd) {
+        if(!ownEdit&&composingStart>=0&&composingEnd>=composingStart)clearAutomaticUndo();
+        onSelectionChanged(start,end);
     }
     public void onSelectionChanged(int start, int end) {
         if(ownEdit)return;

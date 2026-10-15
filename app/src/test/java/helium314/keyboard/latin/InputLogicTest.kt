@@ -145,6 +145,49 @@ class InputLogicTest {
         assertEquals("voy a ver si puedo ", text)
     }
 
+    private fun r22NativeCandidates(typed: String, valid: Boolean, candidates: List<String>) {
+        val typedInfo = SuggestedWordInfo(typed, "", 0, SuggestedWordInfo.KIND_TYPED, null, 0, 0)
+        val source = Mockito.mock(helium314.keyboard.latin.dictionary.Dictionary::class.java)
+        val infos = arrayListOf(typedInfo)
+        candidates.forEach { infos.add(SuggestedWordInfo(it, "", 100, SuggestedWordInfo.KIND_CORRECTION, source, 0, 0)) }
+        val words = SuggestedWords(infos, null, typedInfo, valid, false, false, SuggestedWords.INPUT_STYLE_TYPING, 0)
+        LatinIME::class.java.getDeclaredMethod("setSuggestedWords", SuggestedWords::class.java)
+            .apply { isAccessible = true }.invoke(latinIME, words)
+    }
+
+    @Test fun r22NativeCandidateObservationsDriveActualImeSpellingEdit() {
+        r22Enable("necesito cotisacion")
+        r22NativeCandidates("cotisacion", false, listOf("cotización", "cotizaciones"))
+        r22Key(' '.code)
+        assertEquals("necesito cotización ", text)
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("necesito cotisacion ", text)
+        checkConnectionConsistency()
+    }
+
+    @Test fun r22ValidPersonalAndBilingualWordsNeverUseCandidateOverride() {
+        for (word in listOf("cotisacion", "meeting")) {
+            r22Enable("necesito $word")
+            r22NativeCandidates(word, true, listOf("cotización"))
+            r22Key(' '.code)
+            assertEquals("necesito $word ", text)
+        }
+    }
+
+    @Test fun r22AmbiguousNativeCandidatesStayManual() {
+        r22Enable("casz")
+        r22NativeCandidates("casz", false, listOf("casa", "caza"))
+        r22Key(' '.code)
+        assertEquals("casz ", text)
+    }
+
+    @Test fun r22TruncatedContextFailsClosed() {
+        val original = "palabra ".repeat(70) + "voy haber si puedo"
+        r22Enable(original)
+        r22Key(' '.code)
+        assertEquals("$original ", text)
+    }
+
     @Test fun r22LaterTypingInvalidatesUndo() {
         r22Enable("voy haber si puedo")
         r22Key(' '.code)
