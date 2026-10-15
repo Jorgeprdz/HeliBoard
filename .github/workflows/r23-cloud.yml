@@ -1,4 +1,4 @@
-name: HeliBoard R2.3 Cloud Autonomous Build
+name: HeliBoard R2 verified cloud build
 on:
   push:
     branches: [feat/heliboard-ai-r2-3-full-auto-cloud]
@@ -14,8 +14,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - name: Allocate monotonic R2.3 update version
-        run: echo "HELIBOARD_VERSION_CODE=$((4107 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+      - name: Allocate monotonic R2.4 Preview update version
+        run: echo "HELIBOARD_VERSION_CODE=$((4122 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -34,6 +34,8 @@ jobs:
           bash -n scripts/termux/heliboard-r22-auto-install.sh
           bash -n scripts/termux/heliboard-r22-clean-clones.sh
           python3 -m unittest discover -s scripts/tests -v
+      - name: R2.4 typing and style acceptance gate
+        run: ./gradlew :app:testDebugUnitTest --tests '*R24*'
       - name: R2.3 behavioral acceptance gate
         run: ./gradlew :app:testDebugUnitTest --tests '*R23*'
       - name: Complete regression including local documentation paths and live dictionaries
@@ -60,20 +62,23 @@ jobs:
       - name: Verify APK integrity, package and checksum; audit certificate identity
         env:
           EXPECTED_CERT: cfea5c3e180245ec7db199a1d8d799a4a91e0454fef7d02c5313b6d923b66ba2
+          HELIBOARD_APK_NAME: HeliBoard-R2.4-Typing-Preview-debug.apk
+          HELIBOARD_EXPECTED_VERSION_NAME: 4.1-iosglass.8-ai-r24-typing-preview
         run: |
           set -euo pipefail
           mkdir r23-artifact
           mapfile -t apks < <(find app/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk')
           test "${#apks[@]}" -eq 1
-          cp "${apks[0]}" r23-artifact/HeliBoard-R2.3-debug.apk
+          cp "${apks[0]}" r23-artifact/"$HELIBOARD_APK_NAME"
           tools="$ANDROID_HOME/build-tools/37.0.0"
-          "$tools/apksigner" verify --print-certs r23-artifact/HeliBoard-R2.3-debug.apk | tee "$RUNNER_TEMP/r22-certificate.txt"
-          "$tools/aapt" dump badging r23-artifact/HeliBoard-R2.3-debug.apk > "$RUNNER_TEMP/r22-badging.txt"
+          "$tools/apksigner" verify --print-certs r23-artifact/"$HELIBOARD_APK_NAME" | tee "$RUNNER_TEMP/r22-certificate.txt"
+          "$tools/aapt" dump badging r23-artifact/"$HELIBOARD_APK_NAME" > "$RUNNER_TEMP/r22-badging.txt"
+          grep -Fx "sdkVersion:'21'" "$RUNNER_TEMP/r22-badging.txt"
           python3 scripts/ci/r23-manifest.py
           (cd r23-artifact && sha256sum -c SHA256SUMS.txt)
       - uses: actions/upload-artifact@v4
         with:
-          name: HeliBoard-R2.3-debug-apk
+          name: HeliBoard-R2.4-Typing-Preview-debug-apk
           path: r23-artifact/*
           if-no-files-found: error
           retention-days: 14
@@ -81,7 +86,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: HeliBoard-R2.3-reports
+          name: HeliBoard-R2.4-Typing-Preview-reports
           path: |
             app/build/reports
             app/build/test-results

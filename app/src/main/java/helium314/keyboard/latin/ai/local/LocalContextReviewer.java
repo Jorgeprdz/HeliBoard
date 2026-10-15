@@ -31,6 +31,10 @@ public final class LocalContextReviewer {
         List<String> candidates(String word);
         /** True only after native validity checked the configured languages and personal words. */
         default boolean knownInvalid(String word) { return false; }
+        default double prior(String source,String candidate){return 0;}
+        default double personalPreference(String source,String candidate){return 0;}
+        default boolean rejected(String source,String candidate){return false;}
+        default double keyDistance(char a,char b){return TypingCandidateRanker.QWERTY.distance(a,b);}
     }
     public interface Cancellation { boolean cancelled(); }
     public static final class Correction {
@@ -70,7 +74,7 @@ public final class LocalContextReviewer {
                 Correction proposal = hasCapital(token.word) ? null : grammar(text, tokens, i, lexicon);
                 if (proposal == null && !lexicon.valid(token.lower)
                         && !hasCapital(token.word)) {
-                    proposal = spelling(tokens, i, lexicon, cancellation);
+                    proposal = spelling(text, tokens, i, lexicon, cancellation);
                 }
                 if (proposal != null && !ignored.contains(proposal.original.toLowerCase(Locale.ROOT))
                         && !ignored.contains(proposal.replacement.toLowerCase(Locale.ROOT))
@@ -138,39 +142,15 @@ public final class LocalContextReviewer {
                 && lexicon.valid(word.substring(0, word.length() - 1) + "ó"))));
     }
 
-    private static Correction spelling(List<Token> tokens, int i, Lexicon lexicon,
+    private static Correction spelling(String text, List<Token> tokens, int i, Lexicon lexicon,
                                         Cancellation cancellation) {
         Token t = tokens.get(i);
-        List<String> candidates = lexicon.candidates(t.lower);
-        if (candidates == null) return null;
-        String best = null;
-        double bestScore = -1, secondScore = -1;
-        Set<String> seen = new HashSet<>();
-        int count = 0;
-        for (String candidate : candidates) {
-            if (++count > MAX_CANDIDATES || cancellation.cancelled()) break;
-            if (candidate == null || candidate.length() > MAX_WORD_LENGTH || candidate.length() < 2
-                    || hasCapital(candidate) || !letterWord(candidate)) continue;
-            String value = candidate.toLowerCase(Locale.ROOT);
-            if (!seen.add(value) || NEGATIONS.contains(value) || !lexicon.valid(value)) continue;
-            String source = withoutAccents(t.lower), target = withoutAccents(value);
-            int distance = distance(source, target);
-            if (distance > 2 || distance > Math.max(1, source.length() / 4)) continue;
-            double score = 1.0 - distance * .12;
-            if (source.equals(target)) score += .1;
-            // Weak agreement tie-breaker, never a semantic replacement of a valid noun.
-            if (i > 0 && ARTICLES.contains(tokens.get(i - 1).lower)) {
-                String article = tokens.get(i - 1).lower;
-                if ((article.endsWith("a") && value.endsWith("a"))
-                        || (article.equals("el") && value.endsWith("o"))) score += .025;
-            }
-            if (score > bestScore) {
-                secondScore = bestScore; bestScore = score; best = value;
-            } else secondScore = Math.max(secondScore, score);
-        }
-        if (best == null || best.equals(t.lower)) return null;
-        double confidence = bestScore == secondScore ? .65
-                : Math.min(.97, Math.max(.70, bestScore));
+        String previous=i>0&&linked(text,tokens,i-1,i)?tokens.get(i-1).lower:"",
+            next=i+1<tokens.size()&&linked(text,tokens,i,i+1)?tokens.get(i+1).lower:"";
+        TypingCandidateRanker.Choice choice=TypingCandidateRanker.choose(t.lower,previous,next,lexicon,cancellation);
+        if(choice==null)return null;
+        String best=choice.word;
+        double confidence=Math.min(.97,Math.max(.65,1-choice.cost*.12));
         // Deliberately narrow: long lowercase words, one s/z/c confusion after accent
         // normalization, an accented verified target and a decisive candidate margin.
         // This decision is independent of the heuristic confidence value.
@@ -184,8 +164,8 @@ public final class LocalContextReviewer {
         }
         boolean automatic=lexicon.knownInvalid(t.lower)&&!lexicon.valid(t.lower)
             &&source.length()>=8&&confusion&&differences==1
-            &&!best.equals(target)&&bestScore-secondScore>=.12;
-        return correction(t, best, "native-dictionary-spelling-candidate", confidence, automatic);
+            &&!best.equals(target)&&choice.margin>=.30;
+        return correction(t, best, "motor-error-native-context-ranking", confidence, automatic||choice.automatic);
     }
 
     private static List<Token> tokenize(String text) {

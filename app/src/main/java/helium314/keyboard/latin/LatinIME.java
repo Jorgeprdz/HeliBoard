@@ -657,7 +657,7 @@ public class LatinIME extends InputMethodService implements
         final ArrayList<Locale> locales = new ArrayList<>();
         locales.add(subtypeLocale);
         locales.addAll(mSettings.getCurrent().mSecondaryLocales);
-        final java.util.List<Locale> aiLocales=helium314.keyboard.latin.ai.local.BilingualLocalePolicy.locales(locales,helium314.keyboard.latin.ai.AiSettingsActivity.contextualEnabled(this));
+        final java.util.List<Locale> aiLocales=helium314.keyboard.latin.ai.local.BilingualLocalePolicy.locales(locales,helium314.keyboard.latin.ai.AiSettingsActivity.typingEnabled(this));
         locales.clear();locales.addAll(aiLocales);
         if (mDictionaryFacilitator.usesSameSettings(
                 locales,
@@ -1432,7 +1432,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     public void onLocalWordBoundary() {
-        if (!helium314.keyboard.latin.ai.AiSettingsActivity.contextualEnabled(this)) return;
+        if (!helium314.keyboard.latin.ai.AiSettingsActivity.typingEnabled(this)) return;
         if (mAiKeyboardAssistant == null) mAiKeyboardAssistant = new AiKeyboardAssistant(this);
         mAiKeyboardAssistant.onWordBoundary();
     }
@@ -1440,6 +1440,11 @@ public class LatinIME extends InputMethodService implements
         return mAiKeyboardAssistant != null && mAiKeyboardAssistant.undoAutomaticOnBackspace();
     }
 
+    public void onNativeCorrectionReverted(String typed,String replacement){
+        if(!helium314.keyboard.latin.ai.AiSettingsActivity.typingEnabled(this))return;
+        if(mAiKeyboardAssistant==null)mAiKeyboardAssistant=new AiKeyboardAssistant(this);
+        mAiKeyboardAssistant.onNativeCorrectionReverted(typed,replacement);
+    }
     public RichInputConnection getAiInputConnection() { return mInputLogic.mConnection; }
     public boolean applyAiReplacement(int start, int end, CharSequence expected, CharSequence replacement) {
         boolean accepted = mInputLogic.applyAiReplacement(start, end, expected, replacement);
@@ -1538,10 +1543,18 @@ public class LatinIME extends InputMethodService implements
         return null != mSuggestionStripView;
     }
 
-    private void setSuggestedWords(final SuggestedWords suggestedWords) {
+    private void setSuggestedWords(SuggestedWords suggestedWords) {
+        if(helium314.keyboard.latin.ai.AiSettingsActivity.typingEnabled(this)) {
+            if(mAiKeyboardAssistant==null)mAiKeyboardAssistant=new AiKeyboardAssistant(this);
+            suggestedWords=mAiKeyboardAssistant.protectNativeSuggestions(suggestedWords);
+        }
+        if(helium314.keyboard.latin.ai.AiSettingsActivity.styleEnabled(this)) {
+            if(mAiKeyboardAssistant==null)mAiKeyboardAssistant=new AiKeyboardAssistant(this);
+            suggestedWords=mAiKeyboardAssistant.rankStylePredictions(suggestedWords);
+        }
         final SettingsValues currentSettingsValues = mSettings.getCurrent();
         mInputLogic.setSuggestedWords(suggestedWords);
-        if(helium314.keyboard.latin.ai.AiSettingsActivity.contextualEnabled(this)) {
+        if(helium314.keyboard.latin.ai.AiSettingsActivity.typingEnabled(this)) {
             if(mAiKeyboardAssistant==null)mAiKeyboardAssistant=new AiKeyboardAssistant(this);
             mAiKeyboardAssistant.onPredictions(suggestedWords,mSuggestionStripView);
         }

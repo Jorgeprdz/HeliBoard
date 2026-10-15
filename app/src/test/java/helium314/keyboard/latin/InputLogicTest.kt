@@ -127,6 +127,101 @@ class InputLogicTest {
         } finally { field.set(settingsValues, original) }
     }
 
+    @Test fun R24MotorCorrectionAndUndoReuseNativeTransaction() {
+        r22Enable("poryectos")
+        r22NativeCandidates("poryectos", false, listOf("proyectos"))
+        r22Key(' '.code)
+        assertEquals("proyectos ", text)
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("poryectos ", text)
+        latinIME.onLocalWordBoundary()
+        assertEquals("poryectos ", text)
+        checkConnectionConsistency()
+    }
+
+    @Test fun R24ProtectedVocabularyIsNotAutocorrected() {
+        r22Enable("poryectos")
+        val learning = helium314.keyboard.latin.ai.local.PersonalTypingStore.get(latinIME)
+        learning.erase()
+        kotlin.test.assertTrue(learning.keepWord("poryectos", "en-US"))
+        r22NativeCandidates("poryectos", false, listOf("proyectos"))
+        r22Key(' '.code)
+        assertEquals("poryectos ", text)
+        checkConnectionConsistency()
+    }
+
+    @Test fun R24NativeRejectionVetoesFutureAutomaticCandidate() {
+        r22Enable("poryectos")
+        val assistant = r23Assistant()
+        val model = helium314.keyboard.latin.ai.local.PersonalTypingStore.get(latinIME)
+        model.erase()
+        assistant.onNativeCorrectionReverted("poryectos", "proyectos")
+        val typed = SuggestedWordInfo("poryectos", "", 0, SuggestedWordInfo.KIND_TYPED, null, -1, -1)
+        val corrected = SuggestedWordInfo("proyectos", "", 100, SuggestedWordInfo.KIND_CORRECTION, null, -1, -1)
+        val words = SuggestedWords(arrayListOf(typed, corrected), null, typed, false, true, false, SuggestedWords.INPUT_STYLE_TYPING, 0)
+        val guarded = assistant.protectNativeSuggestions(words)
+        kotlin.test.assertFalse(guarded.mWillAutoCorrect)
+        assertEquals("poryectos", guarded.mTypedWordInfo!!.mWord)
+        kotlin.test.assertTrue(helium314.keyboard.latin.ai.AiSettingsActivity.rejectedCorrections(latinIME).contains("poryectos→proyectos"))
+        assertEquals("poryectos", text)
+    }
+
+    @Test fun R24ProtectedEditorCannotLearnStyleOrReorderPredictions() {
+        r22Enable("Oye, además.")
+        val assistant = r23Assistant()
+        val model = helium314.keyboard.latin.ai.local.PersonalTypingStore.get(latinIME)
+        model.erase()
+        latinIME.getSharedPreferences("keyboard_ai_private", 0).edit().putBoolean("personal_style_consent", true).commit()
+        setInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)
+        val infos = arrayListOf(SuggestedWordInfo("asimismo", "", 100, SuggestedWordInfo.KIND_PREDICTION, null, -1, -1),
+            SuggestedWordInfo("hey", "", 90, SuggestedWordInfo.KIND_PREDICTION, null, -1, -1))
+        val words = SuggestedWords(infos, null, null, false, false, false, SuggestedWords.INPUT_STYLE_PREDICTION, 0)
+        kotlin.test.assertSame(words, assistant.rankStylePredictions(words))
+        assistant.onWordBoundary()
+        kotlin.test.assertTrue(model.styleSnapshot().isEmpty())
+        latinIME.getSharedPreferences("keyboard_ai_private", 0).edit().putBoolean("personal_style_consent", false).commit()
+    }
+
+    @Test fun R24StyleLearnsCompleteEllipsisOnceWithoutTreatingLetterNAsSeparator() {
+        r22Enable("Oye, además quería mencionar una reunión...")
+        val assistant = r23Assistant()
+        val model = helium314.keyboard.latin.ai.local.PersonalTypingStore.get(latinIME)
+        model.erase()
+        latinIME.getSharedPreferences("keyboard_ai_private", 0).edit().putBoolean("personal_style_consent", true).commit()
+        try {
+            assistant.onWordBoundary()
+            assistant.onWordBoundary()
+            val profile = model.styleSnapshot()
+            assertEquals(1L, profile["opening.casual"])
+            assertEquals(1L, profile["connector.además"])
+            assertEquals(1L, profile["ending.ellipsis"])
+            kotlin.test.assertFalse(profile.toString().contains("reunión"))
+            assertEquals("Oye, además quería mencionar una reunión...", text)
+            model.eraseStyle()
+            kotlin.test.assertTrue(model.styleSnapshot().isEmpty())
+        } finally {
+            latinIME.getSharedPreferences("keyboard_ai_private", 0).edit().putBoolean("personal_style_consent", false).commit()
+        }
+    }
+
+    @Test fun R24StyleOptOutPreservesOriginalSuggestionsAndOptInUsesSameStrip() {
+        r22Enable("Oye ")
+        val assistant = r23Assistant()
+        val infos = arrayListOf(
+            SuggestedWordInfo("asimismo", "", 100, SuggestedWordInfo.KIND_PREDICTION, null, -1, -1),
+            SuggestedWordInfo("hey", "", 90, SuggestedWordInfo.KIND_PREDICTION, null, -1, -1))
+        val words = SuggestedWords(infos, null, null, false, false, false, SuggestedWords.INPUT_STYLE_PREDICTION, 0)
+        latinIME.getSharedPreferences("keyboard_ai_private", 0).edit()
+            .putBoolean("personal_style_consent", false).commit()
+        kotlin.test.assertSame(words, assistant.rankStylePredictions(words))
+        latinIME.getSharedPreferences("keyboard_ai_private", 0).edit()
+            .putBoolean("personal_style_consent", true).putString("style_tone", "casual").commit()
+        val ranked = assistant.rankStylePredictions(words)
+        assertEquals("hey", ranked.getWord(0))
+        kotlin.test.assertFalse(ranked.mWillAutoCorrect)
+        latinIME.getSharedPreferences("keyboard_ai_private", 0).edit().putBoolean("personal_style_consent", false).commit()
+    }
+
     @Test fun R23PersonalBoundaryAndSingleBackspaceUseRealIme() {
         r22Enable("teh ")
         val assistant = r23Assistant()
@@ -996,6 +1091,8 @@ class InputLogicTest {
         // reset settings
         latinIME.getSharedPreferences("keyboard_ai_private", 0).edit().clear().commit()
         latinIME.prefs().edit { clear() }
+        // The new persistent singleton must be isolated just like preferences/dictionaries.
+        helium314.keyboard.latin.ai.local.PersonalTypingStore.get(latinIME).erase()
 
         setText("") // (re)sets selection and composing word
     }

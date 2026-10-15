@@ -2068,6 +2068,11 @@ public final class InputLogic {
             mWordComposer.setComposingWord(codePoints, mLatinIME.getCoordinatesForCurrentKeyboard(codePoints));
             setComposingTextInternal(textToCommit, 1);
         }
+        // Observe only the native, attributable Backspace revert; do not consume another key.
+        final CharSequence restored = mConnection.getTextBeforeCursor(stringToCommit.length(), 0);
+        if (restored != null && restored.toString().equals(stringToCommit)) {
+            mLatinIME.onNativeCorrectionReverted(originallyTypedWord.toString(), committedWordString);
+        }
         // Don't restart suggestion yet. We'll restart if the user deletes the separator.
         mLastComposedWord = LastComposedWord.NOT_A_COMPOSED_WORD;
 

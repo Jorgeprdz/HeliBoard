@@ -21,10 +21,12 @@ public final class PersonalTypingStore {
  private static final int LIMIT=4096, MAX_BYTES=2_000_000;
  private final ExecutorService writer=Executors.newSingleThreadExecutor();
  private final Map<String,Row> rows=new TreeMap<>();
+ private final Map<String,Long> style=new TreeMap<>();
+ private final Set<String> vocabulary=new TreeSet<>();
  private final Context context;private Database database;private String device;
  private volatile boolean ready,loading;
  private volatile RuntimeException storageFailure;
- private long epoch;
+ private long epoch,styleEpoch;
  public static synchronized PersonalTypingStore get(Context context){
   if(instance==null)instance=new PersonalTypingStore(context);else instance.ensureLoaded();return instance;
  }
@@ -38,6 +40,7 @@ public final class PersonalTypingStore {
   if(Build.VERSION.SDK_INT>=24&&!((android.os.UserManager)context.getSystemService(Context.USER_SERVICE)).isUserUnlocked())return;
   loading=true;
   final long initializationEpoch=generation();
+  final long initializationStyleEpoch;synchronized(rows){initializationStyleEpoch=styleEpoch;}
   writer.execute(()->{
    try {
     if(Build.VERSION.SDK_INT>=24&&!((android.os.UserManager)context.getSystemService(Context.USER_SERVICE)).isUserUnlocked())return;
@@ -52,7 +55,16 @@ public final class PersonalTypingStore {
        c.getLong(c.getColumnIndexOrThrow("accepts")),c.getLong(c.getColumnIndexOrThrow("rejects")),c.getLong(c.getColumnIndexOrThrow("updated")));
       if(epoch==initializationEpoch){Row old=rows.get(r.key());rows.put(r.key(),old==null?r:new Row(r.error,r.correction,r.language,r.device,Math.max(old.a,r.a),Math.max(old.r,r.r),Math.max(old.t,r.t)));}
      }}
-    }storageFailure=null;ready=true;
+    }
+    Map<String,Long> loadedStyle=new TreeMap<>();Set<String> loadedWords=new TreeSet<>();
+    try(Cursor cur=database.getReadableDatabase().query("style",null,null,null,null,null,null)){
+     while(cur.moveToNext()){String feature=cur.getString(0);if(PersonalStyleProfile.KEYS.contains(feature))loadedStyle.put(feature,Math.max(0,Math.min(1000000,cur.getLong(1))));}
+    }
+    try(Cursor cur=database.getReadableDatabase().query("vocabulary",null,null,null,null,null,null,"512")){
+     while(cur.moveToNext())loadedWords.add(cur.getString(0)+Character.toString(9)+cur.getString(1));
+    }
+    synchronized(rows){if(epoch==initializationEpoch){if(styleEpoch==initializationStyleEpoch)style.putAll(loadedStyle);vocabulary.addAll(loadedWords);}}
+    storageFailure=null;ready=true;
    }catch(RuntimeException unavailable){storageFailure=unavailable;ready=false;}finally{loading=false;}
   });
  }
@@ -108,6 +120,69 @@ public final class PersonalTypingStore {
   }
   return best!=null&&!rejected&&first>=5&&first-second>=4&&second*4<first?best:null;
  }
+ /** Bounded evidence lookup; no disk IO on the typing thread. */
+ public double preference(String error,String correction,String language){
+  long accepted=0,rejected=0;
+  synchronized(rows){for(Row r:rows.values())if(r.error.equals(error)&&r.correction.equals(correction)&&r.language.equals(language)){accepted+=r.a;rejected+=r.r;}}
+  return rejected>0?0:Math.min(.18,accepted*.03);
+ }
+ public boolean rejected(String error,String correction,String language){
+  synchronized(rows){for(Row r:rows.values())if(r.error.equals(error)&&r.correction.equals(correction)&&r.language.equals(language)&&r.r>0)return true;}return false;
+ }
+ public boolean protectedWord(String value){
+  String prefix=normalized(value)+Character.toString(9);synchronized(rows){for(String key:vocabulary)if(key.startsWith(prefix))return true;}return false;
+ }
+ private static boolean safeVocabulary(String value){
+  if(value==null||!value.matches("[\\p{L}\\p{M}]{2,32}")||helium314.keyboard.latin.ai.SensitiveInputPolicy.sensitiveText(value))return false;
+  int upper=0;
+  for(int offset=0;offset<value.length();){
+   int codePoint=value.codePointAt(offset);offset+=Character.charCount(codePoint);
+   if(Character.isUpperCase(codePoint)&&++upper>1)return false;
+  }
+  return true;
+ }
+ /** Explicit keep-word evidence only. Manual dictionaries remain authoritative as well. */
+ public boolean keepWord(String value,String language){
+  ensureLoaded();if(!ready||!safeVocabulary(value)||!locale(language))return false;
+  String normalized=normalized(value),key=normalized+Character.toString(9)+language;long ticket;
+  synchronized(rows){if(vocabulary.size()>=512&&!vocabulary.contains(key))return false;vocabulary.add(key);ticket=epoch;}
+  writer.execute(()->{try{synchronized(rows){if(epoch!=ticket||!vocabulary.contains(key))return;}
+   ContentValues v=new ContentValues();v.put("word",normalized);v.put("language",language);
+   if(database.getWritableDatabase().insertWithOnConflict("vocabulary",null,v,SQLiteDatabase.CONFLICT_REPLACE)<0)throw new SQLiteException("Vocabulary write failed");
+  }catch(RuntimeException e){storageFailure=e;}});return true;
+ }
+ public void forgetWord(String value,String language){
+  String normalized=normalized(value);synchronized(rows){vocabulary.remove(normalized+Character.toString(9)+language);}
+  writer.execute(()->{try{if(database!=null)database.getWritableDatabase().delete("vocabulary","word=? AND language=?",new String[]{normalized,language});}catch(RuntimeException e){storageFailure=e;}});
+ }
+ public Map<String,Long> styleSnapshot(){synchronized(rows){return Collections.unmodifiableMap(new TreeMap<>(style));}}
+ public List<String> inspect(){
+  List<String> result=new ArrayList<>();synchronized(rows){
+   for(String word:vocabulary){if(result.size()==40)break;result.add("Conservar: "+word.replace((char)9,' '));}
+   for(Row r:rows.values()){if(result.size()==40)break;result.add(r.error+" → "+r.correction+" ["+r.language+"] +"+r.a+" / rechazo "+r.r);}
+  }return Collections.unmodifiableList(result);
+ }
+ /** The caller must supply initial opt-in, field/context policy and one completed sentence. */
+ public void observeStyle(String sentence,String language){observeStyle(sentence,language,false);}
+ public void observeStyle(String sentence,String language,boolean messageOpening){
+  ensureLoaded();if(!ready)return;Map<String,Long> features=PersonalStyleProfile.features(sentence,language,messageOpening);
+  if(features.isEmpty())return;long ticket;Map<String,Long> next=new TreeMap<>();
+  synchronized(rows){ticket=styleEpoch;for(String key:features.keySet()){
+   long value=Math.min(1000000,style.getOrDefault(key,0L)+1);style.put(key,value);next.put(key,value);
+  }}
+  writer.execute(()->{try{
+   synchronized(rows){if(styleEpoch!=ticket)return;}
+   SQLiteDatabase db=database.getWritableDatabase();db.beginTransaction();
+   try{for(Map.Entry<String,Long> item:next.entrySet()){
+    ContentValues v=new ContentValues();v.put("feature",item.getKey());v.put("count",item.getValue());
+    if(db.insertWithOnConflict("style",null,v,SQLiteDatabase.CONFLICT_REPLACE)<0)throw new SQLiteException("Style write failed");
+   }db.setTransactionSuccessful();}finally{db.endTransaction();}
+  }catch(RuntimeException e){storageFailure=e;}});
+ }
+ public void eraseStyle(){
+  synchronized(rows){styleEpoch++;style.clear();}
+  writer.execute(()->{try{if(database!=null)database.getWritableDatabase().delete("style",null,null);}catch(RuntimeException e){storageFailure=e;}});
+ }
  private void prune(){while(rows.size()>LIMIT){Row oldest=Collections.min(rows.values(),Comparator.comparingLong(r->r.t));rows.remove(oldest.key());}}
  private void save(Row r){
   ContentValues v=new ContentValues();v.put("error",r.error);v.put("correction",r.correction);v.put("language",r.language);v.put("device",r.device);
@@ -162,8 +237,11 @@ public final class PersonalTypingStore {
   });
  }
  public void eraseAsync(){
-  synchronized(rows){epoch++;rows.clear();}
-  writer.execute(()->{if(database!=null)database.getWritableDatabase().delete("evidence",null,null);});
+  synchronized(rows){epoch++;styleEpoch++;rows.clear();style.clear();vocabulary.clear();}
+  writer.execute(()->{if(database!=null){
+   SQLiteDatabase db=database.getWritableDatabase();db.beginTransaction();
+   try{db.delete("evidence",null,null);db.delete("style",null,null);db.delete("vocabulary",null,null);db.setTransactionSuccessful();}finally{db.endTransaction();}
+  }});
  }
  public void erase(){ensureLoaded();eraseAsync();io(()->null);}
  private static final class Row {
@@ -173,9 +251,16 @@ public final class PersonalTypingStore {
   JSONObject json()throws JSONException{return new JSONObject().put("error",error).put("correction",correction).put("language",language).put("device",device).put("a",a).put("r",r).put("t",t);}
  }
  private static final class Database extends SQLiteOpenHelper{
-  Database(Context c){super(c,"personal_typing_v1.db",null,1);setWriteAheadLoggingEnabled(true);}
-  public void onCreate(SQLiteDatabase db){db.execSQL("CREATE TABLE evidence(error TEXT NOT NULL,correction TEXT NOT NULL,language TEXT NOT NULL,device TEXT NOT NULL,accepts INTEGER NOT NULL,rejects INTEGER NOT NULL,frequency INTEGER NOT NULL,confidence REAL NOT NULL,updated INTEGER NOT NULL,PRIMARY KEY(error,correction,language,device))");}
-  public void onUpgrade(SQLiteDatabase db,int old,int next){throw new SQLiteException("Unsupported learning migration; original database retained");}
+  Database(Context c){super(c,"personal_typing_v1.db",null,2);setWriteAheadLoggingEnabled(true);}
+  public void onCreate(SQLiteDatabase db){db.execSQL("CREATE TABLE evidence(error TEXT NOT NULL,correction TEXT NOT NULL,language TEXT NOT NULL,device TEXT NOT NULL,accepts INTEGER NOT NULL,rejects INTEGER NOT NULL,frequency INTEGER NOT NULL,confidence REAL NOT NULL,updated INTEGER NOT NULL,PRIMARY KEY(error,correction,language,device))");createProfile(db);}
+  private static void createProfile(SQLiteDatabase db){
+   db.execSQL("CREATE TABLE IF NOT EXISTS style(feature TEXT PRIMARY KEY NOT NULL,count INTEGER NOT NULL)");
+   db.execSQL("CREATE TABLE IF NOT EXISTS vocabulary(word TEXT NOT NULL,language TEXT NOT NULL,PRIMARY KEY(word,language))");
+  }
+  public void onUpgrade(SQLiteDatabase db,int old,int next){
+   if(old==1&&next==2){createProfile(db);return;}
+   throw new SQLiteException("Unsupported learning migration; original database retained");
+  }
   public void onDowngrade(SQLiteDatabase db,int old,int next){throw new SQLiteException("Newer learning schema; original database retained");}
  }
 }
