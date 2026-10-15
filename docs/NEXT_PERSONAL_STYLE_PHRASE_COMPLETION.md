@@ -51,9 +51,33 @@ Ejemplos conceptuales, no entrenados ni implementados:
 - Controles para inspeccionar, pausar, desactivar, borrar y excluir aplicaciones/campos del aprendizaje, con política de retención limitada.
 - Recuperación mediante futuras copias cifradas de Drive solo con elección explícita, esquema versionado y opción de exportar/importar perfil; jamás sincronizar datos personales crudos por defecto.
 
+### D0. Regla no negociable: inteligencia directa, sin intermediarios ni confirmaciones de rutina
+
+**Requisito del usuario (2026-10-15):** `Inteligente es inteligente`: no obligar a confirmar lo evidente, abrir menús ni hacer cinco clics para completar una acción de escritura. El teclado debe **trabajar mientras el usuario escribe**, no comportarse como un asistente aparte.
+
+- **Cero clics para errores inequívocos:** autocorregir de inmediato, preferentemente al finalizar palabra, typos de teclas próximas, letras omitidas/duplicadas/transpuestas y acentos evidentes. Usar contexto antes y después cuando esté disponible, y un sistema de confianza **calibrada**; no convertir `dw` en `DW` por parecer una sigla.
+- **Cero clics para ver las continuaciones:** las frases se muestran proactivamente en la barra de sugerencias o como previsualización discreta, sin abrir `IA`, `Avanzado`, `Reescribir` ni cuadros de diálogo.
+- **Una acción inmediata para aceptar contenido NO escrito aún:** toque en la sugerencia o gesto/tecla ya disponible que **no rompa espacio, Enter, selección ni accesos existentes**. No añadir `Aplicar → Revisar → Confirmar`; ninguna confirmación adicional después de aceptar. Las frases son contenido nuevo, distinto a corregir errores obvios; no insertarlas silenciosamente si incluyen significado o compromisos nuevos.
+- **Cero interrupciones:** no mostrar popups de "¿quieres corregir?", solicitudes de permiso por cada uso, spinners sobre el editor, ni bloquear el hilo del teclado. Los permisos y elecciones de privacidad se configuran **una sola vez** cuando corresponda.
+- **Silencioso ante la duda:** si la corrección no es inequívoca, conservar el texto y ofrecer candidato sin fricción. Que falte certeza no autoriza bloquear o interrumpir la escritura.
+- **Aprendizaje implícito limitado y seguro:** observar las señales de interacción **no sensibles** ya disponibles (aceptar candidato, deshacer por Backspace, rechazo explícito) sin guardar pulsaciones ni textos completos. El consentimiento para aprender el estilo debe ser inicial y revocable; no pedir confirmación en cada frase.
+- **Protección de intención:** jamás autocambiar números, negaciones, nombres, siglas, texto de código, URLs ni palabras válidas solo por mejorar fluidez. Priorizar la precisión y la tasa de falsos cambios sobre el número de sustituciones.
+- **Deshacer instantáneo:** Backspace revierte una sustitución automática inmediatamente y pesa como veto para el mismo patrón; la aplicación no debe pelearse con el usuario repitiéndola.
+- **Sin terceros como pasos intermedios de UX:** el usuario no debe salir del teclado para completar, pegar desde otra app, ni abrir herramientas externas. Un proveedor local/remoto puede existir detrás del teclado **cuando esté autorizado**, pero el resultado debe integrarse en el editor. No transmitir contenido al proveedor externo automáticamente.
+
+**Contrato observable / pruebas:**
+1. Escribir `poryectos` -> `proyectos` cuando esté inequívoco, **sin taps**.
+2. Escribir `Estado dw Mexico` -> candidato `Estado de México` con contexto; no forzar cambio si todavía no hay suficiente evidencia.
+3. Escribir `DW` como nombre/sigla -> permanece `DW`; `2 cocas` sigue intacto.
+4. Redactar `Oye, te quería comentar` -> aparece continuación automática **sin menús**; un solo gesto para aceptarla; cero confirmaciones posteriores.
+5. Rechazar una autocorrección mediante Backspace -> deshacer inmediato y **no repetir la misma corrección** en el mismo contexto.
+6. Sin modelo contextual cargado, internet ni servidor -> mecanografía y autocorrección local continúan normales, sin diálogos ni ralentización.
+
+**Métrica UX obligatoria:** corrección obvia = **0 acciones**; mostrar autocompletado = **0 acciones**; aceptar frase = **máximo 1 acción**; corregir/revertir error = **1 Backspace**; no existen flujos de 3–5 clics para escribir.
+
 ### D. Contexto y UX
 - Usar barra de sugerencias existente sin cambiar geometría y sin interrumpir predicción normal, portapapeles, correcciones o el micrófono.
-- Distinguir `palabra` (candidato de autocorrección) de `frase` (continuación explícita); no insertar párrafos con un espacio.
+- Distinguir `palabra` (autocorrección automática si hay alta confianza) de `frase` (continuación sugerida proactivamente y aceptable con una única acción); no insertar párrafos con un espacio.
 - Vistas de ajustes para `Aprender mi estilo`, `Autocompletar frases`, `Preferencia de tono`, `Gestionar aprendizaje`, `Excluir apps` y `Borrar mi perfil`; el usuario decide alcance y profundidad.
 - Soportar ES-MX, EN-US, español informal y mezcla de ambos sin capitalizar siglas accidentalmente.
 
