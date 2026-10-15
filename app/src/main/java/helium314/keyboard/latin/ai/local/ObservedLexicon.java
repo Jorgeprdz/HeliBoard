@@ -2,7 +2,7 @@
 package helium314.keyboard.latin.ai.local;
 import helium314.keyboard.latin.ai.SensitiveInputPolicy;
 import java.util.*;
-/** Bounded ephemeral dictionary observations. The reviewer never calls native dictionaries. */
+/** Bounded ephemeral native candidates and keyboard geometry; no persistent editor text. */
 public final class ObservedLexicon {
  private static final class Entry {final boolean valid,complete;final List<String> candidates;Entry(boolean v,List<String> c,boolean checked){valid=v;complete=checked;candidates=Collections.unmodifiableList(c);}}
  private final LinkedHashMap<String,Entry> words=new LinkedHashMap<>();
@@ -29,6 +29,13 @@ public final class ObservedLexicon {
    if(positions==null)return Double.POSITIVE_INFINITY;
    double[] x=positions.get(a),y=positions.get(b);if(x==null||y==null)return Double.POSITIVE_INFINITY;
    return Math.hypot(x[0]-y[0],x[1]-y[1])/Math.max(1,(x[2]+y[2])/2);
+  }
+  public boolean spaceNeighbor(char c){
+   if(positions==null)return false;
+   double[] key=positions.get(c),space=positions.get(' ');
+   return key!=null&&space!=null&&key.length>=4&&space.length>=4
+     &&Math.abs(key[0]-space[0])<=space[2]/2&&space[1]>key[1]
+     &&space[1]-key[1]<=key[3]*1.6;
   }
   public boolean valid(String word){Entry e=copy.get(word.toLowerCase(Locale.ROOT));return e!=null&&e.valid;}
   public boolean knownInvalid(String word){Entry e=copy.get(word.toLowerCase(Locale.ROOT));return e!=null&&e.complete&&!e.valid;}

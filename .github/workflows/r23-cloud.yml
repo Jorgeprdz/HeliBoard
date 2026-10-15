@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - name: Allocate monotonic R2.4 Preview update version
+      - name: Allocate monotonic R2.4.1 Typing Quality Preview update version
         run: echo "HELIBOARD_VERSION_CODE=$((4122 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -34,6 +34,8 @@ jobs:
           bash -n scripts/termux/heliboard-r22-auto-install.sh
           bash -n scripts/termux/heliboard-r22-clean-clones.sh
           python3 -m unittest discover -s scripts/tests -v
+      - name: R2.4.1 real-world writing acceptance gate
+        run: ./gradlew :app:testDebugUnitTest --tests '*R241*'
       - name: R2.4 typing and style acceptance gate
         run: ./gradlew :app:testDebugUnitTest --tests '*R24*'
       - name: R2.3 behavioral acceptance gate
@@ -62,8 +64,8 @@ jobs:
       - name: Verify APK integrity, package and checksum; audit certificate identity
         env:
           EXPECTED_CERT: cfea5c3e180245ec7db199a1d8d799a4a91e0454fef7d02c5313b6d923b66ba2
-          HELIBOARD_APK_NAME: HeliBoard-R2.4-Typing-Preview-debug.apk
-          HELIBOARD_EXPECTED_VERSION_NAME: 4.1-iosglass.8-ai-r24-typing-preview
+          HELIBOARD_APK_NAME: HeliBoard-R2.4.1-Typing-Quality-Preview-debug.apk
+          HELIBOARD_EXPECTED_VERSION_NAME: 4.1-iosglass.8-ai-r241-typing-quality-preview
         run: |
           set -euo pipefail
           mkdir r23-artifact
@@ -78,7 +80,7 @@ jobs:
           (cd r23-artifact && sha256sum -c SHA256SUMS.txt)
       - uses: actions/upload-artifact@v4
         with:
-          name: HeliBoard-R2.4-Typing-Preview-debug-apk
+          name: HeliBoard-R2.4.1-Typing-Quality-Preview-debug-apk
           path: r23-artifact/*
           if-no-files-found: error
           retention-days: 14
@@ -86,7 +88,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: HeliBoard-R2.4-Typing-Preview-reports
+          name: HeliBoard-R2.4.1-Typing-Quality-Preview-reports
           path: |
             app/build/reports
             app/build/test-results

@@ -161,6 +161,7 @@ public final class AiKeyboardAssistant {
     private int localOffset;
     private CharSequence localOriginal;
     private final Runnable localDebounce=this::reviewLocal;
+    private helium314.keyboard.latin.SuggestedWords nativeSuggestions;
     public void onPredictions(helium314.keyboard.latin.SuggestedWords words,SuggestionStripView view) {
         if(!AiSettingsActivity.typingEnabled(ime)||typingProtected())return;
         if(!words.isPrediction()&&words.size()>0) {
@@ -180,9 +181,8 @@ public final class AiKeyboardAssistant {
             for(String word:candidates)if(!word.equals(typed))lexicon.record(word,true,Collections.emptyList());
         }
         if(view==null||view.isAiActive())return;
-        strip=view;
-        // Ambiguous corrections remain normal native suggestions; never open an AI menu.
-        main.removeCallbacks(localDebounce);
+        strip=view;nativeSuggestions=words;
+        // Keep native candidates while a bounded word-boundary review is pending.
     }
     public helium314.keyboard.latin.SuggestedWords protectNativeSuggestions(helium314.keyboard.latin.SuggestedWords words){
         if(!AiSettingsActivity.typingEnabled(ime)||typingProtected()||!words.mWillAutoCorrect||words.isPrediction()
@@ -213,9 +213,9 @@ public final class AiKeyboardAssistant {
         helium314.keyboard.keyboard.Keyboard keyboard=helium314.keyboard.keyboard.KeyboardSwitcher.getInstance().getKeyboard();
         if(keyboard==null||keyboard==rankedKeyboard)return;
         Map<Character,double[]> positions=new HashMap<>();
-        for(char key:"abcdefghijklmnopqrstuvwxyzñ".toCharArray()){
+        for(char key:"abcdefghijklmnopqrstuvwxyzñ ".toCharArray()){
             helium314.keyboard.keyboard.Key value=keyboard.getKey(key);
-            if(value!=null)positions.put(key,new double[]{value.getX()+value.getWidth()/2.0,value.getY()+value.getHeight()/2.0,value.getWidth()});
+            if(value!=null)positions.put(key,new double[]{value.getX()+value.getWidth()/2.0,value.getY()+value.getHeight()/2.0,value.getWidth(),value.getHeight()});
         }
         lexicon.keyboard(positions);rankedKeyboard=keyboard;
     }
@@ -223,9 +223,15 @@ public final class AiKeyboardAssistant {
         final helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon base=lexicon.snapshot();
         final String language=typingLanguage();
         return new helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon(){
+            public boolean preserved(String word){return personal.protectedWord(word);}
+            public boolean spaceNeighbor(char c){return base.spaceNeighbor(c);}
             public boolean valid(String word){return personal.protectedWord(word)||base.valid(word);}
             public boolean knownInvalid(String word){return !personal.protectedWord(word)&&base.knownInvalid(word);}
-            public List<String> candidates(String word){return base.candidates(word);}
+            public List<String> candidates(String word){
+                List<String> normalized=new ArrayList<>();
+                for(String candidate:base.candidates(word))normalized.add(candidate.toLowerCase(Locale.ROOT));
+                return normalized;
+            }
             public double prior(String source,String candidate){return base.prior(source,candidate);}
             public double keyDistance(char a,char b){return base.keyDistance(a,b);}
             public double personalPreference(String source,String candidate){return personal.preference(source,candidate,language);}
@@ -266,19 +272,85 @@ public final class AiKeyboardAssistant {
     }
 
     private void reviewLocal() {
-        if(!AiSettingsActivity.typingEnabled(ime)||typingProtected()||strip==null||strip.isAiActive())return;
-        EditorSnapshot base=capture();if(base==null||base.start!=base.end||base.start<0)return;
+        if(!AiSettingsActivity.typingEnabled(ime)||typingProtected()||ime.hasAiComposition()
+                ||ime.getAiInputConnection().hasSlowInputConnection()||(strip!=null&&strip.isAiActive()))return;
+        final EditorSnapshot base=capture();
+        if(base==null||base.start!=base.end||base.start<0)return;
         CharSequence before=ime.getAiInputConnection().getTextBeforeCursor(512,InputConnection.GET_TEXT_WITH_STYLES);
-        if(before==null||before.length()==0||SensitiveInputPolicy.sensitiveText(before))return;
-        String context=before.toString();int offset=base.start-context.length();if(offset<0)return;
-        helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon vocabulary=personalLexicon();
-        Set<String> rejected=AiSettingsActivity.rejectedCorrections(ime);
-        final List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction>[] proposals=new List[]{Collections.emptyList()};
-        localSession.submit(cancel->{proposals[0]=new helium314.keyboard.latin.ai.local.LocalContextReviewer().review(context,vocabulary,rejected,cancel::cancelled);return "";},(unused,error)->{
-            if(error!=null||!AiSettingsActivity.typingEnabled(ime)||privateField()||!base.matches(capture())||proposals[0].isEmpty()||strip==null||strip.isAiActive())return;
-            localBase=base;localContext=context;localOffset=offset;localCorrection=proposals[0].get(0);localOriginal=SpannedString.valueOf(before.subSequence(localCorrection.start,localCorrection.end));
-            show(localCorrection.original+" → "+localCorrection.replacement,"Aplicar corrección","Rechazar corrección","Cerrar");
-        },1000);
+        if(before==null||before.length()==0||base.start!=before.length()||SensitiveInputPolicy.sensitiveText(before))return;
+        final String context=before.toString();
+        final helium314.keyboard.latin.DictionaryFacilitator dictionary=ime.getAiDictionary();
+        if(dictionary==null||!dictionary.hasAtLeastOneInitializedMainDictionary())return;
+        final helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon observed=personalLexicon();
+        final Set<String> rejected=AiSettingsActivity.rejectedCorrections(ime);
+        final List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction>[] found=new List[]{Collections.emptyList()};
+        localSession.submit(cancel->{
+            long deadline=System.nanoTime()+75_000_000L;
+            helium314.keyboard.latin.ai.local.LocalContextReviewer.Cancellation stop=()->cancel.cancelled()||System.nanoTime()>deadline;
+            helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon vocabulary=
+                new helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon(observed,dictionary::isValidSpellingWord,stop);
+            found[0]=boundaryReviewer.review(context,vocabulary,rejected,stop);return "";
+        },(unused,error)->{
+            if(error!=null||typingProtected()||!AiSettingsActivity.typingEnabled(ime)||ime.hasAiComposition()
+                    ||!base.matches(capture())||(strip!=null&&strip.isAiActive()))return;
+            for(helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction correction:found[0])
+                if(correction.automaticAllowed){applyBoundary(base,context,correction);return;}
+            if(!found[0].isEmpty())offerContextCorrection(base,context,found[0].get(0));
+        },500);
+    }
+    /** A contextual candidate is never committed by native word insertion, including stale taps. */
+    public static final class ContextSuggestion extends helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo {
+        final AiKeyboardAssistant owner;final EditorSnapshot base;final String context;
+        final helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction correction;
+        ContextSuggestion(AiKeyboardAssistant owner,EditorSnapshot base,String context,
+                helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction correction){
+            super(correction.original+" → "+correction.replacement,"",0,KIND_CORRECTION,null,-1,-1);
+            this.owner=owner;this.base=base;this.context=context;this.correction=correction;
+        }
+    }
+    private void offerContextCorrection(EditorSnapshot base,String context,
+            helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction correction){
+        if(nativeSuggestions==null||strip==null||strip.isAiActive())return;
+        ArrayList<helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo> candidates=new ArrayList<>();
+        candidates.add(new ContextSuggestion(this,base,context,correction));
+        for(int i=0;i<nativeSuggestions.size()&&candidates.size()<18;i++)candidates.add(nativeSuggestions.getInfo(i));
+        ime.showAiContextSuggestions(new helium314.keyboard.latin.SuggestedWords(candidates,null,null,
+            true,false,false,nativeSuggestions.mInputStyle,nativeSuggestions.mSequenceNumber));
+    }
+    public void acceptContextSuggestion(ContextSuggestion suggestion){
+        if(suggestion.owner!=this)return;
+        if(applyBoundary(suggestion.base,suggestion.context,suggestion.correction))
+            personal.accept(suggestion.correction.original.toLowerCase(Locale.ROOT),
+                suggestion.correction.replacement.toLowerCase(Locale.ROOT),typingLanguage());
+    }
+    private boolean applyBoundary(EditorSnapshot base,String context,
+            helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction correction){
+        if(typingProtected()||!AiSettingsActivity.typingEnabled(ime)||ime.hasAiComposition()||!base.matches(capture())
+            ||(strip!=null&&strip.isAiActive()))return false;
+        CharSequence latest=ime.getAiInputConnection().getTextBeforeCursor(512,InputConnection.GET_TEXT_WITH_STYLES);
+        if(latest==null||!context.contentEquals(latest))return false;
+        CharSequence original=SpannedString.valueOf(latest.subSequence(correction.start,correction.end));
+        // Preserve character styling and restore the original spans exactly on Undo. Native
+        // suggestion/composing spans must not survive changed text.
+        android.text.SpannableString replacement=new android.text.SpannableString(correction.replacement);
+        if(original instanceof android.text.Spanned){
+            android.text.Spanned styled=(android.text.Spanned)original;
+            for(android.text.style.CharacterStyle span:styled.getSpans(0,styled.length(),android.text.style.CharacterStyle.class)){
+                int flags=styled.getSpanFlags(span);
+                if(span instanceof android.text.style.SuggestionSpan||(flags&android.text.Spanned.SPAN_COMPOSING)!=0)continue;
+                int left=Math.max(0,Math.min(replacement.length(),styled.getSpanStart(span)));
+                int right=styled.getSpanEnd(span)==styled.length()?replacement.length():Math.min(replacement.length(),styled.getSpanEnd(span));
+                if(right>left)replacement.setSpan(android.text.style.CharacterStyle.wrap(span),left,right,flags);
+            }
+        }
+        int offset=base.start-context.length();
+        if(offset<0||!automaticEdits.applySpan(base,offset+correction.start,offset+correction.end,original,replacement,target(original)))return false;
+        automaticOriginal=correction.original;automaticLanguage=typingLanguage();automaticReplacement=correction.replacement;
+        automaticAfter=capture();
+        CharSequence after=ime.getAiInputConnection().getTextBeforeCursor(2048,0);
+        automaticContext=after==null?"":after.toString();
+        localSession.cancel();main.removeCallbacks(localDebounce);localBase=null;localCorrection=null;
+        return true;
     }
     private void applyLocal() {
         if(localBase==null||localCorrection==null||!localBase.matches(capture())){show("El texto cambió","Cerrar");return;}
@@ -315,6 +387,7 @@ public final class AiKeyboardAssistant {
         // A truncated prefix may begin inside a quote, URL, name or token. Fail closed.
         if(offset>0)return;
         observeCompletedStyle(context,base.start);
+        main.removeCallbacks(localDebounce);main.postDelayed(localDebounce,40);
         final long deadline=System.nanoTime()+8_000_000L;
         java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> corrections=
             boundaryReviewer.review(
@@ -335,20 +408,7 @@ public final class AiKeyboardAssistant {
         if(System.nanoTime()>deadline)return;
         for(helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction correction:corrections) {
             if(!correction.automaticAllowed)continue;
-            if(!base.matches(capture()))return;
-            CharSequence latest=ime.getCurrentInputConnection().getTextBeforeCursor(512,InputConnection.GET_TEXT_WITH_STYLES);
-            if(latest==null||!context.contentEquals(latest))return;
-            CharSequence original=SpannedString.valueOf(latest.subSequence(correction.start,correction.end));
-            if(automaticEdits.applySpan(base,offset+correction.start,offset+correction.end,
-                    original,correction.replacement,target(original))) {
-                automaticOriginal=correction.original;automaticLanguage=typingLanguage();
-                automaticReplacement=correction.replacement;
-                automaticAfter=capture();
-                CharSequence after=ime.getCurrentInputConnection().getTextBeforeCursor(2048,0);
-                automaticContext=after==null?"":after.toString();
-                localSession.cancel();main.removeCallbacks(localDebounce);
-                localBase=null;localCorrection=null;
-            }
+            applyBoundary(base,context,correction);
             return; // One confirmed transaction per boundary; never race native composition.
         }
     }
@@ -451,7 +511,7 @@ public final class AiKeyboardAssistant {
     public void onNewEditor() { reset(true); }
     private void reset(boolean forgetWords) {
         clearAutomaticUndo();
-        generation++; revision++;dictation.cancel();dictationBase=null;if(audioCapture!=null){audioCapture.close();audioCapture=null;}if(recordedAudio!=null){recordedAudio.delete();recordedAudio=null;}if(speech!=null){speech.close();speech=null;} session.cancel();localSession.cancel();main.removeCallbacks(localDebounce);localBase=null;localCorrection=null;localOriginal=null;localContext="";if(forgetWords){lexicon.clear();rankedKeyboard=null;styleBoundary=-1;}review.clear();edits.clear();undoText="";pendingAction="";entities.clear();
+        generation++; revision++;dictation.cancel();dictationBase=null;if(audioCapture!=null){audioCapture.close();audioCapture=null;}if(recordedAudio!=null){recordedAudio.delete();recordedAudio=null;}if(speech!=null){speech.close();speech=null;} session.cancel();localSession.cancel();main.removeCallbacks(localDebounce);localBase=null;localCorrection=null;localOriginal=null;localContext="";if(forgetWords){lexicon.clear();rankedKeyboard=null;styleBoundary=-1;nativeSuggestions=null;}review.clear();edits.clear();undoText="";pendingAction="";entities.clear();
         if(reviewDialog!=null){AlertDialog old=reviewDialog;reviewDialog=null;old.dismiss();}
         selected = ""; proposed = ""; address = ""; phone = ""; clabe = ""; email = "";
         if (strip != null) strip.closeAiChoices();

@@ -30,6 +30,8 @@ public final class LocalContextReviewer {
         boolean valid(String word);
         List<String> candidates(String word);
         /** True only after native validity checked the configured languages and personal words. */
+        default boolean preserved(String word) { return false; }
+        default boolean spaceNeighbor(char c) { return "vbn".indexOf(c)>=0; }
         default boolean knownInvalid(String word) { return false; }
         default double prior(String source,String candidate){return 0;}
         default double personalPreference(String source,String candidate){return 0;}
@@ -70,13 +72,20 @@ public final class LocalContextReviewer {
                 if (cancellation.cancelled()) return Collections.emptyList();
                 Token token = tokens.get(i);
                 if (token.protectedText || token.word.length() > MAX_WORD_LENGTH
-                        || NEGATIONS.contains(token.lower)) continue;
-                Correction proposal = hasCapital(token.word) ? null : grammar(text, tokens, i, lexicon);
+                        || NEGATIONS.contains(token.lower) || lexicon.preserved(token.lower)) continue;
+                Correction proposal = hasCapital(token.word) ? title(text,tokens,i,lexicon,cancellation) : mechanics(text,tokens,i,lexicon);
+                if(proposal==null&&!hasCapital(token.word))proposal=grammar(text,tokens,i,lexicon);
+                if(proposal==null&&!hasCapital(token.word)){
+                    WordBoundarySegmenter.Choice split=WordBoundarySegmenter.choose(token.lower,lexicon,cancellation);
+                    if(split!=null)proposal=correction(token,split.text,"dictionary-boundary-segmentation",.9,split.automatic);
+                }
                 if (proposal == null && !lexicon.valid(token.lower)
                         && !hasCapital(token.word)) {
                     proposal = spelling(text, tokens, i, lexicon, cancellation);
                 }
-                if (proposal != null && !ignored.contains(proposal.original.toLowerCase(Locale.ROOT))
+                if (proposal != null && (result.isEmpty()||result.get(result.size()-1).end<=proposal.start)
+                        && !lexicon.rejected(proposal.original.toLowerCase(Locale.ROOT),proposal.replacement.toLowerCase(Locale.ROOT))
+                        && !ignored.contains(proposal.original.toLowerCase(Locale.ROOT))
                         && !ignored.contains(proposal.replacement.toLowerCase(Locale.ROOT))
                         && !ignored.contains((proposal.original + "→" + proposal.replacement)
                         .toLowerCase(Locale.ROOT))) {
@@ -93,6 +102,26 @@ public final class LocalContextReviewer {
 
     private static Correction grammar(String text, List<Token> tokens, int i, Lexicon lexicon) {
         Token t = tokens.get(i);
+        if(i>0&&i+1<tokens.size()&&linked(text,tokens,i-1,i+1)){
+            String previous=tokens.get(i-1).lower,next=tokens.get(i+1).lower;
+            if(Arrays.asList("tener","tengo","tiene","tienen","necesito","necesita","necesitamos","requiere").contains(previous)
+                    &&t.lower.length()==3&&!t.lower.equals("más")&&abstractNoun(next)&&lexicon.valid(next)&&lexicon.valid("más")
+                    &&TypingCandidateRanker.editCost(t.lower,"más",lexicon::keyDistance)<=.7)
+                return correction(t,"más","quantity-modifier-before-abstract-noun",.96,true);
+            if(t.lower.length()==2&&t.lower.endsWith("y")&&abstractNoun(previous)&&abstractNoun(next)
+                    &&lexicon.valid(previous)&&lexicon.valid(next)&&lexicon.valid("y"))
+                return correction(t,"y","conjunction-between-abstract-nouns",.96,true);
+        }
+        if(t.lower.endsWith("ió")&&i>0&&linked(text,tokens,i-1,i)){
+            boolean firstPerson=tokens.get(i-1).lower.equals("yo");
+            if(!firstPerson&&i>=3&&tokens.get(i-1).lower.equals("cuando")&&linked(text,tokens,i-3,i)){
+                String infinitive=tokens.get(i-2).lower;
+                firstPerson=tokens.get(i-3).lower.equals("suelo")&&
+                    (infinitive.endsWith("ar")||infinitive.endsWith("er")||infinitive.endsWith("ir"));
+            }
+            String present=t.lower.substring(0,t.lower.length()-2)+"ío";
+            if(firstPerson&&lexicon.valid(present))return correction(t,present,"explicit-first-person-accent",.96,true);
+        }
         if (t.lower.equals("haber") && i > 0 && i + 2 < tokens.size()
                 && MOTION.contains(tokens.get(i - 1).lower)
                 && tokens.get(i + 1).lower.equals("si")
@@ -134,6 +163,44 @@ public final class LocalContextReviewer {
             return correction(t, "sí", "possible-reported-affirmative", .87, false);
         }
         return null;
+    }
+
+    private static boolean abstractNoun(String word){
+        return word.matches(".*(ción|sión|ncia|dad|tad|miento|tura|idez|eza)$");
+    }
+    private static Correction title(String text,List<Token> tokens,int i,Lexicon lexicon,Cancellation cancel){
+        Token t=tokens.get(i);
+        if(t.word.length()<3||!Character.isUpperCase(t.word.charAt(0))
+                ||!t.word.substring(1).equals(t.lower.substring(1))||lexicon.valid(t.lower))return null;
+        String prefix=text.substring(0,t.start).trim();
+        if(!prefix.isEmpty()&&!prefix.matches("(?s).*[.!?]$"))return null;
+        String next=i+1<tokens.size()&&linked(text,tokens,i,i+1)?tokens.get(i+1).lower:"";
+        TypingCandidateRanker.Choice choice=TypingCandidateRanker.choose(t.lower,"",next,lexicon,cancel);
+        if(choice==null)return null;
+        boolean safe=Arrays.asList("esta","este","estas","estos","esa","ese","esas","esos").contains(choice.word)
+            &&Arrays.asList("es","son","era","eran").contains(next)&&choice.cost<=.7&&choice.margin>=.3&&lexicon.knownInvalid(t.lower);
+        String replacement=Character.toUpperCase(choice.word.charAt(0))+choice.word.substring(1);
+        return correction(t,replacement,"sentence-initial-dictionary-candidate",.9,safe);
+    }
+    private static Correction mechanics(String text,List<Token> tokens,int i,Lexicon lexicon){
+        Token t=tokens.get(i);
+        if(i+2<tokens.size()&&Arrays.asList("el","la","los","las","un","una","unos","unas").contains(t.lower)
+                &&t.lower.equals(tokens.get(i+1).lower)&&!t.lower.equals(tokens.get(i+2).lower)
+                &&linked(text,tokens,i,i+2)&&!hasCapital(tokens.get(i+2).word)
+                &&lexicon.valid(tokens.get(i+2).lower)&&lexicon.valid(t.lower)){
+            Token repeated=tokens.get(i+1);
+            return new Correction(t.start,repeated.end,text.substring(t.start,repeated.end),t.word,
+                "adjacent-duplicate-article",.96,true);
+        }
+        if(!lexicon.valid(t.lower))return null;
+        int end=t.end;
+        while(end<text.length()&&(text.charAt(end)==' '||text.charAt(end)==9))end++;
+        if(end==t.end||end>=text.length()||".,;:!?".indexOf(text.charAt(end))<0)return null;
+        int punctuation=end+1;
+        if(text.charAt(end)=='.')while(punctuation<text.length()&&text.charAt(punctuation)=='.')punctuation++;
+        if(punctuation<text.length()&&!Character.isWhitespace(text.charAt(punctuation)))return null;
+        return new Correction(t.start,punctuation,text.substring(t.start,punctuation),
+            t.word+text.substring(end,punctuation),"space-before-punctuation",.99,true);
     }
 
     private static boolean reportedVerb(String word, Lexicon lexicon) {

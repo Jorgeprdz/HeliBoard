@@ -127,6 +127,104 @@ class InputLogicTest {
         } finally { field.set(settingsValues, original) }
     }
 
+    private fun r241Observe(word: String, valid: Boolean = true, candidates: List<String> = emptyList()) {
+        val field = r23Assistant().javaClass.getDeclaredField("lexicon").apply { isAccessible = true }
+        val observed = field.get(r23Assistant()) as helium314.keyboard.latin.ai.local.ObservedLexicon
+        observed.record(word, valid, candidates, true)
+        val positions = mutableMapOf<Char, DoubleArray>()
+        listOf("qwertyuiop", "asdfghjklñ", "zxcvbnm").forEachIndexed { y, row ->
+            row.forEachIndexed { x, key -> positions[key] = doubleArrayOf(x * 10.0 + y * 2.5, y * 10.0, 10.0, 10.0) }
+        }
+        observed.keyboard(positions)
+    }
+
+    @Test fun R241SegmentationUsesAtomicUndoAndPersistentPairVeto() {
+        r22Enable("🙂 nincuidando")
+        r241Observe("ni")
+        r241Observe("cuidando")
+        r241Observe("nincuidando", false)
+        r22Key(' '.code)
+        assertEquals("🙂 ni cuidando ", text)
+        assertEquals(text.length, cursor)
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("🙂 nincuidando ", text)
+        latinIME.onLocalWordBoundary()
+        assertEquals("🙂 nincuidando ", text)
+        kotlin.test.assertTrue(helium314.keyboard.latin.ai.AiSettingsActivity.rejectedCorrections(latinIME)
+            .contains("nincuidando→ni cuidando"))
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("🙂 nincuidando", text)
+        checkConnectionConsistency()
+    }
+
+    @Test fun R241FollowingWordDisambiguatesInitialTypoWithoutChangingAcronyms() {
+        r22Enable("Edta es")
+        r241Observe("edta", false, listOf("esta"))
+        r241Observe("esta")
+        r22Key(' '.code)
+        assertEquals("Esta es ", text)
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("Edta es ", text)
+        checkConnectionConsistency()
+        r22Enable("DW")
+        r241Observe("dw", false, listOf("de"))
+        r241Observe("de")
+        r22Key(' '.code)
+        assertEquals("DW ", text)
+    }
+
+    @Test fun R241ProtectedFieldsAndTermuxNeverApplyGrammar() {
+        for (type in listOf(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD,
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)) {
+            r22Enable("la la gramática")
+            setInputType(type)
+            ShadowInputMethodService.editorPackage = "fixture.editor"
+            r241Observe("la"); r241Observe("gramática")
+            r22Key(' '.code)
+            assertEquals("la la gramática ", text)
+        }
+        r22Enable("la la gramática")
+        ShadowInputMethodService.editorPackage = "com.termux"
+        r241Observe("la"); r241Observe("gramática")
+        r22Key(' '.code)
+        assertEquals("la la gramática ", text)
+    }
+
+    @Test fun R241ContextSuggestionOneTapAndStaleTapCannotInsertLabel() {
+        r22Enable("Slll estoy ")
+        val assistant = r23Assistant()
+        val capture = assistant.javaClass.getDeclaredMethod("capture").apply { isAccessible = true }
+        val correction = helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction(
+            0, 4, "Slll", "Solo", "test-explicit-choice", .7, false)
+        val ctor = helium314.keyboard.latin.ai.AiKeyboardAssistant.ContextSuggestion::class.java.declaredConstructors.single()
+            .apply { isAccessible = true }
+        val suggestion = ctor.newInstance(assistant, capture.invoke(assistant), text, correction) as SuggestedWordInfo
+        latinIME.pickSuggestionManually(suggestion)
+        assertEquals("Solo estoy ", text)
+        checkConnectionConsistency()
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("Slll estoy ", text)
+        assistant.onUserInput()
+        latinIME.pickSuggestionManually(suggestion)
+        assertEquals("Slll estoy ", text)
+    }
+
+    @Test fun R241MovedCursorRejectsPendingContextCorrection() {
+        r22Enable("Slll estoy después")
+        val assistant = r23Assistant()
+        val capture = assistant.javaClass.getDeclaredMethod("capture").apply { isAccessible = true }
+        val correction = helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction(
+            0, 4, "Slll", "Solo", "test-explicit-choice", .7, false)
+        val ctor = helium314.keyboard.latin.ai.AiKeyboardAssistant.ContextSuggestion::class.java.declaredConstructors.single()
+            .apply { isAccessible = true }
+        val candidate = ctor.newInstance(assistant, capture.invoke(assistant), text, correction) as SuggestedWordInfo
+        setCursorPosition(4)
+        latinIME.pickSuggestionManually(candidate)
+        assertEquals("Slll estoy después", text)
+        assertEquals(4, cursor)
+        checkConnectionConsistency()
+    }
+
     @Test fun R24MotorCorrectionAndUndoReuseNativeTransaction() {
         r22Enable("poryectos")
         r22NativeCandidates("poryectos", false, listOf("proyectos"))

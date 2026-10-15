@@ -7,7 +7,7 @@ import re
 
 root = Path("r23-artifact")
 apk_name = os.environ.get("HELIBOARD_APK_NAME", "HeliBoard-R2.3-debug.apk")
-assert apk_name in ("HeliBoard-R2.3-debug.apk", "HeliBoard-R2.4-Typing-Preview-debug.apk"), "Unexpected APK name"
+assert apk_name in ("HeliBoard-R2.3-debug.apk", "HeliBoard-R2.4-Typing-Preview-debug.apk", "HeliBoard-R2.4.1-Typing-Quality-Preview-debug.apk"), "Unexpected APK name"
 apk = root / apk_name
 temp = Path(os.environ["RUNNER_TEMP"])
 badging = (temp / "r22-badging.txt").read_text()
@@ -18,7 +18,7 @@ assert int(package[2]) == int(os.environ.get("HELIBOARD_VERSION_CODE", "4107")),
 expected_name = os.environ.get("HELIBOARD_EXPECTED_VERSION_NAME")
 if expected_name:
     assert package[3] == expected_name, "Unexpected versionName"
-    assert int(package[2]) > 4121, "R2.4 must upgrade R2.3"
+    assert int(package[2]) > (4138 if "r241" in expected_name else 4121), "Preview must upgrade previous version"
 # Owner explicitly authorized certificate identity/audit failures to be non-blocking.
 # Cryptographic APK verification remains mandatory in the workflow before this script.
 certificate_report = (temp / "r22-certificate.txt").read_text()
