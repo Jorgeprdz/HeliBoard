@@ -28,7 +28,7 @@ Rulings:
   synchronization are not yet implemented; no unfiltered preference or history dump is permitted.
 - Initial Google Cloud Android OAuth package/certificate registration, Drive API enablement, account
   consent and recovery phrase are external prerequisites. No user phrase or OAuth session was supplied.
-- Reddit HTTP403 alone is an owner-authorized documentation WARNING. Functional/security gates stay blocking.
+- Owner subsequently removed all documentation HTTP availability audits, their category and Gradle mode. Static documentation stays static; live dictionary download gates and local source-path checks remain blocking.
 
 Evidence:
 - RED run 38759491119: six failures for missing persistent learning/cipher classes; duplicate-result gate passes.

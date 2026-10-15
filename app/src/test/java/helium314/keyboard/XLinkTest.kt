@@ -8,7 +8,6 @@ import helium314.keyboard.latin.common.LocaleUtils.constructLocale
 import helium314.keyboard.latin.utils.getKnownDictionariesForLocale
 import org.json.JSONArray
 import org.junit.runner.RunWith
-import org.junit.experimental.categories.Category
 import org.robolectric.RobolectricTestRunner
 import java.io.File
 import java.net.HttpURLConnection
@@ -16,9 +15,6 @@ import java.net.URL
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-
-/** External documentation availability; dictionary downloads remain release gates. */
-interface DocumentationLinks
 
 @RunWith(RobolectricTestRunner::class)
 class XLinkTest { // Without the X, SubtypeTests fail with ClassCastException. WTF?
@@ -73,59 +69,20 @@ class XLinkTest { // Without the X, SubtypeTests fail with ClassCastException. W
         }
     }
 
-    @Category(DocumentationLinks::class)
-    @Test fun readmeLinks() {
-        val file = File("../README.md")
-        val linkRegex = "(?:https?:\\/\\/.)?(?:www\\.)?[-a-zA-Z0-9@%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b(?:[-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*)".toRegex()
-        val links = linkRegex.findAll(file.readText())
-        links.forEach {
-            if (it.value.contains("heli", true))
-                checkLink(it.value.trim('.'))
-        }
-    }
-
-    @Category(DocumentationLinks::class)
-    @Test fun layoutsLinks() {
-        val file = File("../layouts.md")
-        val linkRegex = "(?:https?:\\/\\/.)?(?:www\\.)?[-a-zA-Z0-9@%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b(?:[-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*)".toRegex()
-        val links = linkRegex.findAll(file.readText())
-        links.forEach {
-            if (it.value.contains("heli", true))
-                checkLink(it.value)
-        }
-    }
-
-    @Category(DocumentationLinks::class)
     @Test fun layoutsLinksInternal() {
         val file = File("../layouts.md")
         val internalLinkRegex = "app/src/\\b(?:[-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*)".toRegex()
-        val links = internalLinkRegex.findAll(file.readText())
-        links.forEach {
-            checkLink(it.value.replace("app/src", Links.GITHUB + "/blob/main/app/src"))
-        }
-    }
-
-    @Category(DocumentationLinks::class)
-    @Test fun otherLinks() {
-        listOf(Links.LICENSE, Links.LAYOUT_WIKI_URL, Links.WIKI_URL, Links.CUSTOM_LAYOUTS, Links.CUSTOM_COLORS).forEach {
-            checkLink(it)
+        internalLinkRegex.findAll(file.readText()).forEach {
+            val path = it.value.substringBefore('#')
+            assertTrue(File("..", path).isFile, "Missing documented source path: $path")
         }
     }
 
     private fun checkLink(link: String) {
-        // Third-party RLM GitHub Pages endpoint disappeared; its HeliBoard discussion remains available.
-        if (link.startsWith("https://roccobot.github.io/HeliBoard-RLM"))
-            return
-        if (link.contains("wiki/"))
-            return checkWikiLink(link)
         var status = responseCode(link, "HEAD")
         // Some sites disallow HEAD while serving ordinary GET requests.
         if (status == 403 || status == 405)
             status = responseCode(link, "GET")
-        if (status == 403 && link == "https://www.reddit.com/r/HeliBoard") {
-            System.err.println("WARNING: owner-authorized Reddit HTTP 403 in documentation audit: $link")
-            return
-        }
         assertEquals(200, status, "Unavailable link: $link")
     }
 
@@ -157,8 +114,4 @@ class XLinkTest { // Without the X, SubtypeTests fail with ClassCastException. W
         }
     }
 
-    private fun checkWikiLink(link: String) {
-        val text = readLink(link)
-        assertTrue("Create new page" !in text, "Missing wiki page: $link")
-    }
 }

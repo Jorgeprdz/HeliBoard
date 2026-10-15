@@ -34,8 +34,8 @@ jobs:
           python3 -m unittest discover -s scripts/tests -v
       - name: R2.3 behavioral acceptance gate
         run: ./gradlew :app:testDebugUnitTest --tests '*R23*'
-      - name: Complete functional regression including live dictionary downloads
-        run: ./gradlew :app:testDebugUnitTest -Pr22DocumentationAudit=exclude
+      - name: Complete regression including local documentation paths and live dictionaries
+        run: ./gradlew :app:testDebugUnitTest
       - name: Android lint gate
         run: ./gradlew :app:lintDebug
       - name: Restore existing persistent signing identity securely
@@ -90,40 +90,3 @@ jobs:
           if test -d "$RUNNER_TEMP/heliboard-signing"; then
             rm -rf -- "$RUNNER_TEMP/heliboard-signing"
           fi
-  documentation-link-audit:
-    # Owner authorized documentation availability failures to remain visible
-    # without blocking an APK whose functional, privacy, dictionary and lint gates pass.
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-      - uses: android-actions/setup-android@v3
-        with:
-          packages: 'platform-tools'
-          log-accepted-android-sdk-licenses: false
-      - uses: gradle/actions/setup-gradle@v4
-      - run: chmod +x gradlew
-      - name: Check documentation links (non-blocking audit)
-        id: audit
-        run: ./gradlew :app:testDebugUnitTest -Pr22DocumentationAudit=only
-      - name: Publish documentation audit evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: HeliBoard-R2.3-documentation-audit
-          path: |
-            app/build/reports/tests
-            app/build/test-results
-          if-no-files-found: warn
-          retention-days: 14
-      - name: Report actual documentation audit outcome
-        if: always()
-        env:
-          AUDIT_OUTCOME: ${{ steps.audit.outcome }}
-        run: |
-          printf 'Documentation links audit: **%s** (non-blocking, owner authorized).\n' "$AUDIT_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
