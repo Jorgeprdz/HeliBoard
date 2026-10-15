@@ -14,6 +14,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: Allocate monotonic R2.3 update version
+        run: echo "HELIBOARD_VERSION_CODE=$((4107 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:

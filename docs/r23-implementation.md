@@ -53,3 +53,10 @@ platform keyboard views introduced by the AI-only Material library. These are be
 The test harness now closes/reset singleton stores between Robolectric applications instead of carrying
 a prior test's app context/SQLite connection into a new application's temporary filesystem.
 No functional/security test has been excluded. Documentation HTTP audits have been removed entirely.
+
+Run38765021200: 23/24 focal tests PASS, including real SQLite reopen after isolating
+Robolectric contexts, unlock/deletion fences, all requested typo pairs, IME dictation/undo and
+protected tokens. Remaining failure is the HTTP fixture inheriting desktop Java's PATCH restriction;
+Android's HTTP implementation explicitly supports PATCH. Fixture now implements its transport boundary.
+Android lint PASS in this run. Pending rerun includes all gates, no exclusions.
+R2.3 CI now derives increasing versionCode from workflow run_number to permit recurring compatible updates.

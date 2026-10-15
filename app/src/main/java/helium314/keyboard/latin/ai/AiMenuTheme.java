@@ -79,6 +79,14 @@ public final class AiMenuTheme {
         item.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));
         item.setTextSize(14);
         item.setFocusable(true);
+        if(item instanceof com.google.android.material.button.MaterialButton){
+            com.google.android.material.button.MaterialButton button=(com.google.android.material.button.MaterialButton)item;
+            button.setBackgroundTintList(new ColorStateList(new int[][]{
+                {android.R.attr.state_pressed},{android.R.attr.state_focused},{android.R.attr.state_hovered},{}},
+                new int[]{pressed,focused,focused,surface}));
+            button.setRippleColor(ColorStateList.valueOf(pressed));
+            return; // Preserve Expressive shape-state/motion support owned by MaterialButton.
+        }
         StateListDrawable states=new StateListDrawable();
         states.addState(new int[]{android.R.attr.state_pressed},shape(context,pressed,18));
         states.addState(new int[]{android.R.attr.state_focused},shape(context,focused,18));

@@ -25,7 +25,7 @@ class R23ManifestCertificateTest(unittest.TestCase):
         def write_text(path, content, *args, **kwargs):
             outputs[path.name] = content
             return len(content)
-        env = dict(RUNNER_TEMP="/runner-temp", EXPECTED_CERT=CERT,
+        env = dict(HELIBOARD_VERSION_CODE="4107", RUNNER_TEMP="/runner-temp", EXPECTED_CERT=CERT,
                    GITHUB_SHA="c" * 40, GITHUB_RUN_ID="123", GITHUB_STEP_SUMMARY="",
                    GITHUB_SERVER_URL="https://github.com",
                    GITHUB_REPOSITORY="Jorgeprdz/HeliBoard")

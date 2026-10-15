@@ -8,6 +8,7 @@ public class R23DriveTest {
   final int status;final byte[] payload;final ByteArrayOutputStream sent=new ByteArrayOutputStream();boolean disconnected;
   Response(URL url,int status,String payload){super(url);this.status=status;this.payload=payload.getBytes(StandardCharsets.UTF_8);}
   public void disconnect(){disconnected=true;}public boolean usingProxy(){return false;}public void connect(){}
+  public void setRequestMethod(String method){this.method=method;}
   public int getResponseCode(){return status;}public InputStream getInputStream(){return new ByteArrayInputStream(payload);}
   public OutputStream getOutputStream(){return sent;}
  }

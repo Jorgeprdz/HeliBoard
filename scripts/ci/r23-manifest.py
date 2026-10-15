@@ -12,7 +12,7 @@ badging = (temp / "r22-badging.txt").read_text()
 package = re.search(r"^package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'", badging, re.M)
 assert package, "Missing APK package metadata"
 assert package[1] == "com.jorgeprdz.ioskeyboard.debug", "Wrong applicationId"
-assert int(package[2]) == 4107, "Unexpected versionCode"
+assert int(package[2]) == int(os.environ.get("HELIBOARD_VERSION_CODE", "4107")), "Unexpected versionCode"
 # Owner explicitly authorized certificate identity/audit failures to be non-blocking.
 # Cryptographic APK verification remains mandatory in the workflow before this script.
 certificate_report = (temp / "r22-certificate.txt").read_text()

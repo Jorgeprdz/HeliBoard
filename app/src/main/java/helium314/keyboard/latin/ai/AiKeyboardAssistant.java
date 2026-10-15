@@ -316,12 +316,13 @@ public final class AiKeyboardAssistant {
         text.setText((review.meaningRisk()?"Revisa cambios en cifras o negaciones.\n\n":"")+review.result());
         text.setTextIsSelectable(true);int pad=(int)(16*ime.getResources().getDisplayMetrics().density);text.setPadding(pad,pad,pad,pad);scroll.addView(text);
         final AlertDialog dialog=new com.google.android.material.dialog.MaterialAlertDialogBuilder(dialogContext)
-            .setTitle(review.meaningRisk()?"Revisa cifras, negaciones y significado":"Resultado")
+            .setTitle(!review.complete()?"Resultado incompleto":review.meaningRisk()?"Revisa cifras, negaciones y significado":"Resultado")
             .setView(scroll)
             .setPositiveButton("Aplicar",(d,w)->{if(!privateField()&&review.reviewed(capture()))onAction("Usar",strip);})
-            .setNeutralButton("Copiar",(d,w)->copy("Respuesta IA",review.result()))
-            .setNegativeButton("Cancelar",(d,w)->reset(false)).create();
+            .setNeutralButton("Copiar",(d,w)->{copy("Respuesta IA",review.result());reset(false);})
+            .setNegativeButton("Cancelar",(d,w)->reset(false)).setOnCancelListener(d->reset(false)).create();
         reviewDialog=dialog;
+        dialog.setOnDismissListener(d->{if(reviewDialog==dialog)reviewDialog=null;});
         WindowManager.LayoutParams params=dialog.getWindow().getAttributes();
         params.token=ime.getWindow().getWindow().getDecorView().getWindowToken();params.type=WindowManager.LayoutParams.TYPE_APPLICATION_ATTACHED_DIALOG;
         dialog.getWindow().setAttributes(params);dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM|WindowManager.LayoutParams.FLAG_SECURE);

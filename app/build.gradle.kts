@@ -13,7 +13,7 @@ android {
         applicationId = "com.jorgeprdz.ioskeyboard"
         minSdk = 21
         targetSdk = 37
-        versionCode = 4107
+        versionCode = providers.environmentVariable("HELIBOARD_VERSION_CODE").map(String::toInt).getOrElse(4107)
         versionName = "4.1-iosglass.7-ai-r23"
         ndk {
             abiFilters.clear()
