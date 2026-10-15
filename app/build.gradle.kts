@@ -130,8 +130,7 @@ android {
 }
 
 dependencies {
-    implementation("androidx.work:work-runtime:2.10.5")
-    implementation("com.google.android.gms:play-services-auth:21.3.0")
+    implementation("com.google.android.gms:play-services-auth:21.4.0")
 
     // Expressive Views scoped to temporary AI surfaces; alpha04 preserves API 21 support.
     implementation("com.google.android.material:material:1.14.0-alpha04")

@@ -122,6 +122,10 @@ class XLinkTest { // Without the X, SubtypeTests fail with ClassCastException. W
         // Some sites disallow HEAD while serving ordinary GET requests.
         if (status == 403 || status == 405)
             status = responseCode(link, "GET")
+        if (status == 403 && link == "https://www.reddit.com/r/HeliBoard") {
+            System.err.println("WARNING: owner-authorized Reddit HTTP 403 in documentation audit: $link")
+            return
+        }
         assertEquals(200, status, "Unavailable link: $link")
     }
 

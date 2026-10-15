@@ -28,9 +28,10 @@ public final class PersonalTypingStore {
  }
  private PersonalTypingStore(Context original){
   Context app=original.getApplicationContext();
-  context=Build.VERSION.SDK_INT>=24?app.createCredentialProtectedStorageContext():app;
+  context=app;
   writer.execute(()->{
    try {
+    if(Build.VERSION.SDK_INT>=24&&!((android.os.UserManager)context.getSystemService(Context.USER_SERVICE)).isUserUnlocked())return;
     android.content.SharedPreferences prefs=context.getSharedPreferences("personal_typing_identity",0);
     device=prefs.getString("device","");
     if(device.isEmpty()){device=UUID.randomUUID().toString();if(!prefs.edit().putString("device",device).commit())return;}
@@ -77,7 +78,7 @@ public final class PersonalTypingStore {
      Math.min(1_000_000,(r==null?0:r.r)+(rejected?1:0)),System.currentTimeMillis());
    rows.put(next.key(),next);prune();
   }
-  writer.execute(()->{try{save(next);helium314.keyboard.latin.ai.cloud.TypingSync.scheduleChanges(context);}catch(RuntimeException unavailable){ready=false;}});
+  writer.execute(()->{try{Row latest;synchronized(rows){latest=rows.get(next.key());}if(latest!=null)save(latest);helium314.keyboard.latin.ai.cloud.TypingSync.scheduleChanges(context);}catch(RuntimeException unavailable){ready=false;}});
  }
  /** A known legitimate word is always protected. Any rejection vetoes auto-replacement. */
  public String automatic(String word,String language,boolean dictionaryValid){
@@ -128,7 +129,10 @@ public final class PersonalTypingStore {
    }}
    if(next.size()>LIMIT){List<Row> ordered=new ArrayList<>(next.values());ordered.sort(Comparator.comparingLong(r->r.t));for(int i=0;i<ordered.size()-LIMIT;i++)next.remove(ordered.get(i).key());}
    try{for(Row r:next.values())save(r);db.setTransactionSuccessful();}finally{db.endTransaction();}
-   synchronized(rows){rows.clear();rows.putAll(next);}return null;
+   synchronized(rows){
+    for(Row r:rows.values()){Row old=next.get(r.key());next.put(r.key(),old==null?r:new Row(r.error,r.correction,r.language,r.device,Math.max(old.a,r.a),Math.max(old.r,r.r),Math.max(old.t,r.t)));}
+    rows.clear();rows.putAll(next);prune();
+   }return null;
   });
  }
  public void erase(){io(()->{if(database==null)throw new IllegalStateException("Learning unavailable");database.getWritableDatabase().delete("evidence",null,null);synchronized(rows){rows.clear();}return null;});}

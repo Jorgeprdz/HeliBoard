@@ -1,13 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package helium314.keyboard.latin.ai.cloud;
-import android.content.*;import android.os.Build;import androidx.work.*;import java.util.*;import java.util.concurrent.*;
+import android.content.*;import android.os.Build;import android.app.job.*;import java.util.*;import java.util.concurrent.*;
 import com.google.android.gms.auth.api.identity.*;import com.google.android.gms.common.api.Scope;import com.google.android.gms.tasks.Tasks;
 import helium314.keyboard.latin.ai.local.PersonalTypingStore;import org.json.*;
 /** Durable work, batched changes and periodic reconciliation. Never runs on a key-event thread. */
-public final class TypingSync extends Worker {
+public final class TypingSync extends JobService {
  private static final Object SYNC=new Object();
- public TypingSync(Context c,WorkerParameters p){super(c,p);}
- static Context storage(Context c){Context app=c.getApplicationContext();return Build.VERSION.SDK_INT>=24?app.createCredentialProtectedStorageContext():app;}
+ private static final int CHANGES=2301,PERIODIC=2302,INITIAL=2303;
+ private volatile boolean stopped;
+ private final ExecutorService background=Executors.newSingleThreadExecutor();
+ private enum Result { SUCCESS,RETRY,FAILURE; static Result success(){return SUCCESS;}static Result retry(){return RETRY;}static Result failure(){return FAILURE;} }
+ @Override public boolean onStartJob(JobParameters parameters){
+  stopped=false;background.execute(()->{Result result=doWork();if(!stopped)jobFinished(parameters,result==Result.RETRY);});return true;
+ }
+ @Override public boolean onStopJob(JobParameters parameters){stopped=true;return true;}
+ @Override public void onDestroy(){stopped=true;background.shutdownNow();super.onDestroy();}
+ private boolean isStopped(){return stopped||Thread.currentThread().isInterrupted();}
+ private int getRunAttemptCount(){int count=prefs(this).getInt("attempt",0);prefs(this).edit().putInt("attempt",count+1).apply();return count;}
+ 
+ static Context storage(Context c){Context app=c.getApplicationContext();return app;}
  static android.content.SharedPreferences prefs(Context c){return storage(c).getSharedPreferences("typing_cloud",0);}
  static AuthorizationRequest request(Context c){
   String account=prefs(c).getString("account","");
@@ -15,25 +26,30 @@ public final class TypingSync extends Worker {
   return AuthorizationRequest.builder().setAccount(new android.accounts.Account(account,"com.google"))
    .setRequestedScopes(Collections.singletonList(new Scope(DriveAppData.SCOPE))).build();
  }
- private static Constraints constraints(){return new Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).setRequiresBatteryNotLow(true).build();}
+ private static JobScheduler scheduler(Context c){return (JobScheduler)c.getSystemService(Context.JOB_SCHEDULER_SERVICE);}
+ private static JobInfo.Builder job(Context c,int id){
+  return new JobInfo.Builder(id,new ComponentName(c,TypingSync.class))
+   .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY).setRequiresBatteryNotLow(true)
+   .setPersisted(true).setBackoffCriteria(30000,JobInfo.BACKOFF_POLICY_EXPONENTIAL);
+ }
  public static void scheduleChanges(Context c){
   if(Build.VERSION.SDK_INT<26||!prefs(c).getBoolean("enabled",false))return;
-  WorkManager.getInstance(c).enqueueUniqueWork("typing-cloud-changes",ExistingWorkPolicy.KEEP,
-   new OneTimeWorkRequest.Builder(TypingSync.class).setInitialDelay(10,TimeUnit.MINUTES).setConstraints(constraints())
-    .setBackoffCriteria(BackoffPolicy.EXPONENTIAL,30,TimeUnit.SECONDS).build());
+  JobScheduler scheduler=scheduler(c);
+  if(scheduler.getPendingJob(CHANGES)==null)scheduler.schedule(job(c,CHANGES).setMinimumLatency(600000).build());
  }
  static void activate(Context c){
-  WorkManager wm=WorkManager.getInstance(c);
-  wm.enqueueUniquePeriodicWork("typing-cloud-periodic",ExistingPeriodicWorkPolicy.KEEP,
-   new PeriodicWorkRequest.Builder(TypingSync.class,12,TimeUnit.HOURS).setConstraints(constraints()).build());
-  wm.enqueueUniqueWork("typing-cloud-initial",ExistingWorkPolicy.KEEP,new OneTimeWorkRequest.Builder(TypingSync.class).setConstraints(constraints()).build());
+  if(Build.VERSION.SDK_INT<26)return;
+  JobScheduler scheduler=scheduler(c);
+  scheduler.schedule(job(c,PERIODIC).setPeriodic(TimeUnit.HOURS.toMillis(12)).build());
+  scheduler.schedule(job(c,INITIAL).build());
  }
+ public static void stopSync(Context c){disable(c);}
  static void disable(Context c){
   prefs(c).edit().putBoolean("enabled",false).putString("status","Desactivado").apply();
-  WorkManager wm=WorkManager.getInstance(c);for(String name:new String[]{"typing-cloud-changes","typing-cloud-periodic","typing-cloud-initial"})wm.cancelUniqueWork(name);
+  JobScheduler scheduler=scheduler(c);for(int id:new int[]{CHANGES,PERIODIC,INITIAL})scheduler.cancel(id);
  }
  private void status(String value){prefs(getApplicationContext()).edit().putString("status",value).apply();}
- @Override public Result doWork(){
+ private Result doWork(){
   if(Build.VERSION.SDK_INT<26||!prefs(getApplicationContext()).getBoolean("enabled",false))return Result.success();
   synchronized(SYNC){
    Context c=storage(getApplicationContext());char[] phrase=null;
@@ -57,7 +73,7 @@ public final class TypingSync extends Worker {
     if(isStopped()||!prefs(c).getBoolean("enabled",false))return Result.success();
     byte[] snapshot=learning.exportData();
     try{drive.upload(name,existing,BackupCipher.encrypt(snapshot,phrase));}finally{Arrays.fill(snapshot,(byte)0);}
-    status("Sincronizado · "+new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm",Locale.ROOT).format(new Date()));return Result.success();
+    prefs(c).edit().putInt("attempt",0).apply();status("Sincronizado · "+new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm",Locale.ROOT).format(new Date()));return Result.success();
    }catch(java.security.GeneralSecurityException|IllegalArgumentException integrity){
     status("Respaldo bloqueado: frase incorrecta, formato incompatible o datos alterados");return Result.failure();
    }catch(DriveAppData.NetworkFailure http){

@@ -60,6 +60,7 @@ public class AiSettingsActivity extends Activity {
     public static void clearLearnedData(Context ctx) {
         ctx.getSharedPreferences(PREF,MODE_PRIVATE).edit().remove("rejected_corrections").commit();
         // Also stop cloud recovery before erasing; remote backup is deliberately retained.
+        helium314.keyboard.latin.ai.cloud.TypingSync.stopSync(ctx);
         new Thread(()->helium314.keyboard.latin.ai.local.PersonalTypingStore.get(ctx).erase(),"typing-erase").start();
         helium314.keyboard.latin.personalization.PersonalizationHelper.removeAllUserHistoryDictionaries(ctx);
     }
