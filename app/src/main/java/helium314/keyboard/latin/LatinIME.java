@@ -1600,12 +1600,15 @@ public class LatinIME extends InputMethodService implements
     // interface
     @Override
     public void pickSuggestionManually(final SuggestedWordInfo suggestionInfo) {
+        final String aiTyped=mInputLogic.getAiComposingWord();
         final InputTransaction completeInputTransaction = mInputLogic.onPickSuggestionManually(
                 mSettings.getCurrent(), suggestionInfo,
                 mKeyboardSwitcher.getKeyboardCapsMode(),
                 mKeyboardSwitcher.getCurrentKeyboardScript(),
                 mHandler);
         updateStateAfterInputTransaction(completeInputTransaction);
+        if(mAiKeyboardAssistant!=null&&mInputLogic.getAiComposingWord().isEmpty())
+            mAiKeyboardAssistant.onExplicitCandidate(aiTyped,suggestionInfo.mWord);
     }
 
     /**

@@ -295,6 +295,8 @@ public final class InputLogic {
      */
     // Called from {@link SuggestionStripView} through the {@link SuggestionStripView#Listener}
     // interface
+    public String getAiComposingWord() { return mWordComposer.getTypedWord(); }
+
     public InputTransaction onPickSuggestionManually(SettingsValues settingsValues, SuggestedWordInfo suggestionInfo,
             CapsMode keyboardCapsMode, String currentKeyboardScript, LatinIME.UIHandler handler) {
         if (isInlineEmojiSearchAction()) {

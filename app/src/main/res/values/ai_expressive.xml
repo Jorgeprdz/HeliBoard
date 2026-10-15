@@ -1,0 +1,8 @@
+<resources>
+    <style name="AiExpressiveLight" parent="Theme.Material3Expressive.Light.NoActionBar">
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+    <style name="AiExpressiveDark" parent="Theme.Material3Expressive.Dark.NoActionBar">
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

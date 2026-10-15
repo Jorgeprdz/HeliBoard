@@ -315,11 +315,15 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         val container = LinearLayout(context)
         container.orientation = LinearLayout.HORIZONTAL
         val pad = (8 * resources.displayMetrics.density).toInt()
-        val aiTheme = helium314.keyboard.latin.ai.AiMenuTheme.resolve(context)
+        val aiTheme = helium314.keyboard.latin.ai.AiMenuTheme.resolveKeyboard(context)
         horizontal.setBackgroundColor(aiTheme.surface)
         container.setBackgroundColor(aiTheme.surface)
         for (choice in choices) {
-            val item = TextView(context, null, R.attr.suggestionWordStyle)
+            val item = com.google.android.material.button.MaterialButton(helium314.keyboard.latin.ai.AiMenuTheme.expressiveContext(context))
+            item.minHeight = 0
+            item.minimumHeight = 0
+            item.insetTop = 0
+            item.insetBottom = 0
             item.text = choice
             aiTheme.styleChoice(item)
             item.gravity = android.view.Gravity.CENTER

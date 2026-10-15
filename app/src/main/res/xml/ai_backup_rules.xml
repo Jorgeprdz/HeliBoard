@@ -2,4 +2,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <full-backup-content>
     <exclude domain="sharedpref" path="keyboard_ai_private.xml" />
+        <exclude domain="sharedpref" path="typing_cloud.xml" />
+        <exclude domain="sharedpref" path="personal_typing_identity.xml" />
+        <exclude domain="database" path="personal_typing_v1.db" />
 </full-backup-content>

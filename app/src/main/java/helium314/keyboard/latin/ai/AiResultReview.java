@@ -13,6 +13,7 @@ public final class AiResultReview {
  private static List<String> tokens(CharSequence text,String regex){List<String> result=new ArrayList<>();if(text==null)return result;Matcher m=Pattern.compile(regex,Pattern.CASE_INSENSITIVE|Pattern.UNICODE_CASE).matcher(text);while(m.find())result.add(m.group().toLowerCase(Locale.ROOT));return result;}
  public boolean reviewed(EditorSnapshot current){reviewed=snapshot!=null&&snapshot.matches(current);return reviewed;}
  public boolean canApply(EditorSnapshot current){return complete&&reviewed&&snapshot!=null&&snapshot.matches(current);}
+ public boolean complete(){return complete;}
  public String result(){return text;}
  public EditorSnapshot snapshot(){return snapshot;}
  public boolean meaningRisk(){return risk;}

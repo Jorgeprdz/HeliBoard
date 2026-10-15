@@ -13,8 +13,8 @@ android {
         applicationId = "com.jorgeprdz.ioskeyboard"
         minSdk = 21
         targetSdk = 37
-        versionCode = 4106
-        versionName = "4.1-iosglass.6-ai-r22"
+        versionCode = 4107
+        versionName = "4.1-iosglass.7-ai-r23"
         ndk {
             abiFilters.clear()
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
@@ -130,6 +130,12 @@ android {
 }
 
 dependencies {
+    implementation("androidx.work:work-runtime:2.10.5")
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
+
+    // Expressive Views scoped to temporary AI surfaces; alpha04 preserves API 21 support.
+    implementation("com.google.android.material:material:1.14.0-alpha04")
+
     // androidx
     implementation("androidx.core:core-ktx:1.17.0") // 1.18.0 requires minSdk 23
     implementation("androidx.recyclerview:recyclerview:1.4.0")

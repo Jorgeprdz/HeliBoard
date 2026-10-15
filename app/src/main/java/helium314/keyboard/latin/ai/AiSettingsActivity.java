@@ -59,6 +59,8 @@ public class AiSettingsActivity extends Activity {
     /** Clears automatically learned history and AI rejection preferences, not manual dictionaries. */
     public static void clearLearnedData(Context ctx) {
         ctx.getSharedPreferences(PREF,MODE_PRIVATE).edit().remove("rejected_corrections").commit();
+        // Also stop cloud recovery before erasing; remote backup is deliberately retained.
+        new Thread(()->helium314.keyboard.latin.ai.local.PersonalTypingStore.get(ctx).erase(),"typing-erase").start();
         helium314.keyboard.latin.personalization.PersonalizationHelper.removeAllUserHistoryDictionaries(ctx);
     }
     private static boolean userUnlocked(Context ctx) {
@@ -121,6 +123,7 @@ public class AiSettingsActivity extends Activity {
         stack.addView(box);
     }
     @Override protected void onCreate(Bundle state) {
+        AiMenuTheme.applyActivity(this);
         super.onCreate(state);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
         ScrollView scroll = new ScrollView(this);
@@ -144,7 +147,7 @@ public class AiSettingsActivity extends Activity {
         TextView label = new TextView(this);
         label.setText("API key de Gemini:");
         stack.addView(label);
-        EditText key = new EditText(this);
+        EditText key = new com.google.android.material.textfield.TextInputEditText(this);
         key.setSingleLine(true);
         key.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         key.setHint(readKey(this).isEmpty() ? "Pega tu API key (no se sube a GitHub)" : "•••••••• (clave guardada)");
@@ -152,14 +155,14 @@ public class AiSettingsActivity extends Activity {
         TextView modelLabel = new TextView(this);
         modelLabel.setText("Modelo Gemini (configurable):");
         stack.addView(modelLabel);
-        EditText model = new EditText(this);
+        EditText model = new com.google.android.material.textfield.TextInputEditText(this);
         model.setSingleLine(true);model.setHint("Consultar modelos disponibles y elegir uno");
         model.setText(readModel(this));
         stack.addView(model);
         TextView status = new TextView(this);
         status.setPadding(0, pad/2, 0, pad/2);
         stack.addView(status);
-        Button refresh=new Button(this);refresh.setText("Consultar modelos disponibles (Google)");
+        Button refresh=new com.google.android.material.button.MaterialButton(this);refresh.setText("Consultar modelos disponibles (Google)");
         refresh.setOnClickListener(v->{
             if(!networkAllowed(this)){status.setText("Activa el consentimiento de red antes de consultar modelos.");return;}
             final String token=readKey(this);if(token.isEmpty()){status.setText("Guarda una clave válida primero.");return;}
@@ -173,7 +176,7 @@ public class AiSettingsActivity extends Activity {
                 new android.app.AlertDialog.Builder(this).setTitle("Modelos disponibles").setItems(values,(dialog,index)->model.setText(values[index])).setNegativeButton("Cancelar",null).show();
             },35000);
         });stack.addView(refresh);
-        Button save = new Button(this);
+        Button save = new com.google.android.material.button.MaterialButton(this);
         save.setText("Guardar configuración");
         save.setOnClickListener(v -> {
             String token = key.getText().toString().trim();
@@ -189,7 +192,7 @@ public class AiSettingsActivity extends Activity {
             } else status.setText("Modelo inválido.");
         });
         stack.addView(save);
-        Button forget = new Button(this);
+        Button forget = new com.google.android.material.button.MaterialButton(this);
         forget.setText("Borrar clave");
         forget.setOnClickListener(v -> {
             getSharedPreferences(PREF, MODE_PRIVATE).edit().remove("key").apply();
@@ -201,19 +204,22 @@ public class AiSettingsActivity extends Activity {
         });
         stack.addView(forget);
         TextView excludedLabel = new TextView(this); excludedLabel.setText("Excluir aplicaciones (paquetes separados por coma):"); stack.addView(excludedLabel);
-        EditText excluded = new EditText(this); excluded.setSingleLine(true);
+        EditText excluded = new com.google.android.material.textfield.TextInputEditText(this); excluded.setSingleLine(true);
         excluded.setText(getSharedPreferences(PREF, MODE_PRIVATE).getString("excluded_apps", "")); stack.addView(excluded);
-        Button saveExcluded = new Button(this); saveExcluded.setText("Guardar exclusiones");
+        Button saveExcluded = new com.google.android.material.button.MaterialButton(this); saveExcluded.setText("Guardar exclusiones");
         saveExcluded.setOnClickListener(v -> getSharedPreferences(PREF, MODE_PRIVATE).edit().putString("excluded_apps", excluded.getText().toString().trim()).apply());
         stack.addView(saveExcluded);
-        Button resetLearning=new Button(this);resetLearning.setText("Borrar aprendizaje local");
+        Button resetLearning=new com.google.android.material.button.MaterialButton(this);resetLearning.setText("Borrar aprendizaje local");
         resetLearning.setOnClickListener(v->{clearLearnedData(this);status.setText("Historial aprendido y rechazos contextuales borrados. El diccionario personal manual se conserva.");});stack.addView(resetLearning);
         TextView voiceLabel=new TextView(this);voiceLabel.setText("Idioma del dictado y vocabulario explícito (máximo 32 términos). El modo local requiere reconocimiento instalado; no descarga modelos ni usa nube como alternativa silenciosa.");stack.addView(voiceLabel);
-        android.widget.Spinner voiceLanguage=new android.widget.Spinner(this);String[] languageCodes={"auto","es-MX","en-US"};voiceLanguage.setAdapter(new android.widget.ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"Detectar ES/EN","Español México","English US"}));voiceLanguage.setSelection(java.util.Arrays.asList(languageCodes).indexOf(dictationLanguage(this)));stack.addView(voiceLanguage);
-        EditText vocabulary=new EditText(this);vocabulary.setHint("Carlos, HeliBoard, vocabulario técnico…");vocabulary.setText(getSharedPreferences(PREF,MODE_PRIVATE).getString("dictation_vocabulary",""));stack.addView(vocabulary);
-        Button saveVoice=new Button(this);saveVoice.setText("Guardar opciones de dictado");saveVoice.setOnClickListener(v->{try{java.util.List<String> terms=helium314.keyboard.latin.ai.dictation.DictationOptions.vocabulary(vocabulary.getText().toString());getSharedPreferences(PREF,MODE_PRIVATE).edit().putString("dictation_language",languageCodes[voiceLanguage.getSelectedItemPosition()]).putString("dictation_vocabulary",android.text.TextUtils.join(",",terms)).apply();status.setText("Opciones guardadas. Los términos se usan localmente o se envían con el audio únicamente al elegir Gemini.");}catch(IllegalArgumentException invalid){status.setText("Usa hasta 32 términos de 48 caracteres, sin datos sensibles.");}});stack.addView(saveVoice);
+        android.widget.Spinner voiceLanguage=new android.widget.Spinner(this);String[] languageCodes={"auto","es-MX","en-US"};voiceLanguage.setAdapter(new android.widget.ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"ES/EN si el motor local lo admite","Español México","English US"}));voiceLanguage.setSelection(java.util.Arrays.asList(languageCodes).indexOf(dictationLanguage(this)));stack.addView(voiceLanguage);
+        EditText vocabulary=new com.google.android.material.textfield.TextInputEditText(this);vocabulary.setHint("Carlos, HeliBoard, vocabulario técnico…");vocabulary.setText(getSharedPreferences(PREF,MODE_PRIVATE).getString("dictation_vocabulary",""));stack.addView(vocabulary);
+        Button saveVoice=new com.google.android.material.button.MaterialButton(this);saveVoice.setText("Guardar opciones de dictado");saveVoice.setOnClickListener(v->{try{java.util.List<String> terms=helium314.keyboard.latin.ai.dictation.DictationOptions.vocabulary(vocabulary.getText().toString());getSharedPreferences(PREF,MODE_PRIVATE).edit().putString("dictation_language",languageCodes[voiceLanguage.getSelectedItemPosition()]).putString("dictation_vocabulary",android.text.TextUtils.join(",",terms)).apply();status.setText("Opciones guardadas. Los términos se usan localmente o se envían con el audio únicamente al elegir Gemini.");}catch(IllegalArgumentException invalid){status.setText("Usa hasta 32 términos de 48 caracteres, sin datos sensibles.");}});stack.addView(saveVoice);
         TextView credit=new TextView(this);credit.setText("Grabación adaptada de Ramblr · © 2026 Trevor NK · GPLv3+. Código y atribuciones: github.com/trevornk/ramblr");stack.addView(credit);
         TextView keyStatus = new TextView(this); keyStatus.setText("Credencial: " + keyState(this)); stack.addView(keyStatus);
+        Button cloud=new com.google.android.material.button.MaterialButton(this);cloud.setText("Personal Typing Cloud · respaldo cifrado");
+        cloud.setOnClickListener(v->startActivity(new android.content.Intent(this,helium314.keyboard.latin.ai.cloud.TypingCloudActivity.class)));stack.addView(cloud);
+        AiMenuTheme.resolve(this).styleSurface(stack);
         setContentView(scroll);
     }
 }
