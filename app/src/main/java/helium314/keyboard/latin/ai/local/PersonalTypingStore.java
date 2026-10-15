@@ -158,8 +158,9 @@ public final class PersonalTypingStore {
   }return Collections.unmodifiableList(result);
  }
  /** The caller must supply initial opt-in, field/context policy and one completed sentence. */
- public void observeStyle(String sentence,String language){
-  ensureLoaded();if(!ready)return;Map<String,Long> features=PersonalStyleProfile.features(sentence,language);
+ public void observeStyle(String sentence,String language){observeStyle(sentence,language,false);}
+ public void observeStyle(String sentence,String language,boolean messageOpening){
+  ensureLoaded();if(!ready)return;Map<String,Long> features=PersonalStyleProfile.features(sentence,language,messageOpening);
   if(features.isEmpty())return;long ticket;Map<String,Long> next=new TreeMap<>();
   synchronized(rows){ticket=styleEpoch;for(String key:features.keySet()){
    long value=Math.min(1000000,style.getOrDefault(key,0L)+1);style.put(key,value);next.put(key,value);

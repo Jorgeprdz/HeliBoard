@@ -239,26 +239,30 @@ public final class AiKeyboardAssistant {
         if(context==null||SensitiveInputPolicy.sensitiveText(context))return words;
         final Map<String,Long> profile=personal.styleSnapshot();
         String detected=AiSettingsActivity.styleTone(ime);
-        if("auto".equals(detected))detected=helium314.keyboard.latin.ai.local.PersonalStyleProfile.register(context.toString());
+        if("auto".equals(detected))detected=helium314.keyboard.latin.ai.local.PersonalStyleProfile.preferredRegister(context.toString(),profile);
         final String register=detected;
         ArrayList<helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo> ranked=new ArrayList<>();
         final Map<helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo,Double> scores=new IdentityHashMap<>();
         for(int i=0;i<words.size();i++){
             helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo word=words.getInfo(i);
             if(!word.isKindOf(helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo.KIND_PREDICTION))return words;
-            ranked.add(word);scores.put(word,-i*.03+helium314.keyboard.latin.ai.local.PersonalStyleProfile.preference(word.mWord,register,profile));
+            ranked.add(word);scores.put(word,-i*.03+helium314.keyboard.latin.ai.local.PersonalStyleProfile.preference(word.mWord,register,profile,context.toString().trim().isEmpty())
+                +(personal.protectedWord(word.mWord)?.06:0));
         }
         ranked.sort((a,b)->Double.compare(scores.get(b),scores.get(a)));
         return new helium314.keyboard.latin.SuggestedWords(ranked,words.mRawSuggestions,words.mTypedWordInfo,words.mTypedWordValid,words.mWillAutoCorrect,words.mIsObsoleteSuggestions,words.mInputStyle,words.mSequenceNumber);
     }
     private void observeCompletedStyle(String context,int cursor){
         if(!AiSettingsActivity.styleEnabled(ime)||cursor==styleBoundary)return;
-        String sentence=context.trim();if(sentence.isEmpty()||".!?".indexOf(sentence.charAt(sentence.length()-1))<0)return;
+        String sentence=context.trim();if(sentence.isEmpty()||".!?…".indexOf(sentence.charAt(sentence.length()-1))<0)return;
+        int contentEnd=sentence.length();
+        while(contentEnd>0&&".!?…".indexOf(sentence.charAt(contentEnd-1))>=0)contentEnd--;
+        if(contentEnd==0)return;
         int start=-1;
-        for(int i=0;i<sentence.length()-1;i++)if(".!?\\n".indexOf(sentence.charAt(i))>=0)start=i;
+        for(int i=0;i<contentEnd;i++)if(".!?".indexOf(sentence.charAt(i))>=0||sentence.charAt(i)==10)start=i;
         sentence=sentence.substring(start+1).trim();
         if(sentence.isEmpty())return;
-        personal.observeStyle(sentence,typingLanguage());styleBoundary=cursor;
+        personal.observeStyle(sentence,typingLanguage(),start<0);styleBoundary=cursor;
     }
 
     private void reviewLocal() {
@@ -306,11 +310,11 @@ public final class AiKeyboardAssistant {
         CharSequence before=ime.getAiInputConnection().getTextBeforeCursor(512,InputConnection.GET_TEXT_WITH_STYLES);
         if(before==null||before.length()==0||SensitiveInputPolicy.sensitiveText(before))return;
         String context=before.toString();
-        observeCompletedStyle(context,base.start);
         int offset=base.start-context.length();
         if(offset<0)return;
         // A truncated prefix may begin inside a quote, URL, name or token. Fail closed.
         if(offset>0)return;
+        observeCompletedStyle(context,base.start);
         final long deadline=System.nanoTime()+8_000_000L;
         java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> corrections=
             boundaryReviewer.review(

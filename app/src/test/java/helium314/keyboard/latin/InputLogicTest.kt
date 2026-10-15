@@ -182,6 +182,28 @@ class InputLogicTest {
         latinIME.getSharedPreferences("keyboard_ai_private", 0).edit().putBoolean("personal_style_consent", false).commit()
     }
 
+    @Test fun R24StyleLearnsCompleteEllipsisOnceWithoutTreatingLetterNAsSeparator() {
+        r22Enable("Oye, además quería mencionar una reunión...")
+        val assistant = r23Assistant()
+        val model = helium314.keyboard.latin.ai.local.PersonalTypingStore.get(latinIME)
+        model.erase()
+        latinIME.getSharedPreferences("keyboard_ai_private", 0).edit().putBoolean("personal_style_consent", true).commit()
+        try {
+            assistant.onWordBoundary()
+            assistant.onWordBoundary()
+            val profile = model.styleSnapshot()
+            assertEquals(1L, profile["opening.casual"])
+            assertEquals(1L, profile["connector.además"])
+            assertEquals(1L, profile["ending.ellipsis"])
+            kotlin.test.assertFalse(profile.toString().contains("reunión"))
+            assertEquals("Oye, además quería mencionar una reunión...", text)
+            model.eraseStyle()
+            kotlin.test.assertTrue(model.styleSnapshot().isEmpty())
+        } finally {
+            latinIME.getSharedPreferences("keyboard_ai_private", 0).edit().putBoolean("personal_style_consent", false).commit()
+        }
+    }
+
     @Test fun R24StyleOptOutPreservesOriginalSuggestionsAndOptInUsesSameStrip() {
         r22Enable("Oye ")
         val assistant = r23Assistant()

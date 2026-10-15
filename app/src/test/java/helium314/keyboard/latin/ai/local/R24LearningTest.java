@@ -49,6 +49,16 @@ public class R24LearningTest {
   assertTrue(model.styleSnapshot().isEmpty());assertTrue(model.protectedWord("Kotlin"));assertEquals("the",model.automatic("teh","en-US",false));
   assertFalse(new String(model.exportData(),"UTF-8").contains("connector."));
  }
+ @Test public void newOpeningAndStructureCountersPersistWithoutChangingR23BackupPayload()throws Exception{
+  model=PersonalTypingStore.get(context);model.exportData();model.erase();
+  model.observeStyle("Oye, quería comentar porque necesito preguntar...","es-MX",true);model.exportData();
+  clearSingleton();model=PersonalTypingStore.get(context);model.exportData();
+  assertEquals(Long.valueOf(1),model.styleSnapshot().get("opening.casual"));
+  assertEquals(Long.valueOf(1),model.styleSnapshot().get("clause.subordination"));
+  assertEquals(Long.valueOf(1),model.styleSnapshot().get("ending.ellipsis"));
+  assertFalse(new String(model.exportData(),"UTF-8").contains("quería comentar"));
+  model.eraseStyle();model.exportData();assertTrue(model.styleSnapshot().isEmpty());
+ }
  @Test public void vocabularyAndStyleRejectSecretsAndNeverStoreSentenceText()throws Exception{
   model=PersonalTypingStore.get(context);model.exportData();model.erase();
   assertFalse(model.keepWord("password","en-US"));assertFalse(model.keepWord("two words","en-US"));
