@@ -1091,6 +1091,8 @@ class InputLogicTest {
         // reset settings
         latinIME.getSharedPreferences("keyboard_ai_private", 0).edit().clear().commit()
         latinIME.prefs().edit { clear() }
+        // The new persistent singleton must be isolated just like preferences/dictionaries.
+        helium314.keyboard.latin.ai.local.PersonalTypingStore.get(latinIME).erase()
 
         setText("") // (re)sets selection and composing word
     }

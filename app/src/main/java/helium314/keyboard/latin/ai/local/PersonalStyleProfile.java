@@ -46,7 +46,10 @@ public final class PersonalStyleProfile {
   if(text.indexOf('?')>=0)out.put("punctuation.question",1L);
   if(text.indexOf('!')>=0)out.put("punctuation.exclamation",1L);
   if(text.indexOf('.')>=0)out.put("punctuation.period",1L);
-  if(text.codePoints().anyMatch(c->c>=0x1F300&&c<=0x1FAFF))out.put("emoji",1L);
+  for(int offset=0;offset<text.length();){
+   int codePoint=text.codePointAt(offset);offset+=Character.charCount(codePoint);
+   if(codePoint>=0x1F300&&codePoint<=0x1FAFF){out.put("emoji",1L);break;}
+  }
   if("es-MX".equals(language))out.put("language.es",1L);
   if("en-US".equals(language))out.put("language.en",1L);
   if(es&&en)out.put("language.mixed",1L);

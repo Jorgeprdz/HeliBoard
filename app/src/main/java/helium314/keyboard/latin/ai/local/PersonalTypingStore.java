@@ -133,8 +133,13 @@ public final class PersonalTypingStore {
   String prefix=normalized(value)+Character.toString(9);synchronized(rows){for(String key:vocabulary)if(key.startsWith(prefix))return true;}return false;
  }
  private static boolean safeVocabulary(String value){
-  return value!=null&&value.matches("[\\p{L}\\p{M}]{2,32}")&&!helium314.keyboard.latin.ai.SensitiveInputPolicy.sensitiveText(value)
-    &&value.chars().filter(Character::isUpperCase).count()<=1;
+  if(value==null||!value.matches("[\\p{L}\\p{M}]{2,32}")||helium314.keyboard.latin.ai.SensitiveInputPolicy.sensitiveText(value))return false;
+  int upper=0;
+  for(int offset=0;offset<value.length();){
+   int codePoint=value.codePointAt(offset);offset+=Character.charCount(codePoint);
+   if(Character.isUpperCase(codePoint)&&++upper>1)return false;
+  }
+  return true;
  }
  /** Explicit keep-word evidence only. Manual dictionaries remain authoritative as well. */
  public boolean keepWord(String value,String language){

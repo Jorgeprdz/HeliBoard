@@ -49,7 +49,7 @@ public class R24TypingTest {
  }
  @Test public void styleRetainsOnlyAllowlistedAggregateFeaturesAndRanksAcceptedConnectors(){
   Map<String,Long> traits=PersonalStyleProfile.features("Oye, además quería comentar. 🙂","es-MX");
-  assertTrue(traits.containsKey("register.casual"));assertTrue(traits.containsKey("connector.además"));
+  assertTrue(traits.containsKey("emoji"));assertTrue(traits.containsKey("register.casual"));assertTrue(traits.containsKey("connector.además"));
   assertTrue(traits.containsKey("emoji"));assertFalse(traits.toString().contains("quería"));
   assertTrue(PersonalStyleProfile.features("password ABCDEF123456","en-US").isEmpty());
   assertTrue(PersonalStyleProfile.features("contact alice@example.org","en-US").isEmpty());
