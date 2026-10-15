@@ -51,7 +51,7 @@ jobs:
         env:
           HELIBOARD_SIGNING_DIR: ${{ runner.temp }}/heliboard-signing
         run: ./gradlew :app:assembleDebug
-      - name: Verify APK identity, certificate, checksum and provenance
+      - name: Verify APK integrity, package and checksum; audit certificate identity
         env:
           EXPECTED_CERT: cfea5c3e180245ec7db199a1d8d799a4a91e0454fef7d02c5313b6d923b66ba2
         run: |
@@ -61,7 +61,7 @@ jobs:
           test "${#apks[@]}" -eq 1
           cp "${apks[0]}" r22-artifact/HeliBoard-R2.2-debug.apk
           tools="$ANDROID_HOME/build-tools/37.0.0"
-          "$tools/apksigner" verify --print-certs r22-artifact/HeliBoard-R2.2-debug.apk > "$RUNNER_TEMP/r22-certificate.txt"
+          "$tools/apksigner" verify --print-certs r22-artifact/HeliBoard-R2.2-debug.apk | tee "$RUNNER_TEMP/r22-certificate.txt"
           "$tools/aapt" dump badging r22-artifact/HeliBoard-R2.2-debug.apk > "$RUNNER_TEMP/r22-badging.txt"
           python3 scripts/ci/r22-manifest.py
           (cd r22-artifact && sha256sum -c SHA256SUMS.txt)
@@ -79,6 +79,7 @@ jobs:
           path: |
             app/build/reports
             app/build/test-results
+            ${{ runner.temp }}/r22-certificate.txt
           retention-days: 14
       - name: Remove runner signing files
         if: always()
