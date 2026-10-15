@@ -12,10 +12,27 @@ public final class ObservedLexicon {
   List<String> safe=new ArrayList<>();if(candidates!=null)for(String candidate:candidates){if(candidate!=null&&candidate.length()<=48&&!SensitiveInputPolicy.sensitiveText(candidate))safe.add(candidate);if(safe.size()==24)break;}
   words.put(word.toLowerCase(Locale.ROOT),new Entry(valid,safe,complete));while(words.size()>256)words.remove(words.keySet().iterator().next());
  }
- public LocalContextReviewer.Lexicon snapshot(){final Map<String,Entry> copy=new HashMap<>(words);return new LocalContextReviewer.Lexicon(){
+ private final Map<String,Map<String,Double>> priors=new LinkedHashMap<>();
+ private Map<Character,double[]> keys=null;
+ public void keyboard(Map<Character,double[]> positions){keys=new HashMap<>(positions);}
+ public void nativePriors(String source,Map<String,Double> values){
+  if(source==null||source.length()>48)return;
+  priors.put(source.toLowerCase(Locale.ROOT),new HashMap<>(values));
+  while(priors.size()>256)priors.remove(priors.keySet().iterator().next());
+ }
+ public LocalContextReviewer.Lexicon snapshot(){final Map<String,Entry> copy=new HashMap<>(words);
+ final Map<String,Map<String,Double>> scores=new HashMap<>(priors);
+ final Map<Character,double[]> positions=keys==null?null:new HashMap<>(keys);
+ return new LocalContextReviewer.Lexicon(){
+  public double prior(String source,String candidate){return scores.getOrDefault(source,Collections.emptyMap()).getOrDefault(candidate,0.0);}
+  public double keyDistance(char a,char b){
+   if(positions==null)return Double.POSITIVE_INFINITY;
+   double[] x=positions.get(a),y=positions.get(b);if(x==null||y==null)return Double.POSITIVE_INFINITY;
+   return Math.hypot(x[0]-y[0],x[1]-y[1])/Math.max(1,(x[2]+y[2])/2);
+  }
   public boolean valid(String word){Entry e=copy.get(word.toLowerCase(Locale.ROOT));return e!=null&&e.valid;}
   public boolean knownInvalid(String word){Entry e=copy.get(word.toLowerCase(Locale.ROOT));return e!=null&&e.complete&&!e.valid;}
   public List<String> candidates(String word){Entry e=copy.get(word.toLowerCase(Locale.ROOT));return e==null?Collections.emptyList():e.candidates;}
  };}
- public void clear(){words.clear();}
+ public void clear(){words.clear();priors.clear();keys=null;}
 }

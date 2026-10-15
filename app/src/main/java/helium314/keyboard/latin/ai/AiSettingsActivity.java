@@ -38,6 +38,13 @@ public class AiSettingsActivity extends Activity {
     public enum KeyState { NO_KEY, AVAILABLE, LOCKED, INVALIDATED }
     public static boolean isEnabled(Context ctx) { return ctx.getSharedPreferences(PREF, MODE_PRIVATE).getBoolean("enabled", false); }
     public static boolean networkAllowed(Context ctx) { return isEnabled(ctx) && ctx.getSharedPreferences(PREF, MODE_PRIVATE).getBoolean("network_consent", false); }
+    /** Balanced local typing is independent of optional Gemini/network consent. */
+    public static boolean typingEnabled(Context ctx){return ctx.getSharedPreferences(PREF,MODE_PRIVATE).getBoolean("intelligent_typing",true);}
+    public static boolean styleEnabled(Context ctx){return typingEnabled(ctx)&&ctx.getSharedPreferences(PREF,MODE_PRIVATE).getBoolean("personal_style_consent",false);}
+    public static String styleTone(Context ctx){
+        String value=ctx.getSharedPreferences(PREF,MODE_PRIVATE).getString("style_tone","auto");
+        return "casual".equals(value)||"professional".equals(value)?value:"auto";
+    }
     public static boolean contextualEnabled(Context ctx) { return isEnabled(ctx) && ctx.getSharedPreferences(PREF, MODE_PRIVATE).getBoolean("local_context", false); }
     public static boolean dictationEnabled(Context ctx) { return isEnabled(ctx) && ctx.getSharedPreferences(PREF, MODE_PRIVATE).getBoolean("dictation", false); }
     public static boolean excludedApp(Context ctx, String name) {
@@ -126,6 +133,42 @@ public class AiSettingsActivity extends Activity {
         box.setOnCheckedChangeListener((button, enabled) -> getSharedPreferences(PREF, MODE_PRIVATE).edit().putBoolean(pref, enabled).apply());
         stack.addView(box);
     }
+    private void addTypingSettings(LinearLayout stack){
+        final helium314.keyboard.latin.ai.local.PersonalTypingStore learning=helium314.keyboard.latin.ai.local.PersonalTypingStore.get(this);
+        CheckBox balanced=new CheckBox(this);balanced.setText("Escritura inteligente · Equilibrado (local)");
+        balanced.setChecked(typingEnabled(this));
+        balanced.setOnCheckedChangeListener((v,on)->getSharedPreferences(PREF,MODE_PRIVATE).edit().putBoolean("intelligent_typing",on).apply());stack.addView(balanced);
+        TextView privacy=new TextView(this);
+        privacy.setText("Estilo opcional: autoriza contadores locales de registro, conectores, longitud, puntuación, idiomas y emojis al terminar oraciones. No guarda frases completas, no usa Accesibilidad y no envía este perfil a Drive o Gemini. Las exclusiones de aplicaciones y campos privados también se respetan. Es un ranking heurístico; la generación semántica de frases aún no está disponible.");
+        stack.addView(privacy);
+        CheckBox consent=new CheckBox(this);consent.setText("Autorizar aprendizaje y uso de mi estilo");
+        consent.setChecked(getSharedPreferences(PREF,MODE_PRIVATE).getBoolean("personal_style_consent",false));
+        consent.setOnCheckedChangeListener((v,on)->getSharedPreferences(PREF,MODE_PRIVATE).edit().putBoolean("personal_style_consent",on).apply());stack.addView(consent);
+        android.widget.Spinner tone=new android.widget.Spinner(this);
+        String[] codes={"auto","casual","professional"};
+        tone.setAdapter(new android.widget.ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"Registro según el texto","Casual","Profesional"}));
+        tone.setSelection(java.util.Arrays.asList(codes).indexOf(styleTone(this)));
+        tone.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
+            public void onNothingSelected(android.widget.AdapterView<?> parent){}
+            public void onItemSelected(android.widget.AdapterView<?> parent,View view,int position,long id){
+                getSharedPreferences(PREF,MODE_PRIVATE).edit().putString("style_tone",codes[position]).apply();
+            }
+        });stack.addView(tone);
+        TextView status=new TextView(this);stack.addView(status);
+        Button inspect=new com.google.android.material.button.MaterialButton(this);inspect.setText("Consultar perfil y aprendizaje");
+        inspect.setOnClickListener(v->status.setText("Contadores (no frases): "+learning.styleSnapshot()+"\\n"+android.text.TextUtils.join("\\n",learning.inspect())));
+        stack.addView(inspect);
+        Button erase=new com.google.android.material.button.MaterialButton(this);erase.setText("Borrar solo mi perfil de estilo");
+        erase.setOnClickListener(v->{learning.eraseStyle();status.setText("Perfil de estilo borrándose. Correcciones y diccionarios se conservan.");});stack.addView(erase);
+        EditText keep=new com.google.android.material.textfield.TextInputEditText(this);keep.setSingleLine(true);keep.setHint("Palabra que debe conservarse (sin frases ni secretos)");stack.addView(keep);
+        android.widget.Spinner lang=new android.widget.Spinner(this);String[] languages={"es-MX","en-US"};
+        lang.setAdapter(new android.widget.ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,languages));stack.addView(lang);
+        Button protect=new com.google.android.material.button.MaterialButton(this);protect.setText("Conservar palabra");
+        protect.setOnClickListener(v->{boolean ok=learning.keepWord(keep.getText().toString().trim(),languages[lang.getSelectedItemPosition()]);
+            status.setText(ok?"Palabra protegida localmente; guardado en segundo plano.":"No guardada: espera a que cargue SQLite o usa una sola palabra segura (máximo 32 letras y 512 entradas).");});stack.addView(protect);
+        Button forgetWord=new com.google.android.material.button.MaterialButton(this);forgetWord.setText("Quitar esta protección");
+        forgetWord.setOnClickListener(v->{learning.forgetWord(keep.getText().toString().trim(),languages[lang.getSelectedItemPosition()]);status.setText("Protección local eliminándose; el diccionario manual original no se modifica.");});stack.addView(forgetWord);
+    }
     @Override protected void onCreate(Bundle state) {
         AiMenuTheme.applyActivity(this);
         super.onCreate(state);
@@ -142,7 +185,7 @@ public class AiSettingsActivity extends Activity {
         stack.addView(title);
         addToggle(stack, "AI Keyboard (desactivado por defecto)", "enabled");
         addToggle(stack, "Permitir Google solo al elegir una acción", "network_consent");
-        addToggle(stack, "Revisión contextual local ES/EN", "local_context");
+        addTypingSettings(stack);
         addToggle(stack, "Dictado integrado en el micrófono existente", "dictation");
         TextView details = new TextView(this);
         details.setText("IA opcional. El texto seleccionado se envía a Google solo al elegir una herramienta y dar permiso. El dictado de nube también requiere ese permiso. Puede consumir cuota. No se envían campos protegidos ni datos detectados como sensibles. La clave se cifra con Android Keystore. Cancelar descarta el resultado, pero no puede retirar datos que Google ya recibió. El menú conserva el portapapeles; ✨ utiliza el acceso fijado sin modificar atajos personalizados.");

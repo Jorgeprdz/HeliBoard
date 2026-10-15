@@ -129,7 +129,11 @@ public final class AiKeyboardAssistant {
     }
     /** Called only for an explicit candidate selection, before native commit. */
     public void onExplicitCandidate(String typed,String chosen){
-        if(AiSettingsActivity.contextualEnabled(ime)&&!privateField())personal.accept(typed,chosen,typingLanguage());
+        if(!AiSettingsActivity.typingEnabled(ime)||typingProtected())return;
+        CharSequence context=ime.getAiInputConnection().getTextBeforeCursor(512,0);
+        if(context==null||SensitiveInputPolicy.sensitiveText(context))return;
+        if(typed.equals(chosen))personal.keepWord(chosen,typingLanguage());
+        else personal.accept(typed,chosen,typingLanguage());
     }
     private boolean finishAutomatic(EditorSnapshot base,String value){
         automaticOriginal="";automaticLanguage="";
@@ -158,7 +162,7 @@ public final class AiKeyboardAssistant {
     private CharSequence localOriginal;
     private final Runnable localDebounce=this::reviewLocal;
     public void onPredictions(helium314.keyboard.latin.SuggestedWords words,SuggestionStripView view) {
-        if(!AiSettingsActivity.contextualEnabled(ime)||privateField())return;
+        if(!AiSettingsActivity.typingEnabled(ime)||typingProtected())return;
         if(!words.isPrediction()&&words.size()>0) {
             String typed=words.mTypedWordInfo==null?words.getWord(0):words.mTypedWordInfo.mWord;
             List<String> candidates=new ArrayList<>();
@@ -168,22 +172,106 @@ public final class AiKeyboardAssistant {
                         &&info.mSourceDict!=null) candidates.add(info.mWord);
             }
             lexicon.record(typed,words.mTypedWordValid,candidates,!words.mIsObsoleteSuggestions&&words.mTypedWordInfo!=null);
+            Map<String,Double> priors=new HashMap<>();
+            // Use native ordering, which already combines lexical frequency and active languages.
+            for(int i=0;i<candidates.size();i++)priors.put(candidates.get(i),.12/(i+1));
+            lexicon.nativePriors(typed,priors);
+            updateKeyGeometry();
             for(String word:candidates)if(!word.equals(typed))lexicon.record(word,true,Collections.emptyList());
         }
         if(view==null||view.isAiActive())return;
-        strip=view;main.removeCallbacks(localDebounce);main.post(localDebounce);
+        strip=view;
+        // Ambiguous corrections remain normal native suggestions; never open an AI menu.
+        main.removeCallbacks(localDebounce);
     }
+    public helium314.keyboard.latin.SuggestedWords protectNativeSuggestions(helium314.keyboard.latin.SuggestedWords words){
+        if(!AiSettingsActivity.typingEnabled(ime)||typingProtected()||!words.mWillAutoCorrect||words.isPrediction()
+            ||words.mTypedWordInfo==null||words.size()<2)return words;
+        // User-defined shortcuts retain their explicit native expansion policy.
+        if(words.getInfo(1).isKindOf(helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo.KIND_SHORTCUT))return words;
+        String typed=words.mTypedWordInfo.mWord,replacement=words.getWord(1);
+        boolean veto=words.mTypedWordValid||personal.protectedWord(typed)||personal.rejected(typed,replacement,typingLanguage())
+            ||!typed.matches("[\\p{Ll}\\p{M}]{2,48}")||!replacement.matches("[\\p{Ll}\\p{M}]{2,48}")
+            ||AiSettingsActivity.rejectedCorrections(ime).contains(typed+"→"+replacement);
+        if(!veto)return words;
+        ArrayList<helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo> keep=new ArrayList<>();
+        for(int i=0;i<words.size();i++)keep.add(words.getInfo(i));
+        return new helium314.keyboard.latin.SuggestedWords(keep,words.mRawSuggestions,words.mTypedWordInfo,
+            words.mTypedWordValid||personal.protectedWord(typed),false,words.mIsObsoleteSuggestions,words.mInputStyle,words.mSequenceNumber);
+    }
+    public void onNativeCorrectionReverted(String typed,String replacement){
+        if(!AiSettingsActivity.typingEnabled(ime)||typingProtected()
+            ||!typed.matches("[\\p{Ll}\\p{M}]{2,48}")||!replacement.matches("[\\p{Ll}\\p{M}]{2,48}"))return;
+        CharSequence before=ime.getAiInputConnection().getTextBeforeCursor(512,0);
+        if(before==null||SensitiveInputPolicy.sensitiveText(before))return;
+        personal.reject(typed,replacement,typingLanguage());
+        AiSettingsActivity.rejectCorrection(ime,typed+"→"+replacement);
+    }
+    private Object rankedKeyboard;
+    private int styleBoundary=-1;
+    private void updateKeyGeometry(){
+        helium314.keyboard.keyboard.Keyboard keyboard=helium314.keyboard.keyboard.KeyboardSwitcher.getInstance().getKeyboard();
+        if(keyboard==null||keyboard==rankedKeyboard)return;
+        Map<Character,double[]> positions=new HashMap<>();
+        for(char key:"abcdefghijklmnopqrstuvwxyzñ".toCharArray()){
+            helium314.keyboard.keyboard.Key value=keyboard.getKey(key);
+            if(value!=null)positions.put(key,new double[]{value.getX()+value.getWidth()/2.0,value.getY()+value.getHeight()/2.0,value.getWidth()});
+        }
+        lexicon.keyboard(positions);rankedKeyboard=keyboard;
+    }
+    private helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon personalLexicon(){
+        final helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon base=lexicon.snapshot();
+        final String language=typingLanguage();
+        return new helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon(){
+            public boolean valid(String word){return personal.protectedWord(word)||base.valid(word);}
+            public boolean knownInvalid(String word){return !personal.protectedWord(word)&&base.knownInvalid(word);}
+            public List<String> candidates(String word){return base.candidates(word);}
+            public double prior(String source,String candidate){return base.prior(source,candidate);}
+            public double keyDistance(char a,char b){return base.keyDistance(a,b);}
+            public double personalPreference(String source,String candidate){return personal.preference(source,candidate,language);}
+            public boolean rejected(String source,String candidate){return personal.rejected(source,candidate,language);}
+        };
+    }
+    /** Reorders existing next-word predictions only. Never generates content or enables auto-commit. */
+    public helium314.keyboard.latin.SuggestedWords rankStylePredictions(helium314.keyboard.latin.SuggestedWords words){
+        if(!AiSettingsActivity.styleEnabled(ime)||typingProtected()||!words.isPrediction()||words.mIsObsoleteSuggestions||words.size()<2)return words;
+        CharSequence context=ime.getAiInputConnection().getTextBeforeCursor(256,0);
+        if(context==null||SensitiveInputPolicy.sensitiveText(context))return words;
+        final Map<String,Long> profile=personal.styleSnapshot();
+        String detected=AiSettingsActivity.styleTone(ime);
+        if("auto".equals(detected))detected=helium314.keyboard.latin.ai.local.PersonalStyleProfile.register(context.toString());
+        final String register=detected;
+        ArrayList<helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo> ranked=new ArrayList<>();
+        final Map<helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo,Double> scores=new IdentityHashMap<>();
+        for(int i=0;i<words.size();i++){
+            helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo word=words.getInfo(i);
+            if(!word.isKindOf(helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo.KIND_PREDICTION))return words;
+            ranked.add(word);scores.put(word,-i*.03+helium314.keyboard.latin.ai.local.PersonalStyleProfile.preference(word.mWord,register,profile));
+        }
+        ranked.sort((a,b)->Double.compare(scores.get(b),scores.get(a)));
+        return new helium314.keyboard.latin.SuggestedWords(ranked,words.mRawSuggestions,words.mTypedWordInfo,words.mTypedWordValid,words.mWillAutoCorrect,words.mIsObsoleteSuggestions,words.mInputStyle,words.mSequenceNumber);
+    }
+    private void observeCompletedStyle(String context,int cursor){
+        if(!AiSettingsActivity.styleEnabled(ime)||cursor==styleBoundary)return;
+        String sentence=context.trim();if(sentence.isEmpty()||".!?".indexOf(sentence.charAt(sentence.length()-1))<0)return;
+        int start=-1;
+        for(int i=0;i<sentence.length()-1;i++)if(".!?\\n".indexOf(sentence.charAt(i))>=0)start=i;
+        sentence=sentence.substring(start+1).trim();
+        if(sentence.isEmpty())return;
+        personal.observeStyle(sentence,typingLanguage());styleBoundary=cursor;
+    }
+
     private void reviewLocal() {
-        if(!AiSettingsActivity.contextualEnabled(ime)||privateField()||strip==null||strip.isAiActive())return;
+        if(!AiSettingsActivity.typingEnabled(ime)||typingProtected()||strip==null||strip.isAiActive())return;
         EditorSnapshot base=capture();if(base==null||base.start!=base.end||base.start<0)return;
         CharSequence before=ime.getAiInputConnection().getTextBeforeCursor(512,InputConnection.GET_TEXT_WITH_STYLES);
         if(before==null||before.length()==0||SensitiveInputPolicy.sensitiveText(before))return;
         String context=before.toString();int offset=base.start-context.length();if(offset<0)return;
-        helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon vocabulary=lexicon.snapshot();
+        helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon vocabulary=personalLexicon();
         Set<String> rejected=AiSettingsActivity.rejectedCorrections(ime);
         final List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction>[] proposals=new List[]{Collections.emptyList()};
         localSession.submit(cancel->{proposals[0]=new helium314.keyboard.latin.ai.local.LocalContextReviewer().review(context,vocabulary,rejected,cancel::cancelled);return "";},(unused,error)->{
-            if(error!=null||!AiSettingsActivity.contextualEnabled(ime)||privateField()||!base.matches(capture())||proposals[0].isEmpty()||strip==null||strip.isAiActive())return;
+            if(error!=null||!AiSettingsActivity.typingEnabled(ime)||privateField()||!base.matches(capture())||proposals[0].isEmpty()||strip==null||strip.isAiActive())return;
             localBase=base;localContext=context;localOffset=offset;localCorrection=proposals[0].get(0);localOriginal=SpannedString.valueOf(before.subSequence(localCorrection.start,localCorrection.end));
             show(localCorrection.original+" → "+localCorrection.replacement,"Aplicar corrección","Rechazar corrección","Cerrar");
         },1000);
@@ -210,7 +298,7 @@ public final class AiKeyboardAssistant {
 
     /** Runs only at an IME word boundary, after native autocorrection; no network/dictionary IO. */
     public void onWordBoundary() {
-        if(!AiSettingsActivity.contextualEnabled(ime)||privateField()
+        if(!AiSettingsActivity.typingEnabled(ime)||typingProtected()
                 ||(strip!=null&&strip.isAiActive())||ime.getAiInputConnection().hasSlowInputConnection())return;
         EditorSnapshot base=capture();
         if(base==null||base.start!=base.end||base.start<0
@@ -218,6 +306,7 @@ public final class AiKeyboardAssistant {
         CharSequence before=ime.getAiInputConnection().getTextBeforeCursor(512,InputConnection.GET_TEXT_WITH_STYLES);
         if(before==null||before.length()==0||SensitiveInputPolicy.sensitiveText(before))return;
         String context=before.toString();
+        observeCompletedStyle(context,base.start);
         int offset=base.start-context.length();
         if(offset<0)return;
         // A truncated prefix may begin inside a quote, URL, name or token. Fail closed.
@@ -225,13 +314,13 @@ public final class AiKeyboardAssistant {
         final long deadline=System.nanoTime()+8_000_000L;
         java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> corrections=
             boundaryReviewer.review(
-                context,lexicon.snapshot(),AiSettingsActivity.rejectedCorrections(ime),
+                context,personalLexicon(),AiSettingsActivity.rejectedCorrections(ime),
                 ()->System.nanoTime()>deadline);
         if(System.nanoTime()>deadline)return;
         java.util.regex.Matcher last=java.util.regex.Pattern.compile("([\\p{Ll}\\p{M}]{2,48})[ \\t.,!?;:]+$").matcher(context);
         if(last.find()&&(last.start()==0||Character.isWhitespace(context.charAt(last.start()-1)))){
             String typed=last.group(1);
-            helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon known=lexicon.snapshot();
+            helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon known=personalLexicon();
             String replacement=known.knownInvalid(typed)?personal.automatic(typed,typingLanguage(),known.valid(typed)):null;
             if(replacement!=null&&boundaryReviewer.allowsPersonal(context,last.start(1),last.end(1),replacement,AiSettingsActivity.rejectedCorrections(ime))){
                 java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> all=new java.util.ArrayList<>();
@@ -343,6 +432,11 @@ public final class AiKeyboardAssistant {
             helium314.keyboard.latin.settings.Settings.getValues().mIncognitoModeEnabled,
             AiSettingsActivity.excludedApp(ime, editor.packageName));
     }
+    private boolean typingProtected(){
+        EditorInfo editor=ime.getCurrentInputEditorInfo();
+        return privateField()||editor==null||"com.termux".equals(editor.packageName)
+            ||(editor.inputType&InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)!=0;
+    }
     private String currentSelection() {
         InputConnection ic = ime.getCurrentInputConnection();
         if (ic == null) return "";
@@ -353,7 +447,7 @@ public final class AiKeyboardAssistant {
     public void onNewEditor() { reset(true); }
     private void reset(boolean forgetWords) {
         clearAutomaticUndo();
-        generation++; revision++;dictation.cancel();dictationBase=null;if(audioCapture!=null){audioCapture.close();audioCapture=null;}if(recordedAudio!=null){recordedAudio.delete();recordedAudio=null;}if(speech!=null){speech.close();speech=null;} session.cancel();localSession.cancel();main.removeCallbacks(localDebounce);localBase=null;localCorrection=null;localOriginal=null;localContext="";if(forgetWords)lexicon.clear();review.clear();edits.clear();undoText="";pendingAction="";entities.clear();
+        generation++; revision++;dictation.cancel();dictationBase=null;if(audioCapture!=null){audioCapture.close();audioCapture=null;}if(recordedAudio!=null){recordedAudio.delete();recordedAudio=null;}if(speech!=null){speech.close();speech=null;} session.cancel();localSession.cancel();main.removeCallbacks(localDebounce);localBase=null;localCorrection=null;localOriginal=null;localContext="";if(forgetWords){lexicon.clear();rankedKeyboard=null;styleBoundary=-1;}review.clear();edits.clear();undoText="";pendingAction="";entities.clear();
         if(reviewDialog!=null){AlertDialog old=reviewDialog;reviewDialog=null;old.dismiss();}
         selected = ""; proposed = ""; address = ""; phone = ""; clabe = ""; email = "";
         if (strip != null) strip.closeAiChoices();
