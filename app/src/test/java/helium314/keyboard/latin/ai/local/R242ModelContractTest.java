@@ -13,10 +13,10 @@ public class R242ModelContractTest {
   assertTrue(WritingModelFiles.file(context).getPath().startsWith(context.getNoBackupFilesDir().getPath()));
  }
  @Test public void profileRegistersAffectRealInferencePromptWithoutStoredConversations(){
-  String casual=NativeWritingModel.prompt("prueba","casual; ending.ellipsis");
-  String professional=NativeWritingModel.prompt("prueba","professional");
+  String casual=CorrectionFocus.prompt("mensaje de prueba","prueab","casual; ending.ellipsis");
+  String professional=CorrectionFocus.prompt("mensaje de prueba","prueab","professional");
   assertNotEquals(casual,professional);assertTrue(casual.contains("ending.ellipsis"));
-  assertTrue(professional.contains("Preserve the language, meaning, names, numbers, negations and commitments"));
+  assertTrue(professional.contains("Preserve names, numbers, negations and commitments"));
   assertFalse(casual.contains("https://"));
  }
  @Test public void truncatedOrForeignModelCannotPassIntegrityValidation()throws Exception{

@@ -15,6 +15,9 @@ public final class BoundedDictionaryLexicon implements LocalContextReviewer.Lexi
   if(cancel.cancelled())throw new java.util.concurrent.CancellationException();
   String key=word.toLowerCase(Locale.ROOT);
   if(base.preserved(key))return true;
+  // A native complete-invalid observation predates automatic user-history insertion on commit.
+  // That insertion is not explicit evidence that the typo is legitimate vocabulary.
+  if(base.knownInvalid(key))return false;
   Boolean result=checked.get(key);
   if(result==null){
    if(checked.size()>=512)throw new java.util.concurrent.CancellationException();

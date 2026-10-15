@@ -172,8 +172,7 @@ public final class AiKeyboardAssistant {
         final helium314.keyboard.latin.ai.local.ContinuousReviewAnchor anchor;
         QueuedReview(EditorSnapshot b,String c,helium314.keyboard.latin.ai.local.ContinuousReviewAnchor a){base=b;context=c;anchor=a;}
     }
-    private int lastModelBoundary=-1;
-    private final LinkedHashSet<Integer> reviewedWindows=new LinkedHashSet<>(),offeredSpans=new LinkedHashSet<>();
+    private final LinkedHashSet<Integer> offeredSpans=new LinkedHashSet<>(),examinedSources=new LinkedHashSet<>();
     private final java.util.ArrayDeque<PendingReview> pendingReviews=new java.util.ArrayDeque<>();
     private static final class PendingReview {
         final helium314.keyboard.latin.ai.local.ContinuousReviewAnchor anchor;
@@ -181,7 +180,7 @@ public final class AiKeyboardAssistant {
         PendingReview(helium314.keyboard.latin.ai.local.ContinuousReviewAnchor a,java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> c){anchor=a;corrections=c;}
     }
     private void invalidateContinuous(){
-        continuousEpoch++;continuousSession.cancel();continuousRunning=false;latestReview=null;pendingReviews.clear();lastModelBoundary=-1;
+        continuousEpoch++;continuousSession.cancel();continuousRunning=false;latestReview=null;pendingReviews.clear();examinedSources.clear();
         main.removeCallbacks(releaseWritingModel);main.postDelayed(releaseWritingModel,45000);
     }
     private long modelRetryAfter;
@@ -202,11 +201,10 @@ public final class AiKeyboardAssistant {
         final helium314.keyboard.latin.ai.local.ContinuousReviewAnchor anchor=anchor(base,context);
         final helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon observed=personalLexicon();
         final Set<String> rejected=AiSettingsActivity.rejectedCorrections(ime);
-        final int fingerprint=Objects.hash(anchor.start,context);
-        final boolean model=android.os.SystemClock.elapsedRealtime()>=modelRetryAfter&&!reviewedWindows.contains(fingerprint)&&helium314.keyboard.latin.ai.local.WritingModelFiles.enabled(ime)
+        final boolean model=android.os.SystemClock.elapsedRealtime()>=modelRetryAfter
+            &&helium314.keyboard.latin.ai.local.WritingModelFiles.enabled(ime)
             &&helium314.keyboard.latin.ai.local.WritingModelFiles.available(ime)
-            &&context.trim().split("\\s+").length>=8
-            &&(lastModelBoundary<0||base.start-lastModelBoundary>=48||context.trim().matches("(?s).*[.!?]$"));
+            &&context.trim().split("\\s+").length>=4;
         String register=AiSettingsActivity.styleEnabled(ime)?AiSettingsActivity.styleTone(ime):"original";
         if("auto".equals(register))register=helium314.keyboard.latin.ai.local.PersonalStyleProfile.preferredRegister(context,personal.styleSnapshot());
         StringBuilder traits=new StringBuilder(register);
@@ -216,7 +214,8 @@ public final class AiKeyboardAssistant {
                 if(profile.getOrDefault(feature,0L)>=5)traits.append("; ").append(feature);
         }
         final String style=traits.toString();
-        if(model){lastModelBoundary=base.start;reviewedWindows.add(fingerprint);while(reviewedWindows.size()>32)reviewedWindows.remove(reviewedWindows.iterator().next());}
+        final Set<Integer> examined=new HashSet<>(examinedSources);
+        final java.util.concurrent.atomic.AtomicReference<Integer> examinedKey=new java.util.concurrent.atomic.AtomicReference<>();
         final java.util.concurrent.atomic.AtomicReference<java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction>> found=
             new java.util.concurrent.atomic.AtomicReference<>(Collections.emptyList());
         continuousRunning=true;if(model)main.removeCallbacks(releaseWritingModel);
@@ -226,34 +225,51 @@ public final class AiKeyboardAssistant {
             helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon vocabulary=
                 new helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon(observed,dictionary::isValidSpellingWord,stop);
             found.set(boundaryReviewer.review(context,vocabulary,rejected,stop));
-            if(!found.get().isEmpty())return ""; // Local repairs never wait for generation.
+            for(helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction repair:found.get())
+                if(repair.automaticAllowed)return ""; // Local repairs never wait for generation.
             if(model&&!cancel.cancelled()){
-                String generated=writingModel.infer(ime,context,style,cancel);
-                if(!generated.isEmpty()){
-                    helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon guardLexicon=
-                        new helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon(observed,dictionary::isValidSpellingWord,cancel::cancelled);
-                    java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> all=new ArrayList<>(found.get());
-                    all.addAll(helium314.keyboard.latin.ai.local.SemanticEditGuard.proposals(context,generated,guardLexicon,rejected,cancel::cancelled));
-                    found.set(all);
+                helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon focusLexicon=
+                    new helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon(observed,dictionary::isValidSpellingWord,cancel::cancelled);
+                for(helium314.keyboard.latin.ai.local.CorrectionFocus focus:
+                    helium314.keyboard.latin.ai.local.CorrectionFocus.targets(context,focusLexicon,cancel::cancelled)){
+                    int key=Objects.hash(anchor.start+focus.start,focus.original);if(examined.contains(key))continue;
+                    examinedKey.set(key);
+                    String generated=writingModel.infer(ime,
+                        helium314.keyboard.latin.ai.local.CorrectionFocus.prompt(context,focus.original,style),cancel);
+                    if(!generated.isEmpty()){
+                        List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> all=new ArrayList<>();
+                        for(helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction edit:
+                            helium314.keyboard.latin.ai.local.SemanticEditGuard.proposals(focus.original,generated,focusLexicon,rejected,cancel::cancelled))
+                            all.add(new helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction(
+                                focus.start+edit.start,focus.start+edit.end,edit.original,edit.replacement,edit.reason,0,false));
+                        all.addAll(found.get());found.set(all);
+                    }
+                    break; // One targeted decode per coalesced request, never one per key.
                 }
             }
             return "";
         },(unused,error)->{
             continuousRunning=false;if(model)main.postDelayed(releaseWritingModel,45000);
+            boolean followFocus=false;
             try {
             if(error!=null||typingProtected()||!AiSettingsActivity.typingEnabled(ime))return;
             CharSequence current=ime.getAiInputConnection().getTextBeforeCursor(2048,0);
             if(current==null||!anchorMatches(anchor,capture(),current.toString()))return;
+            if(examinedKey.get()!=null){followFocus=true;examinedSources.add(examinedKey.get());while(examinedSources.size()>64)examinedSources.remove(examinedSources.iterator().next());}
             java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> safe=new ArrayList<>();
             for(helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction correction:found.get())
                 if(!"local-model-explicit-choice".equals(correction.reason)||helium314.keyboard.latin.ai.local.WritingModelFiles.enabled(ime))safe.add(correction);
             if(safe.isEmpty())return;
             pendingReviews.add(new PendingReview(anchor,safe));
-            while(pendingReviews.size()>2)pendingReviews.removeFirst();
+            while(pendingReviews.size()>8)pendingReviews.removeFirst();
             // While composing, keep the verified result for the next boundary. Never finish or
             // recreate an active native composition just to apply a background result.
             if(!ime.hasAiComposition())applyPendingReview();
-            } finally {drainLatestReview();}
+            } finally {
+                if(followFocus&&latestReview==null&&anchor.epoch==continuousEpoch)
+                    latestReview=new QueuedReview(base,context,anchor);
+                drainLatestReview();
+            }
         },18000);
     }
     private void drainLatestReview(){
@@ -627,7 +643,7 @@ public final class AiKeyboardAssistant {
         if (value == null) return "";
         return value.toString();
     }
-    public void onNewEditor() { invalidateContinuous();reviewedWindows.clear();offeredSpans.clear();writingModel.close();reset(true); }
+    public void onNewEditor() { invalidateContinuous();offeredSpans.clear();examinedSources.clear();writingModel.close();reset(true); }
     private void reset(boolean forgetWords) {
         clearAutomaticUndo();
         generation++; revision++;dictation.cancel();dictationBase=null;if(audioCapture!=null){audioCapture.close();audioCapture=null;}if(recordedAudio!=null){recordedAudio.delete();recordedAudio=null;}if(speech!=null){speech.close();speech=null;} session.cancel();localSession.cancel();main.removeCallbacks(localDebounce);localBase=null;localCorrection=null;localOriginal=null;localContext="";if(forgetWords){lexicon.clear();rankedKeyboard=null;styleBoundary=-1;nativeSuggestions=null;}review.clear();edits.clear();undoText="";pendingAction="";entities.clear();

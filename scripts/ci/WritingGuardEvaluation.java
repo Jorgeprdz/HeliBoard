@@ -22,5 +22,15 @@ public final class WritingGuardEvaluation {
   for(int i=proposals.size()-1;i>=0;i--){LocalContextReviewer.Correction edit=proposals.get(i);if(edit.automaticAllowed)throw new AssertionError("Model auto-apply forbidden");accepted.replace(edit.start,edit.end,edit.replacement);}
   Files.writeString(Paths.get(args[3]+".baseline"),old);Files.writeString(Paths.get(args[3]+".accepted"),accepted);
   Files.writeString(Paths.get(args[3]+".count"),Integer.toString(proposals.size()));
+  if(args.length>4&&args[4].equals("prepare")){
+   StringBuilder targets=new StringBuilder();
+   for(CorrectionFocus focus:CorrectionFocus.targets(old.toString(),lexicon,()->false)){
+    String prompt=CorrectionFocus.prompt(old.toString(),focus.original,"original");
+    targets.append(focus.start).append("\t").append(focus.end).append("\t")
+     .append(Base64.getEncoder().encodeToString(focus.original.getBytes(StandardCharsets.UTF_8))).append("\t")
+     .append(Base64.getEncoder().encodeToString(prompt.getBytes(StandardCharsets.UTF_8))).append("\n");
+   }
+   Files.writeString(Paths.get(args[3]+".focus"),targets);
+  }
  }
 }

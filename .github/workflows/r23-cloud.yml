@@ -47,6 +47,13 @@ jobs:
       - name: Android lint gate
         if: always()
         run: ./gradlew :app:lintDebug
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ${{ runner.temp }}/writing-source
+            ${{ runner.temp }}/writing-host
+            ${{ runner.temp }}/writing-arm64
+          key: writing-runtime-ubuntu-ndk28-b5046-${{ hashFiles('native-writing/writing.cpp', 'native-writing/CMakeLists.txt') }}
       - name: Build pinned local inference runtime on cloud runner only
         run: bash scripts/ci/build-writing-runtime.sh
       - name: Evaluate actual quantized models against independent public cases
