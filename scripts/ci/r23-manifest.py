@@ -6,13 +6,19 @@ from pathlib import Path
 import re
 
 root = Path("r23-artifact")
-apk = root / "HeliBoard-R2.3-debug.apk"
+apk_name = os.environ.get("HELIBOARD_APK_NAME", "HeliBoard-R2.3-debug.apk")
+assert apk_name in ("HeliBoard-R2.3-debug.apk", "HeliBoard-R2.4-Typing-Preview-debug.apk"), "Unexpected APK name"
+apk = root / apk_name
 temp = Path(os.environ["RUNNER_TEMP"])
 badging = (temp / "r22-badging.txt").read_text()
 package = re.search(r"^package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'", badging, re.M)
 assert package, "Missing APK package metadata"
 assert package[1] == "com.jorgeprdz.ioskeyboard.debug", "Wrong applicationId"
 assert int(package[2]) == int(os.environ.get("HELIBOARD_VERSION_CODE", "4107")), "Unexpected versionCode"
+expected_name = os.environ.get("HELIBOARD_EXPECTED_VERSION_NAME")
+if expected_name:
+    assert package[3] == expected_name, "Unexpected versionName"
+    assert int(package[2]) > 4121, "R2.4 must upgrade R2.3"
 # Owner explicitly authorized certificate identity/audit failures to be non-blocking.
 # Cryptographic APK verification remains mandatory in the workflow before this script.
 certificate_report = (temp / "r22-certificate.txt").read_text()
