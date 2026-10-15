@@ -27,6 +27,8 @@ jobs:
       - run: chmod +x gradlew
       - name: Validate Termux installer and cleanup syntax and gates
         run: |
+          bash -n scripts/termux/heliboard-r23-auto-install.sh
+          bash -n scripts/termux/heliboard-r23-clean-clones.sh
           bash -n scripts/termux/heliboard-r22-auto-install.sh
           bash -n scripts/termux/heliboard-r22-clean-clones.sh
           python3 -m unittest discover -s scripts/tests -v
