@@ -37,18 +37,6 @@ open class RecordingEngine(
         val discarded: Boolean,
         val stopReason: StopReason,
         val errorMessage: String? = null,
-        /**
-         * The finalized `.m4a` produced by an [AacEncoderSession] tee'd through this recording's
-         * `onChunk` (#109), when the caller opted into compressed cloud uploads and the encode
-         * actually produced usable audio. Always null when that opt-in is off (see
-         * [CompressedUploadToggle]) -- [RecordingEngine] itself has no knowledge of compression,
-         * this field only exists so the caller (which does own the encoder session, same as it
-         * owns [SilenceAutoStopSession]) can attach the finished file onto the [Result] it
-         * receives via `onFinished`, keeping the compressed file's lifetime attached 1:1 to
-         * [pcmFile]'s from that point on -- both travel together and are deleted together by
-         * every downstream call site, mirroring [pcmFile]'s own discard/delete discipline.
-         */
-        val compressedFile: File? = null
     )
 
     companion object {
@@ -59,15 +47,7 @@ open class RecordingEngine(
         // Backstop independent of the elapsed-time cap: 16kHz mono 16-bit is 32,000 bytes/sec.
         const val MAX_BYTES = 32_000L * (MAX_DURATION_MS / 1000L)
 
-        /** Monotonic id of the current recording session, shared across ALL RecordingEngine
-         *  instances (#88 item 6 / H2). The service creates a fresh engine per recording, so an
-         *  *instance*-private counter never changed across instances: an old reader stalled in
-         *  onChunk/read across a stop->cancel->new-tap sequence saw its own generation as still
-         *  current forever, then observed the shared state machine back in RECORDING (the NEW
-         *  session) and resumed feeding audio concurrently with the new reader (mic contention,
-         *  and it could CAS the new session's RECORDING->TRANSCRIBING, killing a live dictation).
-         *  A process-wide counter makes every new recording's start() supersede all prior readers,
-         *  so a resurrected reader sees generation != myGeneration and exits at its next check. */
+        /** Process-wide ownership prevents an old reader from affecting a newer recording. */
         private val sessionGeneration = java.util.concurrent.atomic.AtomicInteger(0)
     }
 
@@ -79,7 +59,7 @@ open class RecordingEngine(
      * buffer size) — the caller should surface that as user feedback ("mic busy") rather than
      * crash. [onFinished] runs on the reader thread; callers must hop back to the main thread
      * themselves before touching UI (a MAX_DURATION stop is signalled via [Result.stopReason], not
-     * a separate callback). [onChunk] is an optional tee (#29): called
+     * a separate callback). [onChunk] is an optional tee: called
      * with each freshly-read buffer and its valid length right after every successful
      * `AudioRecord.read`, before it's written to [PcmFileBuffer] — e.g. to feed live audio to a
      * streaming recognizer. Defaults to a no-op so callers that don't need it (the common case)
@@ -121,7 +101,7 @@ open class RecordingEngine(
         // Temp-file creation can fail under cache-dir/disk pressure (plausible on a phone
         // carrying multi-GB models). We already hold the RECORDING claim and the mic here, so a
         // throw must unwind both -- otherwise the state machine is wedged in RECORDING forever
-        // and the mic handle leaks (#85).
+        // and the mic handle leaks.
         val pcmFile = try {
             File.createTempFile("heli_ai_audio_", ".pcm", cacheDir)
         } catch (e: Exception) {
@@ -150,7 +130,7 @@ open class RecordingEngine(
             // Opening the file-backed buffer can also fail under disk pressure. It must not
             // throw out of this bare thread (process death) with the recorder unreleased --
             // funnel the failure through the same ERROR result path as a mid-recording
-            // exception (#85).
+            // exception.
             val fileBuffer = try {
                 PcmFileBuffer(pcmFile, MAX_BYTES)
             } catch (e: Exception) {

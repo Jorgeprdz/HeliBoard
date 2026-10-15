@@ -21,6 +21,7 @@ public final class AiSharedTextActivity extends Activity {
   for(EntityRecognizer.Entity entity:new EntityRecognizer().scan(source)){
    Button copy=new Button(this);copy.setText("Copiar "+entity.kind+": "+entity.value);copy.setOnClickListener(v->copy(entity.value));stack.addView(copy);
    if(entity.kind==EntityRecognizer.Kind.PHONE||entity.kind==EntityRecognizer.Kind.ADDRESS||entity.kind==EntityRecognizer.Kind.URL||entity.kind==EntityRecognizer.Kind.EMAIL||entity.kind==EntityRecognizer.Kind.DATE){Button open=new Button(this);open.setText("Abrir acción: "+entity.value);open.setOnClickListener(v->open(entity));stack.addView(open);}
+   if(entity.kind==EntityRecognizer.Kind.ADDRESS){Button directions=new Button(this);directions.setText("Obtener indicaciones: "+entity.value);directions.setOnClickListener(v->directions(entity.value));stack.addView(directions);}
   }
   result=new TextView(this);result.setTextIsSelectable(true);result.setSaveEnabled(false);stack.addView(result);
   accept=new Button(this);accept.setText("Aceptar resultado y volver");accept.setEnabled(false);
@@ -56,17 +57,19 @@ public final class AiSharedTextActivity extends Activity {
   }
   try{startActivity(i);}catch(ActivityNotFoundException e){status.setText("No hay una aplicación compatible.");}
  }
+ private void directions(String address){try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("google.navigation:q="+Uri.encode(address))));}catch(ActivityNotFoundException e){status.setText("No hay una aplicación de navegación compatible.");}}
  private Intent calendarIntent(){
   Intent intent=new Intent(Intent.ACTION_INSERT,CalendarContract.Events.CONTENT_URI).putExtra(CalendarContract.Events.TITLE,"Evento");
-  String date="",time="",location="";int dates=0,times=0;
+  String date="",time="",location="",duration="";int dates=0,times=0,durations=0;
   for(EntityRecognizer.Entity item:new EntityRecognizer().scan(source)){
    if(item.kind==EntityRecognizer.Kind.DATE){date=item.value;dates++;}
    else if(item.kind==EntityRecognizer.Kind.TIME){time=item.value;times++;}
+   else if(item.kind==EntityRecognizer.Kind.DURATION){duration=item.value;durations++;}
    else if(item.kind==EntityRecognizer.Kind.ADDRESS&&location.isEmpty())location=item.value;
   }
   if(!location.isEmpty())intent.putExtra(CalendarContract.Events.EVENT_LOCATION,location);
   Long start=dates==1&&times==1?CalendarResolver.resolve(date,time,System.currentTimeMillis(),TimeZone.getDefault()):null;
-  if(start!=null)intent.putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME,start.longValue());
+  if(start!=null){intent.putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME,start.longValue());Long length=durations==1?CalendarResolver.durationMillis(duration):null;if(length!=null)intent.putExtra(CalendarContract.EXTRA_EVENT_END_TIME,start+length);}
   else intent.putExtra(CalendarContract.Events.DESCRIPTION,"Confirmar fecha y hora detectadas: "+date+" "+time);
   return intent;
  }

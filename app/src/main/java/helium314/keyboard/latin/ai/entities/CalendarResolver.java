@@ -28,4 +28,8 @@ public final class CalendarResolver {
   c.set(Calendar.HOUR_OF_DAY,hour);c.set(Calendar.MINUTE,minute);c.set(Calendar.SECOND,0);c.set(Calendar.MILLISECOND,0);
   try{return c.getTimeInMillis();}catch(IllegalArgumentException invalid){return null;}
  }
+ public static Long durationMillis(String value){String normalized=normalize(value);Matcher matcher=Pattern.compile("^(?:durante|por|for) +(\\d{1,3}) *(minutos?|minutes?|horas?|hours?)$").matcher(normalized);
+  if(!matcher.matches())return null;long amount=Long.parseLong(matcher.group(1));boolean hours=matcher.group(2).startsWith("hora")||matcher.group(2).startsWith("hour");
+  if(amount<1||(hours&&amount>24)||(!hours&&amount>1440))return null;return amount*(hours?60L:1L)*60L*1000L;
+ }
 }

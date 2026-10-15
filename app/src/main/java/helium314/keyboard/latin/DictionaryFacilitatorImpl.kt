@@ -504,7 +504,8 @@ class DictionaryFacilitatorImpl : DictionaryFacilitator {
         val suggestionResults = SuggestionResults(
             SuggestedWords.MAX_SUGGESTIONS, ngramContext.isBeginningOfSentenceContext, false
         )
-        waitForOtherDicts?.await()
+        // Secondary languages are useful, but must never freeze the primary typing path.
+        helium314.keyboard.latin.ai.SecondaryDictionaryQuery.await(waitForOtherDicts, 150)
 
         suggestionsArray.forEach {
             if (it == null) return@forEach

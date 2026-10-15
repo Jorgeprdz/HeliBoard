@@ -32,4 +32,14 @@ public class EntityRecognizerTest {
   assertNotNull(e);assertEquals("1Z999AA10123456784",e.value);
   assertNull(find("Pedido 1Z999AA10123456784",EntityRecognizer.Kind.TRACKING_NUMBER));
  }
+ @Test public void fullRelativeDateAndDurationAreRecognized(){
+  assertEquals("el próximo jueves",find("Nos vemos el próximo jueves por 90 minutos",EntityRecognizer.Kind.DATE).value);
+  assertEquals("por 90 minutos",find("Nos vemos el próximo jueves por 90 minutos",EntityRecognizer.Kind.DURATION).value);
+ }
+ @Test public void peopleAndBusinessesRequireExplicitLabels(){
+  assertEquals("Carlos Pérez",find("Contacto: Carlos Pérez",EntityRecognizer.Kind.PERSON).value);
+  assertEquals("Acme Seguros",find("Empresa: Acme Seguros",EntityRecognizer.Kind.BUSINESS).value);
+  assertNull(find("Reunión con Carlos Pérez",EntityRecognizer.Kind.PERSON));
+  assertNull(find("Acme Seguros confirmó",EntityRecognizer.Kind.BUSINESS));
+ }
 }

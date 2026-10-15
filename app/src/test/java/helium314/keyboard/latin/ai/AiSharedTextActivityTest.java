@@ -44,7 +44,7 @@ public class AiSharedTextActivityTest {
  }
  @Test public void calendarActionPrefillsOnlyResolvedDateTimeAndLocation(){
   Intent intent=new Intent(Intent.ACTION_PROCESS_TEXT).setType("text/plain")
-      .putExtra(Intent.EXTRA_PROCESS_TEXT,"Nos vemos mañana a las 16:30 en Insurgentes Sur 1200")
+      .putExtra(Intent.EXTRA_PROCESS_TEXT,"Nos vemos mañana a las 16:30 en Insurgentes Sur 1200 por 90 minutos")
       .putExtra(Intent.EXTRA_PROCESS_TEXT_READONLY,true);
   AiSharedTextActivity activity=launch(intent);
   button(activity,"Abrir acción: mañana").performClick();
@@ -53,5 +53,12 @@ public class AiSharedTextActivityTest {
   assertEquals(CalendarContract.Events.CONTENT_URI,opened.getData());
   assertEquals("Insurgentes Sur 1200",opened.getStringExtra(CalendarContract.Events.EVENT_LOCATION));
   assertTrue(opened.hasExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME));
+  assertEquals(90*60*1000L,opened.getLongExtra(CalendarContract.EXTRA_EVENT_END_TIME,0)-opened.getLongExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME,0));
+ }
+ @Test public void addressOffersEditableMapDirections(){
+  Intent intent=new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT,"Insurgentes Sur 1200");
+  AiSharedTextActivity activity=launch(intent);button(activity,"Obtener indicaciones").performClick();
+  Intent opened=shadowOf(activity).getNextStartedActivity();assertNotNull(opened);
+  assertEquals(Intent.ACTION_VIEW,opened.getAction());assertTrue(opened.getDataString().startsWith("google.navigation:q="));
  }
 }

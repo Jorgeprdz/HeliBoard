@@ -333,6 +333,7 @@ public final class AiKeyboardAssistant {
             }
             String key=label+" · "+(++index);entities.put(key,entity);choices.add(key);
             if(entity.kind==EntityRecognizer.Kind.PHONE){String contact="Crear contacto · "+index;entities.put(contact,entity);choices.add(contact);}
+            if(entity.kind==EntityRecognizer.Kind.ADDRESS){String directions="Indicaciones · "+index;entities.put(directions,entity);choices.add(directions);}
             if(entity.kind==EntityRecognizer.Kind.ADDRESS||entity.kind==EntityRecognizer.Kind.PHONE||entity.kind==EntityRecognizer.Kind.EMAIL){String cp="Copiar · "+index;entities.put(cp,entity);choices.add(cp);}
         }
         if(choices.isEmpty())choices.add("Sin acciones reconocidas");choices.add("Cerrar");show(choices.toArray(new String[0]));
@@ -340,6 +341,7 @@ public final class AiKeyboardAssistant {
     private void entityAction(String action,EntityRecognizer.Entity entity) {
         if(action.startsWith("Copiar")){copy(entity.kind.name(),entity.value);return;}
         if(action.startsWith("Crear contacto")){Intent i=new Intent(Intent.ACTION_INSERT).setType(android.provider.ContactsContract.Contacts.CONTENT_TYPE);i.putExtra(android.provider.ContactsContract.Intents.Insert.PHONE,entity.value);launch(i);return;}
+        if(action.startsWith("Indicaciones")){launch(new Intent(Intent.ACTION_VIEW,Uri.parse("google.navigation:q="+Uri.encode(entity.value))));return;}
         switch(entity.kind){
             case ADDRESS:launch(new Intent(Intent.ACTION_VIEW,Uri.parse("geo:0,0?q="+Uri.encode(entity.value))));return;
             case PHONE:launch(new Intent(Intent.ACTION_DIAL,Uri.parse("tel:"+entity.value)));return;
@@ -353,15 +355,16 @@ public final class AiKeyboardAssistant {
         Intent i = new Intent(Intent.ACTION_INSERT);
         i.setData(CalendarContract.Events.CONTENT_URI);
         i.putExtra(CalendarContract.Events.TITLE, SensitiveInputPolicy.sensitiveText(selected)?"Evento":(selected.length() > 160 ? selected.substring(0,160) : selected));
-        String date="",time="",location="";int dates=0,times=0;
+        String date="",time="",location="",duration="";int dates=0,times=0,durations=0;
         for(EntityRecognizer.Entity entity:new EntityRecognizer().scan(selected)){
             if(entity.kind==EntityRecognizer.Kind.DATE){date=entity.value;dates++;}
             if(entity.kind==EntityRecognizer.Kind.TIME){time=entity.value;times++;}
+            if(entity.kind==EntityRecognizer.Kind.DURATION){duration=entity.value;durations++;}
             if(entity.kind==EntityRecognizer.Kind.ADDRESS)location=entity.value;
         }
         if(!location.isEmpty())i.putExtra(CalendarContract.Events.EVENT_LOCATION,location);
         Long start=dates==1&&times==1?helium314.keyboard.latin.ai.entities.CalendarResolver.resolve(date,time,System.currentTimeMillis(),java.util.TimeZone.getDefault()):null;
-        if(start!=null)i.putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME,start.longValue());
+        if(start!=null){i.putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME,start.longValue());Long length=durations==1?helium314.keyboard.latin.ai.entities.CalendarResolver.durationMillis(duration):null;if(length!=null)i.putExtra(CalendarContract.EXTRA_EVENT_END_TIME,start+length);}
         else if(!date.isEmpty()||!time.isEmpty())i.putExtra(CalendarContract.Events.DESCRIPTION,"Confirmar fecha y hora detectadas: "+date+" "+time);
         // Never saves directly; the calendar application owns editable confirmation.
         launch(i);

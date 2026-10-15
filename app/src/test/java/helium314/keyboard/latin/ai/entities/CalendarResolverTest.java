@@ -13,4 +13,6 @@ public class CalendarResolverTest {
  @Test public void ambiguousNumericDateIsNotGuessed(){assertNull(resolve("03/04/2026","16:30"));}
  @Test public void explicitIsoAndMidnightAreSupported(){Long value=resolve("2026-10-20","12:00 am");expect(value,20,0,0);}
  @Test public void missingDateDoesNotInventToday(){assertNull(resolve("","16:30"));}
+ @Test public void boundedDurationsBecomeEventLengths(){assertEquals(Long.valueOf(90*60*1000L),CalendarResolver.durationMillis("por 90 minutos"));assertEquals(Long.valueOf(2*60*60*1000L),CalendarResolver.durationMillis("for 2 hours"));}
+ @Test public void invalidDurationsAreRejected(){assertNull(CalendarResolver.durationMillis("por 0 minutos"));assertNull(CalendarResolver.durationMillis("por 48 horas"));}
 }

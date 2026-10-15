@@ -1,47 +1,16 @@
-Ramblr
+Ramblr recording subset
 Copyright (C) 2026 Trevor NK
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Source: https://github.com/trevornk/ramblr
+Pinned commit: 6538900746676382c2422a42a026fa154264f6a0
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
+HeliBoard adapts only Ramblr's consent-based AudioRecord lifecycle, bounded
+PCM file buffering, WAV handoff, and recording state-machine concepts. The
+adapted source is distributed under GPL-3.0-or-later; see LICENSE in this
+directory for the complete terms.
 
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
----
-
-Attribution / third-party notices
-==================================
-
-Ramblr is a fork of phone-whisper (https://github.com/kafkasl/phone-whisper)
-by kafkasl, whose README states: "Personal project. Do whatever you want
-with it." This fork is distributed under GPLv3 per the terms above.
-
-Third-party components used by Ramblr and their licenses:
-
-- sherpa-onnx (https://github.com/k2-fsa/sherpa-onnx) — Apache License 2.0
-  Used for on-device speech transcription. Native libraries are downloaded
-  at build time (see app/build.gradle.kts), not vendored in this repo.
-
-- llama.cpp (https://github.com/ggml-org/llama.cpp) — MIT License
-  Used for on-device cleanup/post-processing. Included as a git submodule
-  (see .gitmodules); not modified beyond the JNI shim in
-  app/src/main/cpp/llama_cleanup/.
-
-- OkHttp (https://square.github.io/okhttp/) — Apache License 2.0
-- AndroidX Core, AppCompat, Material Components, Security-Crypto,
-  WorkManager (https://developer.android.com/jetpack/androidx) — Apache
-  License 2.0
-- Apache Commons Compress (https://commons.apache.org/proper/commons-compress/)
-  — Apache License 2.0
-
-Cloud transcription and cleanup calls (OpenAI, Anthropic, Gemini, or an
-optional self-hosted OpenAI-compatible endpoint you configure) are made
-directly from the device using your own API key — no third-party SDKs
-are vendored for these; see PRIVACY.md for the full data-flow description.
+This application does not include Ramblr's AccessibilityService, overlay,
+model downloader, sherpa-onnx, llama.cpp, cloud provider SDKs, or a second
+input method. HeliBoard uses Android's on-device SpeechRecognizer where the
+platform supplies one, and offers an explicit user-triggered Gemini upload
+only after recording and review.
