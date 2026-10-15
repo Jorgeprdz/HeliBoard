@@ -83,7 +83,7 @@ class InputLogicTest {
 
     private fun r22Enable(text: String) {
         setText(text)
-        latinIME.currentInputEditorInfo.packageName = "fixture.editor"
+        ShadowInputMethodService.editorPackage = "fixture.editor"
         latinIME.getSharedPreferences("keyboard_ai_private", 0).edit()
             .putBoolean("enabled", true).putBoolean("local_context", true).commit()
     }
@@ -112,9 +112,10 @@ class InputLogicTest {
 
     @Test fun r22EnterCompletesLastWordBeforeKeyboardAction() {
         r22Enable("voy haber si puedo")
-        latinIME.currentInputEditorInfo.imeOptions = EditorInfo.IME_ACTION_SEND
+        ShadowInputMethodService.editorOptions = EditorInfo.IME_ACTION_SEND
         r22Key(Constants.CODE_ENTER)
         assertEquals("voy a ver si puedo", text)
+        assertEquals(listOf(EditorInfo.IME_ACTION_SEND to "voy a ver si puedo"), ShadowInputMethodService.editorActions)
         checkConnectionConsistency()
     }
 
@@ -132,7 +133,7 @@ class InputLogicTest {
         assertEquals("\"voy haber si puedo\" ", text)
         r22Enable("voy haber si puedo")
         setInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)
-        latinIME.currentInputEditorInfo.packageName = "fixture.editor"
+        ShadowInputMethodService.editorPackage = "fixture.editor"
         r22Key(' '.code)
         assertEquals("voy haber si puedo ", text)
     }

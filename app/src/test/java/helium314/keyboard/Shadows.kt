@@ -133,6 +133,9 @@ class ShadowInputMethodService {
         var composingStart = -1
         var composingEnd = -1
         var currentInputType = InputType.TYPE_CLASS_TEXT
+        var editorPackage: String? = null
+        var editorOptions = 0
+        val editorActions = mutableListOf<Pair<Int, String>>()
 
         // convenience for access
         val textBeforeCursor get() = text.substring(0, selectionStart)
@@ -152,13 +155,17 @@ class ShadowInputMethodService {
             composingStart = -1
             composingEnd = -1
             currentInputType = InputType.TYPE_CLASS_TEXT
+            editorPackage = null
+            editorOptions = 0
+            editorActions.clear()
         }
     }
 
     @Implementation
     fun getCurrentInputEditorInfo() = EditorInfo().apply {
         inputType = currentInputType
-        // anything else?
+        packageName = editorPackage
+        imeOptions = editorOptions
     }
     @Implementation
     fun getCurrentInputConnection() = ic
@@ -317,7 +324,10 @@ class ShadowInputMethodService {
         override fun getCursorCapsMode(p0: Int): Int = TODO("Not yet implemented")
         override fun deleteSurroundingTextInCodePoints(p0: Int, p1: Int): Boolean = TODO("Not yet implemented")
         override fun commitCompletion(p0: CompletionInfo?): Boolean = TODO("Not yet implemented")
-        override fun performEditorAction(p0: Int): Boolean = TODO("Not yet implemented")
+        override fun performEditorAction(p0: Int): Boolean {
+            editorActions.add(p0 to text)
+            return true
+        }
         override fun performContextMenuAction(p0: Int): Boolean = TODO("Not yet implemented")
         override fun clearMetaKeyStates(p0: Int): Boolean = TODO("Not yet implemented")
         override fun reportFullscreenMode(p0: Boolean): Boolean = TODO("Not yet implemented")
