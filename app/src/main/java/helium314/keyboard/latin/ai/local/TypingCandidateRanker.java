@@ -52,7 +52,7 @@ public final class TypingCandidateRanker {
    if(candidate==null||!candidate.matches("[\\p{Ll}\\p{M}]{2,48}")||!seen.add(candidate)||candidate.equals(typed)
       ||Arrays.asList("no","not","never","nunca","jamás","sin","ni","nor","neither").contains(candidate)
       ||lexicon.rejected(typed,candidate)||!lexicon.valid(candidate))continue;
-   double cost=editCost(typed,candidate,lexicon::keyDistance);if(cost>2.2)continue;
+   double cost=editCost(typed,candidate,lexicon::keyDistance);if(cost>2.8)continue;
    double context=0;
    if("estado".equals(previous)&&Arrays.asList("mexico","méxico").contains(next)&&"de".equals(candidate))context=.22;
    if(Arrays.asList("el","un").contains(previous)&&candidate.endsWith("o"))context+=.04;

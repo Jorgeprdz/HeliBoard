@@ -7,7 +7,7 @@ import re
 
 root = Path("r23-artifact")
 apk_name = os.environ.get("HELIBOARD_APK_NAME", "HeliBoard-R2.3-debug.apk")
-assert apk_name in ("HeliBoard-R2.3-debug.apk", "HeliBoard-R2.4-Typing-Preview-debug.apk"), "Unexpected APK name"
+assert apk_name in ("HeliBoard-R2.3-debug.apk", "HeliBoard-R2.4-Typing-Preview-debug.apk", "HeliBoard-R2.4.1-Typing-Quality-Preview-debug.apk", "HeliBoard-R2.4.2-Intelligent-Writing-Preview-debug.apk"), "Unexpected APK name"
 apk = root / apk_name
 temp = Path(os.environ["RUNNER_TEMP"])
 badging = (temp / "r22-badging.txt").read_text()
@@ -18,7 +18,7 @@ assert int(package[2]) == int(os.environ.get("HELIBOARD_VERSION_CODE", "4107")),
 expected_name = os.environ.get("HELIBOARD_EXPECTED_VERSION_NAME")
 if expected_name:
     assert package[3] == expected_name, "Unexpected versionName"
-    assert int(package[2]) > 4121, "R2.4 must upgrade R2.3"
+    assert int(package[2]) > (4140 if "r242" in expected_name else 4138 if "r241" in expected_name else 4121), "Preview must upgrade previous version"
 # Owner explicitly authorized certificate identity/audit failures to be non-blocking.
 # Cryptographic APK verification remains mandatory in the workflow before this script.
 certificate_report = (temp / "r22-certificate.txt").read_text()
@@ -48,6 +48,7 @@ manifest = dict(apk=apk.name,package=package[1],versionCode=int(package[2]),
                 commit=os.environ["GITHUB_SHA"],runId=os.environ["GITHUB_RUN_ID"],
                 runUrl=os.environ["GITHUB_SERVER_URL"]+"/"+os.environ["GITHUB_REPOSITORY"]+
                        "/actions/runs/"+os.environ["GITHUB_RUN_ID"],
+                semanticCorrectionAndroid="NOT VALIDATED",runtime="llama.cpp b5046 CPU ARM64 API24+",model="Qwen2.5-0.5B-Instruct Q4_K_M, optional data download",
                 deviceAcceptance="NOT VERIFIED",
                 installedCertificateCompatibility="NOT VERIFIED: compare actual installed signer before any in-place update")
 (root / "build-manifest.json").write_text(json.dumps(manifest,indent=2)+"\n")

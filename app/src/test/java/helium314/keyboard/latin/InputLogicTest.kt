@@ -127,6 +127,198 @@ class InputLogicTest {
         } finally { field.set(settingsValues, original) }
     }
 
+    private fun r242Pending(assistant: helium314.keyboard.latin.ai.AiKeyboardAssistant, original: String): Any {
+        val capture = assistant.javaClass.getDeclaredMethod("capture").apply { isAccessible = true }
+        val snapshot = capture.invoke(assistant) as helium314.keyboard.latin.ai.EditorSnapshot
+        val epoch = assistant.javaClass.getDeclaredField("continuousEpoch").apply { isAccessible = true }.getLong(assistant)
+        val anchor = helium314.keyboard.latin.ai.local.ContinuousReviewAnchor(
+            snapshot.editor, snapshot.packageName, snapshot.fieldId, epoch, snapshot.start - original.length, original)
+        val corrections = helium314.keyboard.latin.ai.local.LocalContextReviewer().review(
+            original, helium314.keyboard.latin.ai.local.R241WritingTest.Vocabulary(), emptySet()) { false }
+        kotlin.test.assertTrue(corrections.isNotEmpty())
+        val type = assistant.javaClass.declaredClasses.single { it.simpleName == "PendingReview" }
+        return type.declaredConstructors.single().apply { isAccessible = true }.newInstance(anchor, corrections)
+    }
+    private fun r242Deliver(assistant: helium314.keyboard.latin.ai.AiKeyboardAssistant, pending: Any) {
+        val field = assistant.javaClass.getDeclaredField("pendingReviews").apply { isAccessible = true }
+        @Suppress("UNCHECKED_CAST")
+        val queue = field.get(assistant) as java.util.ArrayDeque<Any>
+        queue.add(pending)
+        assistant.javaClass.getDeclaredMethod("applyPendingReview").apply { isAccessible = true }.invoke(assistant)
+    }
+
+    @Test fun R242ResultSurvivesRapidAppendAndWaitsForSafeBoundaryWithAtomicUndo() {
+        r22Enable("nicuidando ")
+        val assistant = r23Assistant()
+        val pending = r242Pending(assistant, text)
+        r22Key('x'.code)
+        assertEquals("nicuidando x", text)
+        val compositionBefore = composingText
+        r242Deliver(assistant, pending)
+        assertEquals("nicuidando x", text)
+        assertEquals(compositionBefore, composingText)
+        r22Key(' '.code)
+        assertEquals("ni cuidando x ", text)
+        assertEquals(text.length, cursor)
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("nicuidando x ", text)
+        latinIME.onLocalWordBoundary()
+        assertEquals("nicuidando x ", text)
+        checkConnectionConsistency()
+    }
+
+    @Test fun R242ObsoleteFragmentAndEditorGenerationCannotApplyBackgroundResult() {
+        r22Enable("nincuidando ")
+        val assistant = r23Assistant()
+        val pending = r242Pending(assistant, text)
+        r22Key('x'.code)
+        ShadowInputMethodService.text = "nincuidandX x"
+        r242Deliver(assistant, pending)
+        r22Key(' '.code)
+        assertEquals("nincuidandX x ", text)
+        r22Enable("nincuidando ")
+        val old = r242Pending(assistant, text)
+        assistant.onNewEditor()
+        r242Deliver(assistant, old)
+        assertEquals("nincuidando ", text)
+    }
+
+    @Test fun R242BusyReviewCoalescesLatestCompletedWordsInsteadOfDroppingThem() {
+        r22Enable("hola ")
+        val assistant = r23Assistant()
+        val busy = assistant.javaClass.getDeclaredField("continuousRunning").apply { isAccessible = true }
+        busy.setBoolean(assistant, true) // Hold the producer; no simulated model output.
+        "nicuidando ".forEach { r22Key(it.code) }
+        val latestField = assistant.javaClass.getDeclaredField("latestReview").apply { isAccessible = true }
+        val latest = latestField.get(assistant)
+        kotlin.test.assertNotNull(latest)
+        val context = latest.javaClass.getDeclaredField("context").apply { isAccessible = true }.get(latest) as String
+        assertEquals("hola nicuidando ", context)
+        busy.setBoolean(assistant, false)
+        // The integration part consumes the real reviewer result for the coalesced context.
+        r242Deliver(assistant, r242Pending(assistant, context))
+        assertEquals("hola ni cuidando ", text)
+        assertEquals(text.length, cursor)
+        checkConnectionConsistency()
+    }
+
+    @Test fun R242SendingInvalidatesPendingReviewAndCannotEditSentText() {
+        r22Enable("nincuidando ")
+        val assistant = r23Assistant()
+        val pending = r242Pending(assistant, text)
+        assistant.onInputSubmitted()
+        r242Deliver(assistant, pending)
+        assertEquals("nincuidando ", text)
+        checkConnectionConsistency()
+    }
+
+    @Test fun R242FastProtectedInputRemainsExactWithoutModelOrNetwork() {
+        val original = "No quiero 3, quiero 2. Revisa los PRs de Archium. DW."
+        r22Enable("")
+        original.forEach { r22Key(it.code) }
+        assertEquals(original, text)
+        assertEquals(text.length, cursor)
+        checkConnectionConsistency()
+    }
+
+    private fun r241Observe(word: String, valid: Boolean = true, candidates: List<String> = emptyList()) {
+        val field = r23Assistant().javaClass.getDeclaredField("lexicon").apply { isAccessible = true }
+        val observed = field.get(r23Assistant()) as helium314.keyboard.latin.ai.local.ObservedLexicon
+        observed.record(word, valid, candidates, true)
+        val positions = mutableMapOf<Char, DoubleArray>()
+        listOf("qwertyuiop", "asdfghjklñ", "zxcvbnm").forEachIndexed { y, row ->
+            row.forEachIndexed { x, key -> positions[key] = doubleArrayOf(x * 10.0 + y * 2.5, y * 10.0, 10.0, 10.0) }
+        }
+        observed.keyboard(positions)
+    }
+
+    @Test fun R241SegmentationUsesAtomicUndoAndPersistentPairVeto() {
+        r22Enable("🙂 nincuidando")
+        r241Observe("ni")
+        r241Observe("cuidando")
+        r241Observe("nincuidando", false)
+        r22Key(' '.code)
+        assertEquals("🙂 ni cuidando ", text)
+        assertEquals(text.length, cursor)
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("🙂 nincuidando ", text)
+        latinIME.onLocalWordBoundary()
+        assertEquals("🙂 nincuidando ", text)
+        kotlin.test.assertTrue(helium314.keyboard.latin.ai.AiSettingsActivity.rejectedCorrections(latinIME)
+            .contains("nincuidando→ni cuidando"))
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("🙂 nincuidando", text)
+        checkConnectionConsistency()
+    }
+
+    @Test fun R241FollowingWordDisambiguatesInitialTypoWithoutChangingAcronyms() {
+        r22Enable("Edta es")
+        r241Observe("edta", false, listOf("esta"))
+        r241Observe("esta")
+        r22Key(' '.code)
+        assertEquals("Esta es ", text)
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("Edta es ", text)
+        checkConnectionConsistency()
+        r22Enable("DW")
+        r241Observe("dw", false, listOf("de"))
+        r241Observe("de")
+        r22Key(' '.code)
+        assertEquals("DW ", text)
+    }
+
+    @Test fun R241ProtectedFieldsAndTermuxNeverApplyGrammar() {
+        for (type in listOf(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD,
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)) {
+            r22Enable("la la gramática")
+            setInputType(type)
+            ShadowInputMethodService.editorPackage = "fixture.editor"
+            r241Observe("la"); r241Observe("gramática")
+            r22Key(' '.code)
+            assertEquals("la la gramática ", text)
+        }
+        r22Enable("la la gramática")
+        ShadowInputMethodService.editorPackage = "com.termux"
+        r241Observe("la"); r241Observe("gramática")
+        r22Key(' '.code)
+        assertEquals("la la gramática ", text)
+    }
+
+    @Test fun R241ContextSuggestionOneTapAndStaleTapCannotInsertLabel() {
+        r22Enable("Slll estoy ")
+        val assistant = r23Assistant()
+        val capture = assistant.javaClass.getDeclaredMethod("capture").apply { isAccessible = true }
+        val correction = helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction(
+            0, 4, "Slll", "Solo", "test-explicit-choice", .7, false)
+        val ctor = helium314.keyboard.latin.ai.AiKeyboardAssistant.ContextSuggestion::class.java.declaredConstructors.single()
+            .apply { isAccessible = true }
+        val suggestion = ctor.newInstance(assistant, capture.invoke(assistant), text, correction) as SuggestedWordInfo
+        latinIME.pickSuggestionManually(suggestion)
+        assertEquals("Solo estoy ", text)
+        checkConnectionConsistency()
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("Slll estoy ", text)
+        assistant.onUserInput()
+        latinIME.pickSuggestionManually(suggestion)
+        assertEquals("Slll estoy ", text)
+    }
+
+    @Test fun R241MovedCursorRejectsPendingContextCorrection() {
+        r22Enable("Slll estoy después")
+        val assistant = r23Assistant()
+        val capture = assistant.javaClass.getDeclaredMethod("capture").apply { isAccessible = true }
+        val correction = helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction(
+            0, 4, "Slll", "Solo", "test-explicit-choice", .7, false)
+        val ctor = helium314.keyboard.latin.ai.AiKeyboardAssistant.ContextSuggestion::class.java.declaredConstructors.single()
+            .apply { isAccessible = true }
+        val candidate = ctor.newInstance(assistant, capture.invoke(assistant), text, correction) as SuggestedWordInfo
+        setCursorPosition(4)
+        latinIME.pickSuggestionManually(candidate)
+        assertEquals("Slll estoy después", text)
+        assertEquals(4, cursor)
+        checkConnectionConsistency()
+    }
+
     @Test fun R24MotorCorrectionAndUndoReuseNativeTransaction() {
         r22Enable("poryectos")
         r22NativeCandidates("poryectos", false, listOf("proyectos"))

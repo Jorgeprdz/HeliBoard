@@ -133,6 +133,33 @@ public class AiSettingsActivity extends Activity {
         box.setOnCheckedChangeListener((button, enabled) -> getSharedPreferences(PREF, MODE_PRIVATE).edit().putBoolean(pref, enabled).apply());
         stack.addView(box);
     }
+    private void addLocalModelSettings(LinearLayout stack){
+        TextView description=new TextView(this);
+        description.setText("Corrección lingüística local experimental · Qwen2.5 0.5B Q4_K_M (Apache 2.0), 491 MB de descarga y memoria adicional. Runtime llama.cpp (MIT) incluido en el APK; requiere ARM64 y Android 7+. No envía lo que escribes. Las propuestas del modelo se aceptan con un toque; no se aplican automáticamente. Calidad y rendimiento en Android aún requieren validación.");
+        stack.addView(description);
+        CheckBox consent=new CheckBox(this);consent.setText("Autorizar descarga opcional y uso del modelo local");
+        consent.setChecked(helium314.keyboard.latin.ai.local.WritingModelFiles.enabled(this));
+        consent.setOnCheckedChangeListener((v,on)->getSharedPreferences(PREF,MODE_PRIVATE).edit().putBoolean("local_model_consent",on).apply());
+        stack.addView(consent);
+        TextView state=new TextView(this);state.setText(helium314.keyboard.latin.ai.local.WritingModelFiles.available(this)?"Modelo disponible; se comprobará SHA-256 antes de cargarlo.":"Modelo no instalado. La escritura normal sigue disponible.");stack.addView(state);
+        Button download=new com.google.android.material.button.MaterialButton(this);download.setText("Descargar y verificar modelo local (491 MB)");
+        download.setEnabled(Build.VERSION.SDK_INT>=24&&java.util.Arrays.asList(Build.SUPPORTED_ABIS).contains("arm64-v8a"));
+        download.setOnClickListener(v->{
+            if(!helium314.keyboard.latin.ai.local.WritingModelFiles.enabled(this)){state.setText("Autoriza primero esta descarga opcional.");return;}
+            state.setText("Descargando datos del modelo; salir de esta pantalla cancela. No se descarga código ejecutable.");
+            discovery.submit(cancel->{helium314.keyboard.latin.ai.local.WritingModelFiles.download(getApplicationContext(),cancel);return "";},(unused,error)->{
+                if(isFinishing()||isDestroyed())return;download.setEnabled(true);
+                state.setText(error==null?"Modelo verificado e instalado. Inferencia local habilitada.":"Descarga no completada o integridad incorrecta. La escritura normal se conserva; puedes reintentar.");
+            },60000);
+        });stack.addView(download);
+        Button erase=new com.google.android.material.button.MaterialButton(this);erase.setText("Desactivar y borrar solo el modelo descargado");
+        erase.setOnClickListener(v->{
+            consent.setChecked(false);
+            discovery.submit(cancel->{java.io.File file=helium314.keyboard.latin.ai.local.WritingModelFiles.file(getApplicationContext());
+                if(file.exists()&&!file.delete())throw new java.io.IOException("delete failed");return "";
+            },(unused,error)->state.setText(error==null?"Modelo eliminado. Aprendizaje SQLite y diccionarios conservados.":"No se pudo eliminar el archivo; modelo desactivado."),5000);
+        });stack.addView(erase);
+    }
     private void addTypingSettings(LinearLayout stack){
         final helium314.keyboard.latin.ai.local.PersonalTypingStore learning=helium314.keyboard.latin.ai.local.PersonalTypingStore.get(this);
         CheckBox balanced=new CheckBox(this);balanced.setText("Escritura inteligente · Equilibrado (local)");
@@ -186,6 +213,7 @@ public class AiSettingsActivity extends Activity {
         addToggle(stack, "AI Keyboard (desactivado por defecto)", "enabled");
         addToggle(stack, "Permitir Google solo al elegir una acción", "network_consent");
         addTypingSettings(stack);
+        addLocalModelSettings(stack);
         addToggle(stack, "Dictado integrado en el micrófono existente", "dictation");
         TextView details = new TextView(this);
         details.setText("IA opcional. El texto seleccionado se envía a Google solo al elegir una herramienta y dar permiso. El dictado de nube también requiere ese permiso. Puede consumir cuota. No se envían campos protegidos ni datos detectados como sensibles. La clave se cifra con Android Keystore. Cancelar descarta el resultado, pero no puede retirar datos que Google ya recibió. El menú conserva el portapapeles; ✨ utiliza el acceso fijado sin modificar atajos personalizados.");

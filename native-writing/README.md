@@ -1,0 +1,8 @@
+# Optional local writing runtime
+CPU-only llama.cpp b5046 (`74d4f5b041ad837153b0e90fc864b8290e01d8d5`, MIT), statically linked into one signed ARM64 JNI library by the existing cloud workflow. API 24+ only; global minSdk remains 21. Other ABIs and older devices retain native typing.
+
+Qwen2.5-0.5B-Instruct GGUF Q4_K_M (Apache 2.0): 491,400,032 bytes, pinned revision and SHA-256 in WritingModelFiles. Settings consent/download required; no model in APK, no runtime code download, no network in inference. Licenses are packaged by the cloud build. Two CPU threads, 1024-token context, bounded complete-only decoding; release on editor exit or idle. Low-memory/performance acceptance on Android is pending.
+
+CI runs the same native decoder on Linux against actual 0.5B and 1.5B GGUF files using public development and held-out ES/EN/mixed/protected cases. Whole-paragraph decoding worsened the user's real text (run 38820291461), so inference now targets one dictionary-proven nonword using read-only context. It never proposes a paragraph rewrite. Raw focused outputs, completion, edit-distance quality and process time/RSS are evidence, **not** Android latency/battery measurements or full R2.4.1 IME comparison. The 0.5B model is an experimental integration candidate; a quality winner is not assumed from size.
+
+Continuous results use exact append-only dependency anchors; edits wait for a native composition boundary. A changed cursor, editor, source prefix or send invalidates them. No paragraph replacement; all model edits require one explicit tap and pass the span/lexical/protected-term guard. Neither LLM output nor style heuristics prove preserved meaning. Keep PR draft pending physical testing.

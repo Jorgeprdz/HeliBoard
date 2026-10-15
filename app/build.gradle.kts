@@ -13,8 +13,8 @@ android {
         applicationId = "com.jorgeprdz.ioskeyboard"
         minSdk = 21
         targetSdk = 37
-        versionCode = providers.environmentVariable("HELIBOARD_VERSION_CODE").map(String::toInt).getOrElse(4122)
-        versionName = "4.1-iosglass.8-ai-r24-typing-preview"
+        versionCode = providers.environmentVariable("HELIBOARD_VERSION_CODE").map(String::toInt).getOrElse(4141)
+        versionName = "4.1-iosglass.8-ai-r242-intelligent-writing-preview"
         ndk {
             abiFilters.clear()
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
