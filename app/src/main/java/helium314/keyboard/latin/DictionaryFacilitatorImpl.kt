@@ -493,9 +493,10 @@ class DictionaryFacilitatorImpl : DictionaryFacilitator {
         val suggestionsArray = Array<List<SuggestedWordInfo>?>(dictionaryGroups.size) { null }
         for (i in 1..dictionaryGroups.lastIndex) {
             scope.launch {
-                suggestionsArray[i] = getSuggestions(composedData, ngramContext, settingsValuesForSuggestion, sessionId,
-                    proximityInfoHandle, weightOfLangModelVsSpatialModel, dictionaryGroups[i])
-                waitForOtherDicts?.countDown()
+                helium314.keyboard.latin.ai.SecondaryDictionaryQuery.execute({
+                    getSuggestions(composedData, ngramContext, settingsValuesForSuggestion, sessionId,
+                        proximityInfoHandle, weightOfLangModelVsSpatialModel, dictionaryGroups[i])
+                }, { suggestionsArray[i] = it }, waitForOtherDicts)
             }
         }
         suggestionsArray[0] = getSuggestions(composedData, ngramContext, settingsValuesForSuggestion, sessionId,
@@ -645,7 +646,7 @@ class DictionaryFacilitatorImpl : DictionaryFacilitator {
         }
 
         private fun getUsedLocales(mainLocale: Locale, context: Context): Collection<Locale> {
-            val locales = hashSetOf(mainLocale)
+            val locales = linkedSetOf(mainLocale)
             // adding secondary locales is a bit tricky since they depend on the subtype
             // but usually this is called with the selected subtype locale
             val selectedSubtype = SubtypeSettings.getSelectedSubtype(context.prefs())
@@ -659,7 +660,8 @@ class DictionaryFacilitatorImpl : DictionaryFacilitator {
                         locales.addAll(getSecondaryLocales(it.extraValue))
                 }
             }
-            return locales
+            return helium314.keyboard.latin.ai.local.BilingualLocalePolicy.locales(locales.toList(),
+                helium314.keyboard.latin.ai.AiSettingsActivity.contextualEnabled(context))
         }
 
         /** Include at least two non-emoji, non-typed word results if possible, so that the first two shown suggestions can be non-emoji */

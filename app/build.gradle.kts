@@ -22,6 +22,19 @@ android {
         proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
 
+    // Opt-in durable owner signing identity; secrets remain outside the repository.
+    val ownerSigningDir = providers.environmentVariable("HELIBOARD_SIGNING_DIR").orNull
+    val ownerSigning = ownerSigningDir?.let { directory ->
+        signingConfigs.create("ownerPersistent") {
+            storeFile = File(directory, "heliboard-r2.p12")
+            storeType = "PKCS12"
+            val privatePassword = File(directory, "signing-password").readText().trim()
+            storePassword = privatePassword
+            keyPassword = privatePassword
+            keyAlias = "heliboard-r2"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -41,6 +54,7 @@ android {
             isMinifyEnabled = true
             isJniDebuggable = false
             applicationIdSuffix = ".debug"
+            if (ownerSigning != null) signingConfig = ownerSigning
         }
         create("runTests") { // build variant for running tests on CI that skips tests known to fail
             isMinifyEnabled = false
@@ -52,6 +66,7 @@ android {
             isJniDebuggable = false
             signingConfig = signingConfigs.getByName("debug")
             applicationIdSuffix = ".debug"
+            if (ownerSigning != null) signingConfig = ownerSigning
         }
 
         androidComponents.onVariants { variant: ApplicationVariant ->

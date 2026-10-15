@@ -81,6 +81,8 @@ class ClipboardHistoryManager(
         if (description.hasMimeType("text/*")) {
             val content = clipItem.coerceToText(latinIME)
             if (TextUtils.isEmpty(content)) return
+            if (ClipboardManagerCompat.getClipSensitivity(description) == true ||
+                helium314.keyboard.latin.ai.SensitiveInputPolicy.sensitiveText(content)) return
             clipboardDao?.addClip(timeStamp, false, content.toString())
         } else if (maySaveFromUri(clipItem.uri, latinIME)) {
             clipboardDao?.addClipUri(timeStamp, false, clipItem.uri, description, latinIME)

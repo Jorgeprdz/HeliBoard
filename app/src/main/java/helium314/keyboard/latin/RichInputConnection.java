@@ -359,6 +359,40 @@ public final class RichInputConnection implements PrivateCommandPerformer {
         }
     }
 
+    /** Confirmed AI edit: validate exact range content, check editor returns and refresh caches. */
+    public boolean replaceTextForAi(int start, int end, CharSequence expected, CharSequence replacement) {
+        InputConnection current = mParent.getCurrentInputConnection();
+        if (current == null || current != mIC || start < 0 || end < start || expected == null || replacement == null) return false;
+        int oldStart = mExpectedSelStart, oldEnd = mExpectedSelEnd;
+        boolean committed = false;
+        beginBatchEdit();
+        try {
+            if (!current.setSelection(start, end)) return false;
+            CharSequence actual = current.getSelectedText(0);
+            if(start==end) {
+                if(expected.length()!=0||oldStart!=start||oldEnd!=end)return false;
+                if(actual!=null&&actual.length()!=0)return false;
+            } else if (actual == null || !expected.toString().contentEquals(actual)) return false;
+            finishComposingText();
+            committed = current.commitText(replacement, 1);
+            if (committed) {
+                int desired=helium314.keyboard.latin.ai.AiCursorPolicy.afterReplacement(oldStart,oldEnd,start,end,replacement.length());
+                int fallback=start+replacement.length();
+                if(desired!=fallback&&!current.setSelection(desired,desired))desired=fallback;
+                mExpectedSelStart = mExpectedSelEnd = desired;
+                reloadTextCache();
+            }
+            return committed;
+        } finally {
+            if (!committed && oldStart >= 0 && oldEnd >= 0) {
+                current.setSelection(oldStart, oldEnd);
+                mExpectedSelStart = oldStart; mExpectedSelEnd = oldEnd;
+                reloadTextCache();
+            }
+            endBatchEdit();
+        }
+    }
+
     @Nullable
     public CharSequence getSelectedText(final int flags) {
         return isConnected() ?  mIC.getSelectedText(flags) : null;

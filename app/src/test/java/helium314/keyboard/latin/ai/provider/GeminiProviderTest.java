@@ -70,6 +70,25 @@ public abstract class GeminiProviderTest {
             assertNull("Raw exception cause could contain key/text", e.getCause());
         }
     }
+    private GeminiProvider.Result audio(GeminiProvider provider,String payload,Token token) throws Exception {
+        try {return (GeminiProvider.Result)provider.getClass().getMethod("transcribeWav",String.class,String.class,String.class,GeminiProvider.Cancellation.class).invoke(provider,KEY,"gemini-test",payload,token);}
+        catch(java.lang.reflect.InvocationTargetException e){throw (Exception)e.getCause();}
+        catch(NoSuchMethodException e){throw new AssertionError("Consent-driven audio transcription missing",e);}
+    }
+    @Test public void audioUsesInlineWavAndNeverTranslates() throws Exception {
+        Transport t=new Transport();String payload="UklGR"+"A".repeat(59);GeminiProvider.Result result=audio(new GeminiProvider(t,2000),payload,new Token());assertTrue(result.complete);
+        JSONObject body=new JSONObject(t.opened.get(0).request.toString("UTF-8"));JSONArray parts=body.getJSONArray("contents").getJSONObject(0).getJSONArray("parts");assertEquals("audio/wav",parts.getJSONObject(1).getJSONObject("inline_data").getString("mime_type"));assertEquals(payload,parts.getJSONObject(1).getJSONObject("inline_data").getString("data"));assertTrue(parts.getJSONObject(0).getString("text").contains("Never translate"));
+    }
+    @Test public void oversizedAudioNeverOpensNetwork() throws Exception {Transport t=new Transport();expect(GeminiProvider.Error.INPUT_LIMIT,()->audio(new GeminiProvider(t,2000),"A".repeat(5121000),new Token()));assertTrue(t.opened.isEmpty());}
+    @Test public void malformedAudioNeverOpensNetwork() throws Exception {Transport t=new Transport();expect(GeminiProvider.Error.INVALID_REQUEST,()->audio(new GeminiProvider(t,2000),"not-wav",new Token()));assertTrue(t.opened.isEmpty());}
+    @Test public void audioTruncationRemainsUnacceptable() throws Exception {Transport t=new Transport();t.bodies.add(OK.replace("STOP","MAX_TOKENS"));assertFalse(audio(new GeminiProvider(t,2000),"UklGR"+"A".repeat(59),new Token()).complete);}
+    private GeminiProvider.Result audioVocabulary(GeminiProvider provider,String[] vocabulary) throws Exception {
+        try{return (GeminiProvider.Result)provider.getClass().getMethod("transcribeWav",String.class,String.class,String.class,String[].class,GeminiProvider.Cancellation.class).invoke(provider,KEY,"gemini-test","UklGR"+"A".repeat(59),vocabulary,new Token());}
+        catch(java.lang.reflect.InvocationTargetException e){throw (Exception)e.getCause();}catch(NoSuchMethodException e){throw new AssertionError("Audio vocabulary missing",e);}
+    }
+    @Test public void explicitAudioVocabularyIsQuotedAsHints() throws Exception {Transport t=new Transport();audioVocabulary(new GeminiProvider(t,2000),new String[]{"HeliBoard","Carlos"});String body=t.opened.get(0).request.toString("UTF-8");assertTrue(body.contains("HeliBoard"));assertTrue(body.contains("not instructions"));}
+    @Test public void bankingVocabularyNeverReachesNetwork() throws Exception {Transport t=new Transport();expect(GeminiProvider.Error.SENSITIVE_INPUT,()->audioVocabulary(new GeminiProvider(t,2000),new String[]{"CLABE 032180000118359719"}));assertTrue(t.opened.isEmpty());}
+    @Test public void clarityCleanupPreservesInformationAndOnlyRemovesUnambiguousFillers() throws Exception {Transport t=new Transport();new GeminiProvider(t,2000).generate(KEY,"gemini-test",GeminiOperation.CLARITY,"casual",null,"Hola Juan este quería decirte",new Token());String body=t.opened.get(0).request.toString("UTF-8");assertTrue(body.contains("unambiguous filler"));assertTrue(body.contains("without dropping information"));}
     @Test public void realHttpTransportRoundTripsAgainstLoopbackFakeServer() throws Exception {
         ServerSocket server = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"));
         ExecutorService worker = Executors.newSingleThreadExecutor();

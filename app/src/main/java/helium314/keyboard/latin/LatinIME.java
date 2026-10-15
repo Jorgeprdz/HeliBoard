@@ -657,6 +657,8 @@ public class LatinIME extends InputMethodService implements
         final ArrayList<Locale> locales = new ArrayList<>();
         locales.add(subtypeLocale);
         locales.addAll(mSettings.getCurrent().mSecondaryLocales);
+        final java.util.List<Locale> aiLocales=helium314.keyboard.latin.ai.local.BilingualLocalePolicy.locales(locales,helium314.keyboard.latin.ai.AiSettingsActivity.contextualEnabled(this));
+        locales.clear();locales.addAll(aiLocales);
         if (mDictionaryFacilitator.usesSameSettings(
                 locales,
                 mSettings.getCurrent().mUseContactsDictionary,
@@ -708,6 +710,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onDestroy() {
+        if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.close();
         mClipboardHistoryManager.onDestroy();
         mDictionaryFacilitator.closeDictionaries();
         mSettings.onDestroy();
@@ -731,6 +734,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onConfigurationChanged(final Configuration conf) {
+        if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();
         SettingsValues settingsValues = mSettings.getCurrent();
         Log.i(TAG, "onConfigurationChanged");
         SubtypeSettings.INSTANCE.reloadSystemLocales(this);
@@ -797,6 +801,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onStartInput(final EditorInfo editorInfo, final boolean restarting) {
+        if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();
         mHandler.onStartInput(editorInfo, restarting);
     }
 
@@ -808,6 +813,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onFinishInputView(final boolean finishingInput) {
+        if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();
         StatsUtils.onFinishInputView();
         mHandler.onFinishInputView(finishingInput);
         mStatsUtilsManager.onFinishInputView();
@@ -817,6 +823,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onFinishInput() {
+        if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();
         mHandler.onFinishInput();
         BackgroundGatheringCache.saveOrClear(this);
     }
@@ -1007,6 +1014,8 @@ public class LatinIME extends InputMethodService implements
             }
         }
 
+        if (mSuggestionStripView != null) mSuggestionStripView.refreshAiAccess();
+        if(mAiKeyboardAssistant!=null&&!helium314.keyboard.latin.ai.AiSettingsActivity.isEnabled(this)){mAiKeyboardAssistant.close();mAiKeyboardAssistant=null;}
         mainKeyboardView.setMainDictionaryAvailability(mDictionaryFacilitator.hasAtLeastOneInitializedMainDictionary());
         mainKeyboardView.setKeyPreviewPopupEnabled(currentSettingsValues.mKeyPreviewPopupOn);
         mainKeyboardView.setSlidingKeyInputPreviewEnabled(currentSettingsValues.mSlidingKeyInputPreviewEnabled);
@@ -1033,6 +1042,7 @@ public class LatinIME extends InputMethodService implements
     public void onWindowHidden() {
         super.onWindowHidden();
         Log.i(TAG, "onWindowHidden");
+        if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();
         final MainKeyboardView mainKeyboardView = mKeyboardSwitcher.getMainKeyboardView();
         if (mainKeyboardView != null) {
             mainKeyboardView.closing();
@@ -1075,6 +1085,7 @@ public class LatinIME extends InputMethodService implements
                                   final int composingSpanStart, final int composingSpanEnd) {
         super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd,
                 composingSpanStart, composingSpanEnd);
+        if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onSelectionChanged(newSelStart, newSelEnd);
         if (DebugFlags.DEBUG_ENABLED) {
             Log.i(TAG, "onUpdateSelection: oss=" + oldSelStart + ", ose=" + oldSelEnd
                     + ", nss=" + newSelStart + ", nse=" + newSelEnd
@@ -1420,6 +1431,13 @@ public class LatinIME extends InputMethodService implements
         mSubtypeState.switchSubtype(mRichImm);
     }
 
+    public RichInputConnection getAiInputConnection() { return mInputLogic.mConnection; }
+    public boolean applyAiReplacement(int start, int end, CharSequence expected, CharSequence replacement) {
+        boolean accepted = mInputLogic.applyAiReplacement(start, end, expected, replacement);
+        if (accepted) mHandler.postResumeSuggestions(false);
+        return accepted;
+    }
+
     @Override
     public void onAiAction(final String action) {
         if (mSuggestionStripView == null) return;
@@ -1436,6 +1454,12 @@ public class LatinIME extends InputMethodService implements
     // This method is public for testability of LatinIME, but also in the future it should
     // completely replace #onCodeInput.
     public void onEvent(@NonNull final Event event) {
+        if(KeyCode.VOICE_INPUT==event.getKeyCode()&&helium314.keyboard.latin.ai.AiSettingsActivity.dictationEnabled(this)) {
+            if(mAiKeyboardAssistant==null)mAiKeyboardAssistant=new AiKeyboardAssistant(this);
+            if(mSuggestionStripView!=null)mAiKeyboardAssistant.onAction("Dictado",mSuggestionStripView);
+            return;
+        }
+        if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onUserInput();
         if (KeyCode.VOICE_INPUT == event.getKeyCode()) {
             mRichImm.switchToShortcutIme(this);
         }
@@ -1448,6 +1472,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     public void onTextInput(@Nullable String rawText) {
+        if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onUserInput();
         if (rawText == null) return;
         // TODO: have the keyboard pass the correct key code when we need it.
         Event event = Event.createSoftwareTextEvent(rawText, KeyCode.MULTIPLE_CODE_POINTS, null);
@@ -1459,6 +1484,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     public void onStartBatchInput() {
+        if(mAiKeyboardAssistant!=null)mAiKeyboardAssistant.onUserInput();
         mInputLogic.onStartBatchInput(mSettings.getCurrent(), mKeyboardSwitcher, mHandler);
         mGestureConsumer.onGestureStarted(mRichImm.getCurrentSubtypeLocale(), mKeyboardSwitcher.getKeyboard());
     }
@@ -1506,6 +1532,10 @@ public class LatinIME extends InputMethodService implements
     private void setSuggestedWords(final SuggestedWords suggestedWords) {
         final SettingsValues currentSettingsValues = mSettings.getCurrent();
         mInputLogic.setSuggestedWords(suggestedWords);
+        if(helium314.keyboard.latin.ai.AiSettingsActivity.contextualEnabled(this)) {
+            if(mAiKeyboardAssistant==null)mAiKeyboardAssistant=new AiKeyboardAssistant(this);
+            mAiKeyboardAssistant.onPredictions(suggestedWords,mSuggestionStripView);
+        }
         // TODO: Modify this when we support suggestions with hard keyboard
         if (!hasSuggestionStripView()) {
             return;
@@ -1702,6 +1732,10 @@ public class LatinIME extends InputMethodService implements
     // Hooks for hardware keyboard
     @Override
     public boolean onKeyDown(final int keyCode, final KeyEvent keyEvent) {
+        if ((keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_ESCAPE) && mSuggestionStripView != null && mSuggestionStripView.isAiActive()) {
+            if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();
+            return true;
+        }
         if (mKeyboardActionListener.onKeyDown(keyCode, keyEvent))
             return true;
         return super.onKeyDown(keyCode, keyEvent);

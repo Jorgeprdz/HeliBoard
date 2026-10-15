@@ -47,4 +47,11 @@ public class AiCoreTest {
         assertFalse(permits(1, 0, false, false, ""));
         assertFalse(permits(1, 0, false, false, new String(new char[4097]).replace('\0', 'x')));
     }
+    private boolean learns(String context,String word,boolean excluded) {
+        try{return (boolean)SensitiveInputPolicy.class.getMethod("permitsLearning",int.class,int.class,boolean.class,boolean.class,CharSequence.class,CharSequence.class).invoke(null,1,0,false,excluded,context,word);}
+        catch(Exception e){throw new AssertionError("Sensitive-context learning guard missing",e);}
+    }
+    @org.junit.Test public void financialContextDoesNotLearnOrdinaryFollowingWords(){org.junit.Assert.assertFalse(learns("Mi CLABE es 032180000118359719","gracias",false));}
+    @org.junit.Test public void excludedApplicationDoesNotLearn(){org.junit.Assert.assertFalse(learns("Te comparto la","propuesta",true));}
+    @org.junit.Test public void ordinaryLocalLearningRemainsAvailable(){org.junit.Assert.assertTrue(learns("Te comparto la","propuesta",false));}
 }

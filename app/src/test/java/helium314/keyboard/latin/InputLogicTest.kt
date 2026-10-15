@@ -81,6 +81,18 @@ class InputLogicTest {
         ShadowLog.stream = System.out
     }
 
+    @Test fun aiConfirmedReplacementKeepsCacheConsistent() {
+        setText("  hola 👋\n")
+        val original = text
+        val method = try { RichInputConnection::class.java.getMethod("replaceTextForAi", Int::class.javaPrimitiveType, Int::class.javaPrimitiveType, CharSequence::class.java, CharSequence::class.java) }
+            catch (missing: NoSuchMethodException) { throw AssertionError("Confirmed IME edit adapter missing", missing) }
+        assertEquals(true, method.invoke(connection, 0, original.length, original, "Hola 👋"))
+        assertEquals("Hola 👋", text)
+        assertEquals(text, getTextFromConnection())
+        assertEquals(false, method.invoke(connection, 0, text.length, "wrong original", "should not insert"))
+        assertEquals("Hola 👋", text)
+    }
+
     @Test fun inputCode() {
         input('c')
         assertEquals("c", textBeforeCursor)

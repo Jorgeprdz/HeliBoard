@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Trevor NK. Adapted from Ramblr commit 6538900746676382c2422a42a026fa154264f6a0.
+package helium314.keyboard.latin.ai.dictation.ramblr
+
+/** Wraps raw PCM bytes in a WAV container. */
+object WavWriter {
+    /** Builds just the 44-byte WAV header for [pcmSize] bytes of PCM data that follow it. */
+    fun header(pcmSize: Long, sampleRate: Int = 16000, channels: Int = 1, bitsPerSample: Int = 16): ByteArray {
+        // WAV's RIFF/data size fields are unsigned 32-bit; pcmSize.toInt() would silently truncate
+        // for a >2GB payload (unreachable today given the recording duration cap, but guard it so a
+        // future cap change can't produce a corrupt header) (L13).
+        require(pcmSize in 0..(Int.MAX_VALUE - 44).toLong()) {
+            "PCM size $pcmSize exceeds WAV's 32-bit size field"
+        }
+        val byteRate = sampleRate * channels * bitsPerSample / 8
+        val blockAlign = channels * bitsPerSample / 8
+        val header = ByteArray(44)
+        val pcmSizeInt = pcmSize.toInt()
+
+        fun putStr(off: Int, s: String) = s.forEachIndexed { i, c -> header[off + i] = c.code.toByte() }
+        fun putInt(off: Int, v: Int) { for (i in 0..3) header[off + i] = (v shr (8 * i) and 0xFF).toByte() }
+        fun putShort(off: Int, v: Int) { header[off] = (v and 0xFF).toByte(); header[off + 1] = (v shr 8 and 0xFF).toByte() }
+
+        putStr(0, "RIFF")
+        putInt(4, 36 + pcmSizeInt)
+        putStr(8, "WAVE")
+        putStr(12, "fmt ")
+        putInt(16, 16)            // fmt chunk size
+        putShort(20, 1)           // PCM format
+        putShort(22, channels)
+        putInt(24, sampleRate)
+        putInt(28, byteRate)
+        putShort(32, blockAlign)
+        putShort(34, bitsPerSample)
+        putStr(36, "data")
+        putInt(40, pcmSizeInt)
+
+        return header
+    }
+
+    fun encode(pcm: ByteArray, sampleRate: Int = 16000, channels: Int = 1, bitsPerSample: Int = 16): ByteArray =
+        header(pcm.size.toLong(), sampleRate, channels, bitsPerSample) + pcm
+}

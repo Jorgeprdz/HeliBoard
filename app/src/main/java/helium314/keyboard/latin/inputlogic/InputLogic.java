@@ -215,6 +215,15 @@ public final class InputLogic {
     /**
      * Clean up the input logic after input is finished.
      */
+    /** Preserve the original composition state machine around a confirmed external edit. */
+    public boolean applyAiReplacement(int start, int end, CharSequence expected, CharSequence replacement) {
+        if (!mConnection.replaceTextForAi(start, end, expected, replacement)) return false;
+        resetComposingState(true);
+        mInputLogicHandler.reset();
+        mSpaceState = SpaceState.NONE;
+        return true;
+    }
+
     public void finishInput() {
         if (mWordComposer.isComposingWord()) {
             mConnection.finishComposingText();
@@ -1706,12 +1715,18 @@ public final class InputLogic {
             return;
         boolean wasAutoCapitalized = mWordComposer.wasAutoCapitalized() && !mWordComposer.isMostlyCaps();
         String word = StringUtilsKt.stripTrailingSeparatorsAndConnectors(suggestion, settingsValues.mSpacingAndPunctuations);
+        if (helium314.keyboard.latin.ai.SensitiveInputPolicy.sensitiveText(word)) return;
         if (settingsValues.mIncognitoModeEnabled) {
             // don't add to history, but still adjust confidences
             // otherwise incognito input fields can be very annoying when the wrong language is active
             mDictionaryFacilitator.adjustConfidences(word, wasAutoCapitalized);
             return;
         }
+        final android.view.inputmethod.EditorInfo learningEditor=mLatinIME.getCurrentInputEditorInfo();
+        if(learningEditor==null||!helium314.keyboard.latin.ai.SensitiveInputPolicy.permitsLearning(
+            learningEditor.inputType,learningEditor.imeOptions,settingsValues.mIncognitoModeEnabled,
+            helium314.keyboard.latin.ai.AiSettingsActivity.excludedApp(mLatinIME,learningEditor.packageName),
+            mConnection.getTextBeforeCursor(256,0),word))return;
         if (mConnection.hasSlowInputConnection()) {
             // Since we don't unlearn when the user backspaces on a slow InputConnection,
             // turn off learning to guard against adding typos that the user later deletes.

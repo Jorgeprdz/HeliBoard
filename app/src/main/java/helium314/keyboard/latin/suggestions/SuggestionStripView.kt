@@ -31,6 +31,11 @@ import android.widget.TextView
 import androidx.core.view.doOnNextLayout
 import androidx.core.view.isVisible
 import helium314.keyboard.event.HapticEvent
+import helium314.keyboard.keyboard.KeyboardTypeface
+import helium314.keyboard.latin.ai.AiSettingsActivity
+import helium314.keyboard.latin.ai.SuggestionStripArbiter
+import helium314.keyboard.latin.utils.getCustomKeyCode
+import helium314.keyboard.latin.utils.getCustomLongpressKeyCode
 import helium314.keyboard.keyboard.KeyboardSwitcher
 import helium314.keyboard.keyboard.internal.KeyboardIconsSet
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode
@@ -89,6 +94,11 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private val wordViews = ArrayList<TextView>()
     private val debugInfoViews = ArrayList<TextView>()
     private val dividerViews = ArrayList<View>()
+    private val stripArbiter = SuggestionStripArbiter()
+    private var normalExternal: View? = null
+    private var normalExternalClose = false
+    private var pendingRtl = false
+    val isAiActive get() = stripArbiter.active()
 
     init {
         val inflater = LayoutInflater.from(context)
@@ -161,20 +171,16 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             val button = createToolbarKey(context, key)
             button.layoutParams = toolbarKeyLayoutParams
             setupKey(button, colors)
-            if (key == ToolbarKey.CLIPBOARD) {
-                button.setImageResource(R.drawable.ic_ai_sparkles)
-                button.contentDescription = "Asistente IA (mantener para portapapeles)"
-            }
             toolbar.addView(button)
         }
         for (pinnedKey in getPinnedToolbarKeys(context.prefs())) {
             val button = createToolbarKey(context, pinnedKey)
             button.layoutParams = toolbarKeyLayoutParams
-            setupKey(button, colors)
-            if (pinnedKey == ToolbarKey.CLIPBOARD) {
+            if (pinnedKey == ToolbarKey.CLIPBOARD && usesAiAccess(true)) {
                 button.setImageResource(R.drawable.ic_ai_sparkles)
                 button.contentDescription = "Asistente IA (mantener para portapapeles)"
             }
+            setupKey(button, colors)
             pinnedKeys.addView(button)
             val pinnedKeyInToolbar = toolbar.findViewWithTag<View>(pinnedKey)
             if (pinnedKeyInToolbar != null && Settings.getValues().mQuickPinToolbarKeys)
@@ -238,6 +244,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     fun setToolbarVisibility(toolbarVisible: Boolean) {
+        if (stripArbiter.active() && toolbarVisible) return
         pinnedKeys.isVisible = !toolbarVisible
         suggestionsStrip.isVisible = !toolbarVisible
         toolbarContainer.isVisible = toolbarVisible
@@ -252,6 +259,10 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     fun setSuggestions(suggestions: SuggestedWords, isRtlLanguage: Boolean) {
+        stripArbiter.rememberPredictions(suggestions)
+        pendingRtl = isRtlLanguage
+        normalExternal = null
+        if (stripArbiter.active()) return
         clear()
         setRtl(isRtlLanguage)
         suggestedWords = suggestions
@@ -263,6 +274,13 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     fun setExternalSuggestionView(view: View?, addCloseButton: Boolean) {
+        normalExternal = view
+        normalExternalClose = addCloseButton
+        if (!stripArbiter.active()) renderExternalSuggestionView(view, addCloseButton)
+    }
+
+    private fun renderExternalSuggestionView(view: View?, addCloseButton: Boolean) {
+        (view?.parent as? ViewGroup)?.removeView(view)
         clear()
         isExternalSuggestionVisible = true
 
@@ -290,6 +308,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
 
     /** AI content reuses the existing suggestion strip without changing keyboard geometry. */
     fun setAiChoices(choices: Array<String>) {
+        if (!stripArbiter.active() && stripArbiter.latestPredictions() == null) stripArbiter.rememberPredictions(suggestedWords)
+        stripArbiter.enter(toolbarContainer.isVisible)
         val horizontal = HorizontalScrollView(context)
         horizontal.isHorizontalScrollBarEnabled = false
         val container = LinearLayout(context)
@@ -300,6 +320,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             val item = TextView(context, null, R.attr.suggestionWordStyle)
             item.text = choice
             item.setTextColor(textColor)
+            KeyboardTypeface.applyToTextView(item)
             item.gravity = android.view.Gravity.CENTER
             item.isSingleLine = true
             item.setPadding(pad, 0, pad, 0)
@@ -308,13 +329,41 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT))
         }
         horizontal.addView(container)
-        setExternalSuggestionView(horizontal, false)
+        renderExternalSuggestionView(horizontal, false)
         setToolbarVisibility(false)
     }
 
     fun closeAiChoices() {
-        clear()
-        setToolbarVisibility(true)
+        if (!stripArbiter.active()) return
+        val restoreToolbar = stripArbiter.restoreToolbarVisible()
+        val external = normalExternal
+        val externalClose = normalExternalClose
+        stripArbiter.exit()
+        if (external != null) setExternalSuggestionView(external, externalClose)
+        else setSuggestions(stripArbiter.latestPredictions() as? SuggestedWords ?: suggestedWords, pendingRtl)
+        setToolbarVisibility(restoreToolbar)
+    }
+
+    private fun usesAiAccess(pinned: Boolean) = SuggestionStripArbiter.usesAiAccess(
+        AiSettingsActivity.isEnabled(context), pinned,
+        getCustomKeyCode(ToolbarKey.CLIPBOARD, context.prefs()) != null,
+        getCustomLongpressKeyCode(ToolbarKey.CLIPBOARD, context.prefs()) != null)
+
+    private fun isAiAccess(view: View) = view.tag == ToolbarKey.CLIPBOARD && usesAiAccess(view.parent === pinnedKeys)
+
+    fun refreshAiAccess() {
+        for (i in 0 until pinnedKeys.childCount) {
+            val button = pinnedKeys.getChildAt(i) as? ImageButton ?: continue
+            if (button.tag != ToolbarKey.CLIPBOARD) continue
+            if (isAiAccess(button)) {
+                button.setImageResource(R.drawable.ic_ai_sparkles)
+                button.contentDescription = "Asistente IA (mantener para portapapeles)"
+            } else {
+                button.setImageDrawable(KeyboardIconsSet.instance.getNewDrawable(ToolbarKey.CLIPBOARD.name, context))
+                button.contentDescription = ToolbarKey.CLIPBOARD.name.lowercase().let { context.getString(R.string.clipboard) }
+            }
+            Settings.getValues().mColors.setColor(button, ColorType.TOOL_BAR_KEY)
+        }
     }
 
     fun setMoreSuggestionsHeight(remainingHeight: Int) {
@@ -343,6 +392,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        if (stripArbiter.active() && ::listener.isInitialized) listener.onAiAction("Cerrar")
         dismissMoreSuggestionsPanel()
     }
 
@@ -369,7 +419,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
 
     override fun onClick(view: View) {
         val tag = view.tag
-        if (tag == ToolbarKey.CLIPBOARD) {
+        if (isAiAccess(view)) {
             listener.onAiAction("IA")
             return
         }
@@ -379,6 +429,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         }
         AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, this, HapticEvent.KEY_PRESS)
         if (view === toolbarExpandKey) {
+            if (stripArbiter.active()) { listener.onAiAction("Cerrar"); return }
             setToolbarVisibility(toolbarContainer.visibility != VISIBLE)
         }
 
@@ -393,7 +444,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     override fun onLongClick(view: View): Boolean {
-        if (view.tag == ToolbarKey.CLIPBOARD) {
+        if (isAiAccess(view)) {
             listener.onCodeInput(KeyCode.CLIPBOARD, Constants.SUGGESTION_STRIP_COORDINATE, Constants.SUGGESTION_STRIP_COORDINATE, false)
             return true
         }

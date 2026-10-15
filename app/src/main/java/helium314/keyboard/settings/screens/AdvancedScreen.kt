@@ -2,6 +2,8 @@
 package helium314.keyboard.settings.screens
 
 import android.annotation.SuppressLint
+import android.content.Intent
+import helium314.keyboard.latin.ai.AiSettingsActivity
 import android.content.Context
 import android.os.Build
 import androidx.compose.material3.Surface
@@ -59,6 +61,7 @@ fun AdvancedSettingsScreen(
     if ((b?.value ?: 0) < 0)
         Log.v("irrelevant", "stupid way to trigger recomposition on preference change")
     val items = listOf(
+        "ai_keyboard_settings",
         Settings.PREF_ALWAYS_INCOGNITO_MODE,
         Settings.PREF_KEY_LONGPRESS_TIMEOUT,
         Settings.PREF_SPACE_HORIZONTAL_SWIPE,
@@ -99,6 +102,9 @@ fun AdvancedSettingsScreen(
 
 @SuppressLint("ApplySharedPref")
 fun createAdvancedSettings(context: Context) = listOf(
+    Setting(context, "ai_keyboard_settings", R.string.ai_keyboard_settings) {
+        Preference(name = it.title, onClick = { context.startActivity(Intent(context, AiSettingsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }) { NextScreenIcon() }
+    },
     Setting(context, Settings.PREF_ALWAYS_INCOGNITO_MODE,
         R.string.incognito, R.string.prefs_force_incognito_mode_summary)
     {

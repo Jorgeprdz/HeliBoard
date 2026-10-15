@@ -15,12 +15,17 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
     <uses-permission android:name="android.permission.WRITE_USER_DICTIONARY" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
 
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <queries><intent><action android:name="android.speech.RecognitionService" /></intent></queries>
+
     <application android:label="@string/english_ime_name"
             android:name="helium314.keyboard.latin.App"
             android:icon="@mipmap/ic_launcher"
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:allowBackup="true"
+            android:fullBackupContent="@xml/ai_backup_rules"
+            android:dataExtractionRules="@xml/ai_data_extraction_rules"
             android:defaultToDeviceProtectedStorage="true"
             android:directBootAware="true"
             android:enableOnBackInvokedCallback="true"
@@ -52,6 +57,11 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
         </service>
 
         <!-- Activities -->
+        <activity android:name="helium314.keyboard.latin.ai.AiSharedTextActivity" android:exported="true" android:excludeFromRecents="true" android:label="@string/ai_keyboard_settings" android:theme="@style/platformActivityTheme" android:windowSoftInputMode="stateAlwaysHidden">
+            <intent-filter><action android:name="android.intent.action.PROCESS_TEXT" /><category android:name="android.intent.category.DEFAULT" /><data android:mimeType="text/plain" /></intent-filter>
+            <intent-filter><action android:name="android.intent.action.SEND" /><category android:name="android.intent.category.DEFAULT" /><data android:mimeType="text/plain" /></intent-filter>
+        </activity>
+        <activity android:name="helium314.keyboard.latin.ai.dictation.DictationPermissionActivity" android:exported="false" android:theme="@style/platformActivityTheme" />
         <activity android:name="helium314.keyboard.latin.ai.AiSettingsActivity"
             android:exported="false"
             android:theme="@style/platformActivityTheme" />

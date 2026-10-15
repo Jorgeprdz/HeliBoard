@@ -21,6 +21,21 @@ public final class AiEditTransaction {
         return true;
     }
 
+    /** Explicit local correction or dictation. Target must validate the exact original span. */
+    public boolean applySpan(EditorSnapshot expected,int start,int end,CharSequence originalText,
+                             CharSequence replacement,Target target) {
+        clear();
+        if(expected==null||expected.start!=expected.end||expected.start<0||start<0||end<start||end>expected.start
+            ||originalText==null||originalText.length()!=end-start||originalText.length()>4096
+            ||replacement==null||replacement.length()==0||replacement.length()>16384
+            ||target==null||!expected.matches(target.capture()))return false;
+        if(start==end&&start!=expected.start)return false;
+        if(!target.replace(start,end,replacement))return false;
+        original=new EditorSnapshot(expected.editor,expected.packageName,expected.fieldId,expected.generation,
+            expected.revision,start,end,originalText);
+        replacementLength=replacement.length();after=target.capture();return true;
+    }
+
     public boolean undo(Target target) {
         if (original == null || after == null || target == null || !after.matches(target.capture())) return false;
         int start = Math.min(original.start, original.end);

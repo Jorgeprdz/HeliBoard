@@ -63,6 +63,15 @@ public class AiTransactionTest {
         assertTrue(apply(tx, f, f.capture(), "changed"));
         f.revision++; assertFalse(undo(tx, f));
     }
+    private boolean span(Object tx,Fixture f,int start,int end,String original,String replacement) {
+        try {
+            Class<?> target=Class.forName("helium314.keyboard.latin.ai.AiEditTransaction$Target");
+            return (boolean)tx.getClass().getMethod("applySpan",EditorSnapshot.class,int.class,int.class,CharSequence.class,CharSequence.class,target)
+                .invoke(tx,f.capture(),start,end,original,replacement,f.target(target));
+        } catch(ReflectiveOperationException e){throw new AssertionError("Confirmed local span transaction missing",e);}
+    }
+    @Test public void localSpanReplacementAndUndoKeepSurroundingText(){Fixture f=new Fixture();String original=f.value;f.start=f.end;Object tx=transaction();assertTrue(span(tx,f,2,6,"hola","Hola"));assertEquals("  Hola 👋\n",f.value);assertTrue(undo(tx,f));assertEquals(original,f.value);}
+    @Test public void confirmedDictationInsertionCanBeUndone(){Fixture f=new Fixture();String original=f.value;f.start=f.end;int cursor=f.start;Object tx=transaction();assertTrue(span(tx,f,cursor,cursor,"","dictado"));assertTrue(f.value.endsWith("dictado"));assertTrue(undo(tx,f));assertEquals(original,f.value);}
     @Test public void collapsedSelectionCannotBeRewritten() {
         Fixture f = new Fixture(); f.start = f.end;
         assertFalse(apply(transaction(), f, f.capture(), "changed"));

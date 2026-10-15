@@ -24,6 +24,11 @@ public final class SensitiveInputPolicy {
         return variation == 0x80 || variation == 0x90 || variation == 0xe0;
     }
 
+    public static boolean permitsLearning(int type,int options,boolean incognito,boolean excluded,
+                                          CharSequence context,CharSequence word) {
+        return !protectedEditor(type,options,incognito,excluded)&&!sensitiveText(context)&&!sensitiveText(word);
+    }
+
     /** Also used for local learning and clipboard retention, independently of cloud opt-in. */
     public static boolean sensitiveText(CharSequence value) {
         if (value == null || value.length() > MAX_SELECTION) return true;

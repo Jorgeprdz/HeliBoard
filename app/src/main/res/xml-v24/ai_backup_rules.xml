@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="keyboard_ai_private.xml" />
+    <exclude domain="device_sharedpref" path="keyboard_ai_private.xml" />
+</full-backup-content>
