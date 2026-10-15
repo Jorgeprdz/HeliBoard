@@ -67,7 +67,15 @@ fun hasLetterBeforeLastSpaceBeforeCursor(text: CharSequence): Boolean {
 // todo: this is now only used for tests, do we actually need it?
 fun getFullEmojiAtEnd(text: CharSequence): String {
     val lastGrapheme = text.toString().lastGrapheme
-    return if (isEmoji(lastGrapheme)) lastGrapheme else ""
+    if (isEmoji(lastGrapheme)) return lastGrapheme
+    // A modifier attached to a non-modifier base (e.g. 🎄🏼) is not a valid
+    // emoji cluster. Backspace must still be able to remove its trailing modifier.
+    if (lastGrapheme.isNotEmpty()) {
+        val lastCodePoint = lastGrapheme.codePointBefore(lastGrapheme.length)
+        if (lastCodePoint in 0x1F3FB..0x1F3FF)
+            return String(Character.toChars(lastCodePoint))
+    }
+    return ""
 }
 
 /**

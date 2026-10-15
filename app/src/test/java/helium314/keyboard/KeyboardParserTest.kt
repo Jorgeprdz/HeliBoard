@@ -463,14 +463,30 @@ f""", // no newline at the end
     @Test fun `de_DE has extra keys`() {
         val editorInfo = EditorInfo()
         val subtype = SubtypeUtilsAdditional.createEmojiCapableAdditionalSubtype(Locale.GERMANY, "qwertz+", true)
-        val (_, keys) = buildKeyboard(editorInfo, subtype, KeyboardElement.ALPHABET)
-        assertEquals(11, keys[0].size)
-        assertEquals(11, keys[1].size)
-        assertEquals(10, keys[2].size)
-        val (_, keys2) = buildKeyboard(editorInfo, subtype, KeyboardElement.ALPHABET_AUTOMATIC_SHIFTED)
-        assertEquals(11, keys2[0].size)
-        assertEquals(11, keys2[1].size)
-        assertEquals(10, keys2[2].size)
+        // This bilingual APK intentionally omits German locale assets. Supply the
+        // parser's German extra-key input in the fixture, not in the shipped UI.
+        val fixture = LocaleKeyboardInfos(
+            "[extra_keys]\n1: ü\n2: ö\n2: ä\n3: ß\n".byteInputStream(), Locale.GERMANY)
+        @Suppress("UNCHECKED_CAST")
+        val cache = LocaleKeyboardInfos::class.java
+            .getDeclaredField("localeKeyboardInfosCache").apply { isAccessible = true }
+            .get(null) as MutableMap<String, LocaleKeyboardInfos>
+        val settings = helium314.keyboard.latin.settings.Settings.getValues()
+        val cacheKey = (settings.mSecondaryLocales + Locale.GERMANY)
+            .joinToString { it.toString() } + settings.mShowMorePopupKeys
+        cache[cacheKey] = fixture
+        try {
+            val (_, keys) = buildKeyboard(editorInfo, subtype, KeyboardElement.ALPHABET)
+            assertEquals(11, keys[0].size)
+            assertEquals(11, keys[1].size)
+            assertEquals(10, keys[2].size)
+            val (_, keys2) = buildKeyboard(editorInfo, subtype, KeyboardElement.ALPHABET_AUTOMATIC_SHIFTED)
+            assertEquals(11, keys2[0].size)
+            assertEquals(11, keys2[1].size)
+            assertEquals(10, keys2[2].size)
+        } finally {
+            LocaleKeyboardInfos.clearCache()
+        }
     }
 
     @Test fun `popup key count does not depend on shift for (for simple layout)`() {

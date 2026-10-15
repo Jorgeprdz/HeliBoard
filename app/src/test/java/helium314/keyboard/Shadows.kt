@@ -133,7 +133,8 @@ class ShadowInputMethodService {
         var composingStart = -1
         var composingEnd = -1
         var currentInputType = InputType.TYPE_CLASS_TEXT
-        var editorPackage: String? = null
+        // Model an ordinary editor; privacy tests explicitly provide missing/excluded packages.
+        var editorPackage: String? = "fixture.editor"
         var editorOptions = 0
         val editorActions = mutableListOf<Pair<Int, String>>()
 
@@ -155,7 +156,7 @@ class ShadowInputMethodService {
             composingStart = -1
             composingEnd = -1
             currentInputType = InputType.TYPE_CLASS_TEXT
-            editorPackage = null
+            editorPackage = "fixture.editor"
             editorOptions = 0
             editorActions.clear()
         }

@@ -81,6 +81,14 @@ class InputLogicTest {
         ShadowLog.stream = System.out
     }
 
+    // Exercise the real Hangul combiner without restoring removed production locales/layouts.
+    private fun koreanCombiningSubtype() =
+        helium314.keyboard.latin.utils.SubtypeUtilsAdditional.createAdditionalSubtype(
+            Locale.KOREAN,
+            "KeyboardLayoutSet=MAIN:qwerty,CombiningRules=hangul,SupportTouchPositionCorrection",
+            false, true
+        )
+
     private fun r22Enable(text: String) {
         setText(text)
         ShadowInputMethodService.editorPackage = "fixture.editor"
@@ -293,14 +301,14 @@ class InputLogicTest {
     }
 
     @Test fun combineHangul() {
-        val ko = SubtypeSettings.getResourceSubtypesForLocale("ko".constructLocale()).first()
+        val ko = koreanCombiningSubtype()
         latinIME.switchToSubtype(ko)
         chainInput("ㅂㄱㅑ")
         assertEquals("ㅂ갸", text)
     }
 
     @Test fun emojiHangul() {
-        val ko = SubtypeSettings.getResourceSubtypesForLocale("ko".constructLocale()).first()
+        val ko = koreanCombiningSubtype()
         latinIME.switchToSubtype(ko)
         input(0x1F970)
         assertEquals("\uD83E\uDD70", text)
@@ -310,7 +318,7 @@ class InputLogicTest {
     //  https://github.com/HeliBorg/HeliBoard/issues/214
     @Test fun insertLetterIntoWordHangulFails() {
         if (BuildConfig.BUILD_TYPE == "runTests") return
-        latinIME.switchToSubtype(SubtypeSettings.getResourceSubtypesForLocale("ko".constructLocale()).first())
+        latinIME.switchToSubtype(koreanCombiningSubtype())
         chainInput("ㅛㅎㄹㅎㅕㅛ")
         setCursorPosition(3)
         input('ㄲ') // fails, as expected from the hangul issue when processing the event in onCodeInput
@@ -323,13 +331,13 @@ class InputLogicTest {
 
     // see issue 1447
     @Test fun separatorAfterHangul() {
-        latinIME.switchToSubtype(SubtypeSettings.getResourceSubtypesForLocale("ko".constructLocale()).first())
+        latinIME.switchToSubtype(koreanCombiningSubtype())
         chainInput("ㅛ.")
         assertEquals("ㅛ.", text)
     }
 
     @Test fun deleteHangulInDebugMode() { // issue 1551, later only happened on phone
-        latinIME.switchToSubtype(SubtypeSettings.getResourceSubtypesForLocale("ko".constructLocale()).first())
+        latinIME.switchToSubtype(koreanCombiningSubtype())
         setText("ㅛㅛ ")
         functionalKeyPress(KeyCode.DELETE)
         functionalKeyPress(KeyCode.DELETE)

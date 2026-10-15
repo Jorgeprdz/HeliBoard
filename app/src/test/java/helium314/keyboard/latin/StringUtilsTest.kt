@@ -160,9 +160,8 @@ class StringUtilsTest {
         assertEquals("\uD83D\uDE22", getFullEmojiAtEnd(" \u200D\uD83D\uDE22"))
     }
 
-    @Test fun detectEmojisAtEndFails() {
-        if (BuildConfig.BUILD_TYPE == "runTests") return
-        // fails, but unlikely enough that we leave it unfixed (issue is that 🏼 is not a standalone emoji, but combining with 🎄 doesn't merge)
+    @Test fun detectsTrailingModifierAfterNonModifierBase() {
+        // Keep this regression active for every build type.
         assertEquals("\uD83C\uDFFC", getFullEmojiAtEnd("\uD83C\uDF84\uD83C\uDFFC")) // 🎄🏼
     }
 
