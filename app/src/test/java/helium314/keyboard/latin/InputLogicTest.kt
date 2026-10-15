@@ -103,6 +103,58 @@ class InputLogicTest {
         latinIME.onEvent(Event.createEventForCodePointFromUnknownSource(code))
     }
 
+    private fun r23Assistant(): helium314.keyboard.latin.ai.AiKeyboardAssistant {
+        latinIME.onLocalWordBoundary()
+        val field = LatinIME::class.java.getDeclaredField("mAiKeyboardAssistant").apply { isAccessible = true }
+        return field.get(latinIME) as helium314.keyboard.latin.ai.AiKeyboardAssistant
+    }
+
+    @Test fun R23PersonalBoundaryAndSingleBackspaceUseRealIme() {
+        r22Enable("teh ")
+        val assistant = r23Assistant()
+        val learning = helium314.keyboard.latin.ai.local.PersonalTypingStore.get(latinIME)
+        learning.erase()
+        repeat(5) { learning.accept("teh", "the", "en-US") }
+        val field = assistant.javaClass.getDeclaredField("lexicon").apply { isAccessible = true }
+        val observed = field.get(assistant) as helium314.keyboard.latin.ai.local.ObservedLexicon
+        observed.record("teh", false, listOf("the"), true)
+        assistant.onWordBoundary()
+        assertEquals("the ", text)
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("teh ", text)
+        kotlin.test.assertNull(learning.automatic("teh", "en-US", false))
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("teh", text)
+        checkConnectionConsistency()
+    }
+
+    @Test fun R23DictationTransactionAndImmediateBackspaceRestoreWholeInsertion() {
+        r22Enable("Antes ")
+        val assistant = r23Assistant()
+        val capture = assistant.javaClass.getDeclaredMethod("capture").apply { isAccessible = true }
+        val finish = assistant.javaClass.getDeclaredMethod("finishAutomatic",
+            helium314.keyboard.latin.ai.EditorSnapshot::class.java, String::class.java).apply { isAccessible = true }
+        finish.invoke(assistant, capture.invoke(assistant), "dictado completo")
+        assertEquals("Antes dictado completo", text)
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("Antes ", text)
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("Antes", text)
+        checkConnectionConsistency()
+    }
+
+    @Test fun R23DictationCannotApplyAfterEditorGenerationChanges() {
+        r22Enable("Antes ")
+        val assistant = r23Assistant()
+        val capture = assistant.javaClass.getDeclaredMethod("capture").apply { isAccessible = true }
+        val snapshot = capture.invoke(assistant)
+        assistant.onNewEditor()
+        val finish = assistant.javaClass.getDeclaredMethod("finishAutomatic",
+            helium314.keyboard.latin.ai.EditorSnapshot::class.java, String::class.java).apply { isAccessible = true }
+        finish.invoke(assistant, snapshot, "obsoleto")
+        assertEquals("Antes ", text)
+    }
+
     @Test fun r22ContextEditsThroughRealImeAndBackspaceOnce() {
         r22Enable("voy haber si puedo")
         r22Key(' '.code)

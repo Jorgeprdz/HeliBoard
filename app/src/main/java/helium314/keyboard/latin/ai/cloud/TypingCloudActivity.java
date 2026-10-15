@@ -5,12 +5,13 @@ import android.accounts.AccountManager;import com.google.android.gms.auth.api.id
 import java.util.*;import java.util.concurrent.*;
 /** Initial consent and portable recovery unlock. No access token or recovery phrase in preferences. */
 public final class TypingCloudActivity extends Activity{
- private final ExecutorService background=Executors.newSingleThreadExecutor();private EditText phrase;private TextView status;
+ private final ExecutorService background=Executors.newSingleThreadExecutor();private EditText phrase;private TextView status;private CheckBox restoreVisual;
  @Override public void onCreate(Bundle b){helium314.keyboard.latin.ai.AiMenuTheme.applyActivity(this);super.onCreate(b);getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
   LinearLayout stack=new LinearLayout(this);stack.setOrientation(LinearLayout.VERTICAL);int pad=(int)(24*getResources().getDisplayMetrics().density);stack.setPadding(pad,pad,pad,pad);
   TextView title=new TextView(this);title.setText("Personal Typing Cloud");title.setTextSize(26);stack.addView(title);
-  TextView detail=new TextView(this);detail.setText("Solo asociaciones de palabras aprendidas y rechazos, cifrados antes de subir a Drive privado. Guarda fuera del teléfono una frase larga de recuperación (mínimo 20 caracteres). Usa la misma frase en tus dispositivos. Nunca se envían API keys, conversaciones, audio ni pulsaciones. La sincronización comienza tras autorizar y desbloquear. Se necesita registrar este paquete y certificado en Google Cloud y activar Drive API.");stack.addView(detail);
+  TextView detail=new TextView(this);detail.setText("Asociaciones, rechazos, palabras personales y preferencias visuales compatibles, cifrados antes de subir a Drive privado. No se respaldan atajos con frases. Guarda fuera del teléfono una frase larga de recuperación (mínimo 20 caracteres). Usa la misma frase en tus dispositivos. Nunca se envían API keys, conversaciones, audio ni pulsaciones. La sincronización comienza tras autorizar y desbloquear. Se necesita registrar este paquete y certificado en Google Cloud y activar Drive API.");stack.addView(detail);
   phrase=new com.google.android.material.textfield.TextInputEditText(this);phrase.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);phrase.setHint("Frase de recuperación");stack.addView(phrase);
+  restoreVisual=new CheckBox(this);restoreVisual.setText("Restaurar también preferencias visuales al conectar");restoreVisual.setChecked(false);stack.addView(restoreVisual);
   status=new TextView(this);status.setText(TypingSync.prefs(this).getString("status","Sin configurar"));stack.addView(status);
   Button enable=new com.google.android.material.button.MaterialButton(this);enable.setText("Autorizar Google y activar respaldo");enable.setEnabled(Build.VERSION.SDK_INT>=26);
   enable.setOnClickListener(v->{
@@ -42,12 +43,14 @@ public final class TypingCloudActivity extends Activity{
  private void activate(AuthorizationResult authorization){
   if(authorization.getAccessToken()==null){status.setText("Google no autorizó Drive");return;}
   char[] secret=new char[phrase.length()];phrase.getText().getChars(0,phrase.length(),secret,0);phrase.setText("");
+  final boolean restore=restoreVisual.isChecked();
   background.execute(()->{try{
    Context c=TypingSync.storage(this);RecoveryVault.save(c,secret);
-   TypingSync.prefs(c).edit().putBoolean("enabled",true).putString("status","Autorizado; verificando respaldo y frase").commit();
+   TypingSync.prefs(c).edit().putBoolean("enabled",true).putBoolean("restore_visual",restore).putString("status","Autorizado; verificando respaldo y frase").commit();
    TypingSync.activate(c);runOnUiThread(()->status.setText("Sincronización programada. Revisa el estado al volver a esta pantalla."));
   }catch(Exception e){runOnUiThread(()->status.setText("No se pudo proteger la frase; sincronización desactivada."));}
   finally{Arrays.fill(secret,'\0');}});
  }
+ @Override protected void onResume(){super.onResume();if(status!=null)status.setText(TypingSync.prefs(this).getString("status","Sin configurar"));}
  @Override protected void onDestroy(){background.shutdown();super.onDestroy();}
 }

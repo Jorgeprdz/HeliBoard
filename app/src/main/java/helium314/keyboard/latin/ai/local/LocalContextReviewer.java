@@ -226,6 +226,22 @@ public final class LocalContextReviewer {
         return tokens;
     }
 
+    /** Shares lexical protection with contextual review; personal evidence cannot bypass it. */
+    public boolean allowsPersonal(String text,int start,int end,String replacement,Set<String> rejected){
+        if(text==null||text.length()>MAX_TEXT_LENGTH||replacement==null)return false;
+        List<Token> tokens=tokenize(text);if(tokens.size()>MAX_TOKENS)return false;
+        for(Token token:tokens)if(token.start==start&&token.end==end){
+            if(token.protectedText||hasCapital(token.word)||NEGATIONS.contains(token.lower))return false;
+            if(rejected!=null)for(String value:rejected){
+                String rejection=value.toLowerCase(Locale.ROOT);
+                if(rejection.equals(token.lower)||rejection.equals(replacement.toLowerCase(Locale.ROOT))
+                    ||rejection.equals((token.word+"→"+replacement).toLowerCase(Locale.ROOT)))return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
     private static boolean linked(String text, List<Token> tokens, int start, int end) {
         for (int i = start; i <= end; i++) {
             if (tokens.get(i).protectedText) return false;

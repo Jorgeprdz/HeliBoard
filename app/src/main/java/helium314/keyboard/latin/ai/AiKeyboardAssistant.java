@@ -231,7 +231,7 @@ public final class AiKeyboardAssistant {
             String typed=last.group(1);
             helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon known=lexicon.snapshot();
             String replacement=known.knownInvalid(typed)?personal.automatic(typed,typingLanguage(),known.valid(typed)):null;
-            if(replacement!=null){
+            if(replacement!=null&&boundaryReviewer.allowsPersonal(context,last.start(1),last.end(1),replacement,AiSettingsActivity.rejectedCorrections(ime))){
                 java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> all=new java.util.ArrayList<>();
                 all.add(new helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction(last.start(1),last.end(1),typed,replacement,"personal-explicit-evidence",.99,true));
                 all.addAll(corrections);corrections=all;
@@ -264,7 +264,10 @@ public final class AiKeyboardAssistant {
         boolean valid=!privateField()&&automaticAfter!=null&&automaticAfter.matches(capture())
             &&before!=null&&automaticContext.contentEquals(before);
         boolean undone=valid&&automaticEdits.undo(target(automaticReplacement));
-        if(undone&&!automaticOriginal.isEmpty())personal.reject(automaticOriginal,automaticReplacement,automaticLanguage);
+        if(undone&&!automaticOriginal.isEmpty()){
+            personal.reject(automaticOriginal,automaticReplacement,automaticLanguage);
+            AiSettingsActivity.rejectCorrection(ime,automaticOriginal+"→"+automaticReplacement);
+        }
         clearAutomaticUndo();
         return undone;
     }
@@ -416,7 +419,10 @@ public final class AiKeyboardAssistant {
         }
         if(!AiSettingsActivity.isEnabled(ime)){onNewEditor();return;}
         if("Aplicar corrección".equals(action)){applyLocal();return;}
-        if("Rechazar corrección".equals(action)){if(localCorrection!=null)AiSettingsActivity.rejectCorrection(ime,localCorrection.original+"→"+localCorrection.replacement);reset(false);return;}
+        if("Rechazar corrección".equals(action)){if(localCorrection!=null){
+            personal.reject(localCorrection.original,localCorrection.replacement,typingLanguage());
+            AiSettingsActivity.rejectCorrection(ime,localCorrection.original+"→"+localCorrection.replacement);
+        }reset(false);return;}
         if("Revisar resultado".equals(action)){fullReview();return;}
         if("Deshacer".equals(action)) {
             if(edits.undo(target(undoText))){undoText="";show("Cambio deshecho","Cerrar");}

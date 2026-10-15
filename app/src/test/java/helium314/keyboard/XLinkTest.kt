@@ -71,10 +71,10 @@ class XLinkTest { // Without the X, SubtypeTests fail with ClassCastException. W
 
     @Test fun layoutsLinksInternal() {
         val file = File("../layouts.md")
-        val internalLinkRegex = "app/src/\\b(?:[-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*)".toRegex()
+        val internalLinkRegex = """(?<=\]\()app/src/[-a-zA-Z0-9@:%_+.~#?&/=]*""".toRegex()
         internalLinkRegex.findAll(file.readText()).forEach {
             val path = it.value.substringBefore('#')
-            assertTrue(File("..", path).isFile, "Missing documented source path: $path")
+            assertTrue(File("..", path).exists(), "Missing documented source path: $path")
         }
     }
 

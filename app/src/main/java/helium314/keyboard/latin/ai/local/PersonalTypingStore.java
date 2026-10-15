@@ -22,20 +22,27 @@ public final class PersonalTypingStore {
  private final ExecutorService writer=Executors.newSingleThreadExecutor();
  private final Map<String,Row> rows=new TreeMap<>();
  private final Context context;private Database database;private String device;
- private volatile boolean ready;
+ private volatile boolean ready,loading;
+ private long epoch;
  public static synchronized PersonalTypingStore get(Context context){
-  if(instance==null)instance=new PersonalTypingStore(context);return instance;
+  if(instance==null)instance=new PersonalTypingStore(context);else instance.ensureLoaded();return instance;
  }
  private PersonalTypingStore(Context original){
   Context app=original.getApplicationContext();
   context=app;
+  ensureLoaded();
+ }
+ private synchronized void ensureLoaded(){
+  if(ready||loading)return;
+  if(Build.VERSION.SDK_INT>=24&&!((android.os.UserManager)context.getSystemService(Context.USER_SERVICE)).isUserUnlocked())return;
+  loading=true;
   writer.execute(()->{
    try {
     if(Build.VERSION.SDK_INT>=24&&!((android.os.UserManager)context.getSystemService(Context.USER_SERVICE)).isUserUnlocked())return;
     android.content.SharedPreferences prefs=context.getSharedPreferences("personal_typing_identity",0);
     device=prefs.getString("device","");
     if(device.isEmpty()){device=UUID.randomUUID().toString();if(!prefs.edit().putString("device",device).commit())return;}
-    database=new Database(context);
+    if(database==null)database=new Database(context);
     try(Cursor c=database.getReadableDatabase().query("evidence",null,null,null,null,null,"updated DESC",Integer.toString(LIMIT))){
      synchronized(rows){while(c.moveToNext()){
       Row r=new Row(c.getString(c.getColumnIndexOrThrow("error")),c.getString(c.getColumnIndexOrThrow("correction")),
@@ -44,7 +51,7 @@ public final class PersonalTypingStore {
       rows.put(r.key(),r);
      }}
     }ready=true;
-   }catch(RuntimeException unavailable){ready=false;}
+   }catch(RuntimeException unavailable){ready=false;}finally{loading=false;}
   });
  }
  private static String normalized(String value){return value==null?"":java.text.Normalizer.normalize(value,java.text.Normalizer.Form.NFC).toLowerCase(Locale.ROOT);}
@@ -69,6 +76,7 @@ public final class PersonalTypingStore {
  public void accept(String error,String correction,String language){observe(error,correction,language,false);}
  public void reject(String error,String correction,String language){observe(error,correction,language,true);}
  private void observe(String error,String correction,String language,boolean rejected){
+  ensureLoaded();
   if(!ready||!word(error)||!word(correction))return;
   String a=normalized(error),b=normalized(correction);if(!pair(a,b,language))return;
   final Row next;
@@ -82,6 +90,7 @@ public final class PersonalTypingStore {
  }
  /** A known legitimate word is always protected. Any rejection vetoes auto-replacement. */
  public String automatic(String word,String language,boolean dictionaryValid){
+  ensureLoaded();
   if(dictionaryValid||!ready||!word(word)||!locale(language))return null;
   Map<String,long[]> totals=new HashMap<>();
   synchronized(rows){for(Row r:rows.values())if(r.error.equals(word)&&r.language.equals(language)){
@@ -102,11 +111,13 @@ public final class PersonalTypingStore {
  }
  private <T>T io(Callable<T> task){try{return writer.submit(task).get(30,TimeUnit.SECONDS);}catch(Exception e){throw new IllegalStateException("Learning storage unavailable",e);}}
  /** Background-only API. An authenticated allowlisted, bounded schema; no settings/key dumps. */
- public byte[] exportData(){return io(()->{
+ public byte[] exportData(){ensureLoaded();return io(()->{
   JSONArray all=new JSONArray();synchronized(rows){for(Row r:rows.values())all.put(r.json());}
   return new JSONObject().put("schema",1).put("rows",all).toString().getBytes(StandardCharsets.UTF_8);
  });}
- public void merge(byte[] data){
+ public long generation(){synchronized(rows){return epoch;}}
+ public void validate(byte[] data){parseRows(data);}
+ private static List<Row> parseRows(byte[] data){
   if(data==null||data.length>MAX_BYTES)throw new IllegalArgumentException("Backup too large");
   final List<Row> validated=new ArrayList<>();
   try{
@@ -120,8 +131,15 @@ public final class PersonalTypingStore {
     validated.add(r);
    }
   }catch(JSONException e){throw new IllegalArgumentException("Invalid learning schema",e);}
+  return validated;
+ }
+ public void merge(byte[] data){merge(data,generation());}
+ public void merge(byte[] data,long expectedGeneration){
+  ensureLoaded();
+  final List<Row> validated=parseRows(data);
   io(()->{
    if(!ready)throw new IllegalStateException("Learning unavailable");
+   synchronized(rows){if(epoch!=expectedGeneration)throw new IllegalStateException("Stale cloud import");}
    SQLiteDatabase db=database.getWritableDatabase();db.beginTransaction();
    Map<String,Row> next;
    synchronized(rows){next=new TreeMap<>(rows);for(Row r:validated){
@@ -130,12 +148,17 @@ public final class PersonalTypingStore {
    if(next.size()>LIMIT){List<Row> ordered=new ArrayList<>(next.values());ordered.sort(Comparator.comparingLong(r->r.t));for(int i=0;i<ordered.size()-LIMIT;i++)next.remove(ordered.get(i).key());}
    try{for(Row r:next.values())save(r);db.setTransactionSuccessful();}finally{db.endTransaction();}
    synchronized(rows){
+    if(epoch!=expectedGeneration)return null;
     for(Row r:rows.values()){Row old=next.get(r.key());next.put(r.key(),old==null?r:new Row(r.error,r.correction,r.language,r.device,Math.max(old.a,r.a),Math.max(old.r,r.r),Math.max(old.t,r.t)));}
     rows.clear();rows.putAll(next);prune();
    }return null;
   });
  }
- public void erase(){io(()->{if(database==null)throw new IllegalStateException("Learning unavailable");database.getWritableDatabase().delete("evidence",null,null);synchronized(rows){rows.clear();}return null;});}
+ public void eraseAsync(){
+  synchronized(rows){epoch++;rows.clear();}
+  writer.execute(()->{if(database!=null)database.getWritableDatabase().delete("evidence",null,null);});
+ }
+ public void erase(){ensureLoaded();eraseAsync();io(()->null);}
  private static final class Row {
   final String error,correction,language,device;final long a,r,t;
   Row(String e,String c,String l,String d,long a,long r,long t){error=e;correction=c;language=l;device=d;this.a=a;this.r=r;this.t=t;}

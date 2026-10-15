@@ -4,15 +4,21 @@
     <cloud-backup>
         <exclude domain="sharedpref" path="keyboard_ai_private.xml" />
         <exclude domain="sharedpref" path="typing_cloud.xml" />
+        <exclude domain="device_sharedpref" path="typing_cloud.xml" />
         <exclude domain="sharedpref" path="personal_typing_identity.xml" />
+        <exclude domain="device_sharedpref" path="personal_typing_identity.xml" />
         <exclude domain="database" path="personal_typing_v1.db" />
+        <exclude domain="device_database" path="personal_typing_v1.db" />
         <exclude domain="device_sharedpref" path="keyboard_ai_private.xml" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="keyboard_ai_private.xml" />
         <exclude domain="sharedpref" path="typing_cloud.xml" />
+        <exclude domain="device_sharedpref" path="typing_cloud.xml" />
         <exclude domain="sharedpref" path="personal_typing_identity.xml" />
+        <exclude domain="device_sharedpref" path="personal_typing_identity.xml" />
         <exclude domain="database" path="personal_typing_v1.db" />
+        <exclude domain="device_database" path="personal_typing_v1.db" />
         <exclude domain="device_sharedpref" path="keyboard_ai_private.xml" />
     </device-transfer>
 </data-extraction-rules>
