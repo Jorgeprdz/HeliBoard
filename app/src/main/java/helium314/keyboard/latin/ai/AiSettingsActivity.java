@@ -48,16 +48,19 @@ public class AiSettingsActivity extends Activity {
     }
     public static String dictationLanguage(Context ctx){String value=ctx.getSharedPreferences(PREF,MODE_PRIVATE).getString("dictation_language","auto");return "es-MX".equals(value)||"en-US".equals(value)?value:"auto";}
     public static java.util.List<String> readVocabulary(Context ctx){try{return helium314.keyboard.latin.ai.dictation.DictationOptions.vocabulary(ctx.getSharedPreferences(PREF,MODE_PRIVATE).getString("dictation_vocabulary",""));}catch(IllegalArgumentException e){return java.util.Collections.emptyList();}}
-    public static java.util.Set<String> rejectedCorrections(Context ctx) {
+    public static synchronized java.util.Set<String> rejectedCorrections(Context ctx) {
         return new java.util.HashSet<>(ctx.getSharedPreferences(PREF,MODE_PRIVATE).getStringSet("rejected_corrections",java.util.Collections.emptySet()));
     }
-    public static void rejectCorrection(Context ctx,String correction) {
+    public static synchronized void rejectCorrection(Context ctx,String correction) {
         if(correction==null||correction.length()>100||SensitiveInputPolicy.sensitiveText(correction))return;
-        java.util.Set<String> values=rejectedCorrections(ctx);if(values.size()>=128&&!values.contains(correction))values.remove(values.iterator().next());values.add(correction);
+        java.util.Set<String> values=rejectedCorrections(ctx);
+        // Old cloud snapshots must never evict newer local vetoes, including at capacity.
+        if(values.contains(correction)||values.size()>=128)return;
+        values.add(correction);
         ctx.getSharedPreferences(PREF,MODE_PRIVATE).edit().putStringSet("rejected_corrections",values).apply();
     }
     /** Clears automatically learned history and AI rejection preferences, not manual dictionaries. */
-    public static void clearLearnedData(Context ctx) {
+    public static synchronized void clearLearnedData(Context ctx) {
         ctx.getSharedPreferences(PREF,MODE_PRIVATE).edit().remove("rejected_corrections").commit();
         // Also stop cloud recovery before erasing; remote backup is deliberately retained.
         helium314.keyboard.latin.ai.cloud.TypingSync.stopSync(ctx);

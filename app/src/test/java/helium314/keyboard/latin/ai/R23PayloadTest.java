@@ -48,4 +48,33 @@ public class R23PayloadTest {
   finally{c.getSharedPreferences("typing_cloud",0).edit().putBoolean("enabled",false).commit();}
  }
 
+
+ @Test public void oldSnapshotCannotEvictFullLocalRejectionSet()throws Exception{
+  Context c=ApplicationProvider.getApplicationContext();PersonalTypingStore model=PersonalTypingStore.get(c);model.erase();
+  java.util.Set<String> full=new java.util.HashSet<>();
+  for(int i=0;i<128;i++)full.add("veto"+i);
+  full.remove("veto0");full.add("haber→a ver");
+  c.getSharedPreferences("keyboard_ai_private",0).edit().putStringSet("rejected_corrections",full).commit();
+  byte[] old=BackupPayload.export(c,model);
+  c.getSharedPreferences("typing_cloud",0).edit().putBoolean("enabled",true).commit();
+  try{
+   BackupPayload.merge(c,model,old,model.generation());
+   AiSettingsActivity.rejectCorrection(c,"new veto");
+   assertEquals(full,AiSettingsActivity.rejectedCorrections(c));
+  }finally{c.getSharedPreferences("typing_cloud",0).edit().putBoolean("enabled",false).commit();}
+ }
+ @Test public void simultaneousRejectionsRetainBothLocalAndImportedVetoes()throws Exception{
+  Context c=ApplicationProvider.getApplicationContext();
+  c.getSharedPreferences("keyboard_ai_private",0).edit().remove("rejected_corrections").commit();
+  java.util.concurrent.CountDownLatch start=new java.util.concurrent.CountDownLatch(1);
+  java.util.concurrent.ExecutorService workers=java.util.concurrent.Executors.newFixedThreadPool(2);
+  try{
+   java.util.concurrent.Future<?> a=workers.submit(()->{try{start.await();}catch(InterruptedException e){throw new AssertionError(e);}for(int i=0;i<60;i++)AiSettingsActivity.rejectCorrection(c,"local"+i);});
+   java.util.concurrent.Future<?> b=workers.submit(()->{try{start.await();}catch(InterruptedException e){throw new AssertionError(e);}for(int i=0;i<60;i++)AiSettingsActivity.rejectCorrection(c,"remote"+i);});
+   start.countDown();a.get(10,java.util.concurrent.TimeUnit.SECONDS);b.get(10,java.util.concurrent.TimeUnit.SECONDS);
+   java.util.Set<String> got=AiSettingsActivity.rejectedCorrections(c);
+   assertEquals(120,got.size());for(int i=0;i<60;i++){assertTrue(got.contains("local"+i));assertTrue(got.contains("remote"+i));}
+  }finally{workers.shutdownNow();}
+ }
+
 }
