@@ -159,3 +159,19 @@ dependencies {
     testImplementation("androidx.test:runner:1.7.0")
     testImplementation("androidx.test:core:1.7.0")
 }
+
+// Keep the default test command complete. CI explicitly separates documentation
+// availability from the functional release gate, as authorized by the owner.
+val r22DocumentationAudit = providers.gradleProperty("r22DocumentationAudit").orElse("all")
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    when (r22DocumentationAudit.get()) {
+        "all" -> Unit
+        "exclude" -> useJUnit {
+            excludeCategories("helium314.keyboard.DocumentationLinks")
+        }
+        "only" -> useJUnit {
+            includeCategories("helium314.keyboard.DocumentationLinks")
+        }
+        else -> error("r22DocumentationAudit must be all, exclude, or only")
+    }
+}

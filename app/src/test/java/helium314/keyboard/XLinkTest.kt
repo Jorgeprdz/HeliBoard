@@ -8,6 +8,7 @@ import helium314.keyboard.latin.common.LocaleUtils.constructLocale
 import helium314.keyboard.latin.utils.getKnownDictionariesForLocale
 import org.json.JSONArray
 import org.junit.runner.RunWith
+import org.junit.experimental.categories.Category
 import org.robolectric.RobolectricTestRunner
 import java.io.File
 import java.net.HttpURLConnection
@@ -15,6 +16,9 @@ import java.net.URL
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+
+/** External documentation availability; dictionary downloads remain release gates. */
+interface DocumentationLinks
 
 @RunWith(RobolectricTestRunner::class)
 class XLinkTest { // Without the X, SubtypeTests fail with ClassCastException. WTF?
@@ -69,6 +73,7 @@ class XLinkTest { // Without the X, SubtypeTests fail with ClassCastException. W
         }
     }
 
+    @Category(DocumentationLinks::class)
     @Test fun readmeLinks() {
         val file = File("../README.md")
         val linkRegex = "(?:https?:\\/\\/.)?(?:www\\.)?[-a-zA-Z0-9@%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b(?:[-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*)".toRegex()
@@ -79,6 +84,7 @@ class XLinkTest { // Without the X, SubtypeTests fail with ClassCastException. W
         }
     }
 
+    @Category(DocumentationLinks::class)
     @Test fun layoutsLinks() {
         val file = File("../layouts.md")
         val linkRegex = "(?:https?:\\/\\/.)?(?:www\\.)?[-a-zA-Z0-9@%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b(?:[-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*)".toRegex()
@@ -89,6 +95,7 @@ class XLinkTest { // Without the X, SubtypeTests fail with ClassCastException. W
         }
     }
 
+    @Category(DocumentationLinks::class)
     @Test fun layoutsLinksInternal() {
         val file = File("../layouts.md")
         val internalLinkRegex = "app/src/\\b(?:[-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*)".toRegex()
@@ -98,6 +105,7 @@ class XLinkTest { // Without the X, SubtypeTests fail with ClassCastException. W
         }
     }
 
+    @Category(DocumentationLinks::class)
     @Test fun otherLinks() {
         listOf(Links.LICENSE, Links.LAYOUT_WIKI_URL, Links.WIKI_URL, Links.CUSTOM_LAYOUTS, Links.CUSTOM_COLORS).forEach {
             checkLink(it)

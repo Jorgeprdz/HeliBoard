@@ -501,6 +501,28 @@ public final class InputLogic {
         if (GestureDataGatheringKt.useBackgroundGathering && mWordComposer.isComposingWord() && mWordComposer.isCursorFrontOrMiddleOfComposingWord())
             BackgroundGatheringCache.INSTANCE.onEditWord(mWordComposer.getTypedWord());
 
+        // Hangul consumes letter events before handleNonSeparatorEvent can
+        // finish a composition whose cursor was moved into the word. Finish
+        // that old range first so the new syllable is inserted at the cursor,
+        // preserving the suffix rather than recomposing the whole old word.
+        if ("hangul".equals(mWordComposer.getCombiningSpec())
+                && !event.isFunctionalKeyEvent()
+                && mWordComposer.isComposingWord()
+                && mWordComposer.isCursorFrontOrMiddleOfComposingWord()) {
+            final boolean isMiddle = !mWordComposer.isCursorInFrontOfComposingWord();
+            mConnection.beginBatchEdit();
+            try {
+                if (isMiddle) {
+                    unlearnWord(mWordComposer.getTypedWord(), settingsValues,
+                            DictionaryFacilitator.UnlearnEvent.BACKSPACE);
+                }
+                resetEntireInputState(mConnection.getExpectedSelectionStart(),
+                        mConnection.getExpectedSelectionEnd(), isMiddle);
+            } finally {
+                mConnection.endBatchEdit();
+            }
+        }
+
         Event processedEvent = mWordComposer.processEvent(event);
         InputTransaction inputTransaction = new InputTransaction(settingsValues,
                 processedEvent, SystemClock.uptimeMillis(), mSpaceState,

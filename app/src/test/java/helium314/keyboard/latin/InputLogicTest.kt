@@ -319,16 +319,44 @@ class InputLogicTest {
 
     // todo: make it work, but it might not be that simple because adding is done in combiner
     //  https://github.com/HeliBorg/HeliBoard/issues/214
-    @Test fun insertLetterIntoWordHangulFails() {
-        if (BuildConfig.BUILD_TYPE == "runTests") return
+    @Test fun insertLetterIntoWordHangulPreservesSuffix() {
         latinIME.switchToSubtype(koreanCombiningSubtype())
         chainInput("ㅛㅎㄹㅎㅕㅛ")
         setCursorPosition(3)
-        input('ㄲ') // fails, as expected from the hangul issue when processing the event in onCodeInput
+        input('ㄲ')
         assertEquals("ㅛㅎㄹㄲ혀ㅛ", getWordAtCursor())
         assertEquals("ㅛㅎㄹㄲ혀ㅛ", getTextFromConnection())
         assertEquals("ㅛㅎㄹㄲ혀ㅛ", textBeforeCursor + textAfterCursor)
         assertEquals(4, getCursorPosition())
+        assertEquals(4, cursor)
+        // Continue composing the inserted syllable, then undo its last Jamo.
+        input('ㅏ')
+        assertEquals("ㅛㅎㄹ까혀ㅛ", text)
+        assertEquals("혀ㅛ", textAfterCursor)
+        assertEquals(4, cursor)
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("ㅛㅎㄹㄲ혀ㅛ", text)
+        assertEquals("혀ㅛ", textAfterCursor)
+        assertEquals(4, cursor)
+    }
+
+    @Test fun spaceInsideHangulPreservesSuffix() {
+        latinIME.switchToSubtype(koreanCombiningSubtype())
+        chainInput("ㅛㅎㄹㅎㅕㅛ")
+        setCursorPosition(3)
+        input(' ')
+        assertEquals("ㅛㅎㄹ 혀ㅛ", text)
+        assertEquals("혀ㅛ", textAfterCursor)
+        assertEquals(4, cursor)
+    }
+
+    @Test fun punctuationInsideHangulPreservesSuffix() {
+        latinIME.switchToSubtype(koreanCombiningSubtype())
+        chainInput("ㅛㅎㄹㅎㅕㅛ")
+        setCursorPosition(3)
+        input('.')
+        assertEquals("ㅛㅎㄹ.혀ㅛ", text)
+        assertEquals("혀ㅛ", textAfterCursor)
         assertEquals(4, cursor)
     }
 
@@ -896,6 +924,7 @@ class InputLogicTest {
         val insert = StringUtils.newSingleCodePointString(codePoint)
         val phantomSpaceToInsert = if (spaceState == SpaceState.PHANTOM) " " else ""
         val oldIsAtEnd = !composer.isCursorFrontOrMiddleOfComposingWord
+        val oldComposingStart = composingStart
 
         latinIME.onEvent(Event.createEventForCodePointFromUnknownSource(codePoint))
         handleMessages()
@@ -911,7 +940,9 @@ class InputLogicTest {
         }
         assertEquals(oldAfter, textAfterCursor)
         assertEquals(textBeforeCursor + textAfterCursor, getTextFromConnection())
-        if (composer.isComposingWord) // if we're not composing any more cursor is always at the end
+        // A new composing range may legitimately begin at a moved cursor.
+        // Preserve the cursor-position invariant only while editing the same range.
+        if (composer.isComposingWord && oldComposingStart == composingStart)
             assertEquals(oldIsAtEnd, !composer.isCursorFrontOrMiddleOfComposingWord)
         checkConnectionConsistency()
     }
