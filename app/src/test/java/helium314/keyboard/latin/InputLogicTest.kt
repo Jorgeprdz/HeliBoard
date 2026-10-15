@@ -119,6 +119,14 @@ class InputLogicTest {
         checkConnectionConsistency()
     }
 
+    @Test fun r22MultilineEnterCorrectsBeforeNewline() {
+        r22Enable("voy haber si puedo")
+        ShadowInputMethodService.editorOptions = EditorInfo.IME_ACTION_NONE
+        r22Key(Constants.CODE_ENTER)
+        assertEquals("voy a ver si puedo\\n", text)
+        checkConnectionConsistency()
+    }
+
     @Test fun r22LaterTypingInvalidatesUndo() {
         r22Enable("voy haber si puedo")
         r22Key(' '.code)
@@ -799,6 +807,7 @@ class InputLogicTest {
         lastAddedWord = ""
 
         // reset settings
+        latinIME.getSharedPreferences("keyboard_ai_private", 0).edit().clear().commit()
         latinIME.prefs().edit { clear() }
 
         setText("") // (re)sets selection and composing word

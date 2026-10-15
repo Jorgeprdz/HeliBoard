@@ -262,8 +262,8 @@ public final class LocalContextReviewer {
     }
     private static String withoutAccents(String word) {
         // ñ changes lexical identity, unlike vowel stress marks; retain it when ranking.
-        return Normalizer.normalize(word.replace('ñ', '^A'), Normalizer.Form.NFD)
-                .replaceAll("\\p{M}+", "").replace('^A', 'ñ');
+        return Normalizer.normalize(word.replace('ñ', (char) 1), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "").replace((char) 1, 'ñ');
     }
     private static int distance(String left, String right) {
         if (Math.abs(left.length() - right.length()) > 2) return 3;
