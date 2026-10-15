@@ -26,6 +26,8 @@ import java.util.HashSet;
 
 /** The pop up key preview view. */
 // Android Studio complains about TextView, but we're not using tint or auto-size that should be the relevant differences
+// These are platform IME surfaces, drawn with keyboard parameters; AppCompat inflation is not used.
+@android.annotation.SuppressLint("AppCompatCustomView")
 public class KeyPreviewView extends TextView {
     public static final int POSITION_MIDDLE = 0;
     public static final int POSITION_LEFT = 1;

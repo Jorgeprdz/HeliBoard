@@ -15,6 +15,7 @@ public final class TypingCloudActivity extends Activity{
   status=new TextView(this);status.setText(TypingSync.prefs(this).getString("status","Sin configurar"));stack.addView(status);
   Button enable=new com.google.android.material.button.MaterialButton(this);enable.setText("Autorizar Google y activar respaldo");enable.setEnabled(Build.VERSION.SDK_INT>=26);
   enable.setOnClickListener(v->{
+   if(Build.VERSION.SDK_INT<26){status.setText("Respaldo cifrado requiere Android 8 o posterior");return;}
    if(phrase.length()<20){status.setText("Escribe una frase larga y guárdala para recuperar tus datos.");return;}
    startActivityForResult(AccountManager.newChooseAccountIntent(null,null,new String[]{"com.google"},null,null,null,null),710);
   });stack.addView(enable);

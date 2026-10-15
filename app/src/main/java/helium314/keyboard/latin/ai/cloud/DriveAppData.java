@@ -4,8 +4,11 @@ import java.net.*;import java.io.*;import java.nio.charset.StandardCharsets;impo
 /** No source, credentials or plaintext learning in requests. Strict HTTPS, bounded responses. */
 final class DriveAppData {
  static final String SCOPE="https://www.googleapis.com/auth/drive.appdata";
+ interface Connections{HttpURLConnection open(URL url)throws IOException;}
+ private final Connections connections;
  private final String token;private final java.util.function.BooleanSupplier cancelled;
- DriveAppData(String token,java.util.function.BooleanSupplier cancelled){this.token=token;this.cancelled=cancelled;}
+ DriveAppData(String token,java.util.function.BooleanSupplier cancelled){this(token,cancelled,url->(HttpURLConnection)url.openConnection());}
+ DriveAppData(String token,java.util.function.BooleanSupplier cancelled,Connections connections){this.token=token;this.cancelled=cancelled;this.connections=connections;}
  static final class NetworkFailure extends IOException {final int status;NetworkFailure(int s){super("Drive HTTP "+s);status=s;}}
  JSONArray list()throws Exception{
   String query=URLEncoder.encode("trashed = false and name contains 'heliboard-typing-v1-'","UTF-8");
@@ -27,7 +30,7 @@ final class DriveAppData {
  private static String id(String id)throws IOException{if(id==null||!id.matches("[A-Za-z0-9_-]{1,200}"))throw new IOException("Invalid Drive id");return id;}
  private byte[] request(String method,String url,byte[] body,String type)throws Exception{
   if(cancelled.getAsBoolean())throw new InterruptedIOException("Sync stopped");
-  HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();c.setInstanceFollowRedirects(false);
+  HttpURLConnection c=connections.open(new URL(url));c.setInstanceFollowRedirects(false);
   c.setConnectTimeout(15000);c.setReadTimeout(20000);c.setRequestMethod(method);c.setRequestProperty("Authorization","Bearer "+token);
   try{
    if(body!=null){c.setDoOutput(true);c.setFixedLengthStreamingMode(body.length);c.setRequestProperty("Content-Type",type);try(OutputStream out=c.getOutputStream()){out.write(body);}}

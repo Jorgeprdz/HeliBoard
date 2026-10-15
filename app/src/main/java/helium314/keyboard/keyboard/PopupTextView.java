@@ -24,6 +24,8 @@ import kotlin.jvm.functions.Function1;
 /**
  * A view that displays popup text.
  */
+// These are platform IME surfaces, drawn with keyboard parameters; AppCompat inflation is not used.
+@android.annotation.SuppressLint("AppCompatCustomView")
 public class PopupTextView extends TextView implements PopupKeysPanel {
     private final int[] mCoordinates = CoordinateUtils.newInstance();
     private Controller mController = EMPTY_CONTROLLER;

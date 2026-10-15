@@ -73,13 +73,15 @@ public final class TypingSync extends JobService {
     if(authorization.hasResolution()||authorization.getAccessToken()==null){status("Se necesita autorización de Google");return Result.failure();}
     phrase=RecoveryVault.read(c);
     DriveAppData drive=new DriveAppData(authorization.getAccessToken(),()->cancelled.getAsBoolean()||!prefs(c).getBoolean("enabled",false));
-    JSONArray files=drive.list();List<byte[]> authenticated=new ArrayList<>();
+    JSONArray files=drive.list();List<byte[]> authenticated=new ArrayList<>();int totalBytes=0;
     String device=prefs(c).getString("backup_device","");
     if(device.isEmpty()){device=UUID.randomUUID().toString();if(!prefs(c).edit().putString("backup_device",device).commit())throw new java.io.IOException("Local identity unavailable");}
     String name="heliboard-typing-v1-"+device+".bin",existing=null;
     for(int i=0;i<files.length();i++){
      JSONObject file=files.getJSONObject(i);String id=file.getString("id");
-     authenticated.add(BackupCipher.decrypt(drive.download(id),phrase));
+     byte[] plain=BackupCipher.decrypt(drive.download(id),phrase);totalBytes+=plain.length;
+     if(totalBytes>8_000_000){Arrays.fill(plain,(byte)0);throw new IllegalArgumentException("Aggregate backup limit");}
+     authenticated.add(plain);
      if(name.equals(file.getString("name")))existing=id;
     }
     // Authenticate every envelope before importing anything. Schema validation is atomic per file.

@@ -10,11 +10,17 @@ public class R23PayloadTest {
   Context c=ApplicationProvider.getApplicationContext();
   helium314.keyboard.latin.utils.DeviceProtectedUtils.getSharedPreferences(c).edit()
    .putString("gemini_api_key","SECRET_KEY").putString("clipboard_history","PRIVATE_CONVERSATION")
-   .putString("theme_style","material").commit();
+   .putString("theme_style","Material")
+   .putString("theme_colors","Private custom theme label")
+   .putFloat("keyboard_height_scale_false_false",1.1f)
+   .putFloat("keyboard_height_scale_true_false",.9f).commit();
   PersonalTypingStore store=PersonalTypingStore.get(c);store.erase();
   String exported=new String(BackupPayload.export(c,store),"UTF-8");
+  assertFalse(exported.contains("Private custom theme label"));
   assertFalse(exported.contains("SECRET_KEY"));assertFalse(exported.contains("PRIVATE_CONVERSATION"));
-  org.json.JSONObject root=new org.json.JSONObject(exported);assertEquals("material",root.getJSONObject("visual").getString("theme_style"));
+  org.json.JSONObject root=new org.json.JSONObject(exported);assertEquals("Material",root.getJSONObject("visual").getString("theme_style"));
+  assertEquals(1.1,root.getJSONObject("visual").getDouble("keyboard_height_scale_false_false"),.0001);
+  assertEquals(.9,root.getJSONObject("visual").getDouble("keyboard_height_scale_true_false"),.0001);
   BackupPayload.validate(exported.getBytes("UTF-8"),store);
  }
  @Test public void incompatibleVisualTypesAndFutureVersionsCannotMutateLocalData()throws Exception{

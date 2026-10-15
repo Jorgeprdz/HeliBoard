@@ -37,6 +37,7 @@ public final class PersonalTypingStore {
   if(ready||loading)return;
   if(Build.VERSION.SDK_INT>=24&&!((android.os.UserManager)context.getSystemService(Context.USER_SERVICE)).isUserUnlocked())return;
   loading=true;
+  final long initializationEpoch=generation();
   writer.execute(()->{
    try {
     if(Build.VERSION.SDK_INT>=24&&!((android.os.UserManager)context.getSystemService(Context.USER_SERVICE)).isUserUnlocked())return;
@@ -49,7 +50,7 @@ public final class PersonalTypingStore {
       Row r=new Row(c.getString(c.getColumnIndexOrThrow("error")),c.getString(c.getColumnIndexOrThrow("correction")),
        c.getString(c.getColumnIndexOrThrow("language")),c.getString(c.getColumnIndexOrThrow("device")),
        c.getLong(c.getColumnIndexOrThrow("accepts")),c.getLong(c.getColumnIndexOrThrow("rejects")),c.getLong(c.getColumnIndexOrThrow("updated")));
-      rows.put(r.key(),r);
+      if(epoch==initializationEpoch){Row old=rows.get(r.key());rows.put(r.key(),old==null?r:new Row(r.error,r.correction,r.language,r.device,Math.max(old.a,r.a),Math.max(old.r,r.r),Math.max(old.t,r.t)));}
      }}
     }storageFailure=null;ready=true;
    }catch(RuntimeException unavailable){storageFailure=unavailable;ready=false;}finally{loading=false;}
@@ -64,7 +65,11 @@ public final class PersonalTypingStore {
  private static boolean pair(String a,String b,String lang){
   if(!locale(lang)||!word(a)||!word(b)||a.equals(b))return false;
   // General Damerau-Levenshtein admission, including omission/repetition/transposition/accents.
-  return distance(a,b)<=Math.min(4,Math.max(1,(Math.max(a.length(),b.length())+1)/3));
+  return distance(withoutStress(a),withoutStress(b))<=Math.min(4,Math.max(1,(Math.max(a.length(),b.length())+1)/3));
+ }
+ private static String withoutStress(String value){
+  return java.text.Normalizer.normalize(value.replace('ñ',(char)1),java.text.Normalizer.Form.NFD)
+    .replaceAll("\\p{M}+","").replace((char)1,'ñ');
  }
  private static int distance(String a,String b){
   int[][] d=new int[a.length()+1][b.length()+1];
@@ -107,7 +112,7 @@ public final class PersonalTypingStore {
  private void save(Row r){
   ContentValues v=new ContentValues();v.put("error",r.error);v.put("correction",r.correction);v.put("language",r.language);v.put("device",r.device);
   v.put("accepts",r.a);v.put("rejects",r.r);v.put("frequency",r.a+r.r);v.put("confidence",r.r>0?0.0:Math.min(.99,r.a/5.0));v.put("updated",r.t);
-  SQLiteDatabase db=database.getWritableDatabase();db.insertWithOnConflict("evidence",null,v,SQLiteDatabase.CONFLICT_REPLACE);
+  SQLiteDatabase db=database.getWritableDatabase();if(db.insertWithOnConflict("evidence",null,v,SQLiteDatabase.CONFLICT_REPLACE)<0)throw new SQLiteException("Evidence write failed");
   db.execSQL("DELETE FROM evidence WHERE rowid NOT IN (SELECT rowid FROM evidence ORDER BY updated DESC LIMIT "+LIMIT+")");
  }
  private <T>T io(Callable<T> task){try{return writer.submit(task).get(30,TimeUnit.SECONDS);}catch(Exception e){throw new IllegalStateException("Learning storage unavailable",e);}}

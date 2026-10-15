@@ -7,6 +7,7 @@
 
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_gravity="bottom"
@@ -68,6 +69,7 @@
             android:layout_width="16dp"
             android:layout_height="16dp"
             android:src="@drawable/btn_keyboard_key_action_normal_lxx_base"
+            tools:ignore="UseAppTint"
             android:tint="#a00000"
             android:layout_gravity="top"
             />

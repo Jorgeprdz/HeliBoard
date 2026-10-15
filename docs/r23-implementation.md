@@ -24,8 +24,11 @@ Rulings:
 - Use the current app-private storage with unlocked-user and protected-editor gates for learning.
 - Use Google Identity 21.4.0: 21.3.0 lacks the revocation API; Android minSdk remains 21.
 - A rejected pair remains available for explicit use but cannot automatically replace again.
-- Cloud currently contains learned associations only. Manual dictionary and compatible visual-preference
-  synchronization are not yet implemented; no unfiltered preference or history dump is permitted.
+- Cloud schema 2 adds single-word manual dictionaries and allowlisted compatible built-in visual preferences.
+  Phrase shortcuts and arbitrary custom-theme labels/definitions are omitted. Visual restore requires its
+  initial explicit toggle; ordinary synchronization preserves the active device appearance.
+- Initialization/imports are fenced by deletion generation; per-job tokens own cancellation.
+- Android backup/transfer excludes both credential and device-protected learning/identity storage.
 - Initial Google Cloud Android OAuth package/certificate registration, Drive API enablement, account
   consent and recovery phrase are external prerequisites. No user phrase or OAuth session was supplied.
 - Owner subsequently removed all documentation HTTP availability audits, their category and Gradle mode. Static documentation stays static; live dictionary download gates and local source-path checks remain blocking.
@@ -42,3 +45,11 @@ Evidence:
 
 Next: run installer gates, R2.3 tests, full functional suite, documentation audit and Android lint;
 repair concrete failures, publish signed APK, verify on-device compatibility before any update.
+
+Latest verification: run38763269181 passed15/16 R2.3 behaviors (only SQLite reopen failed).
+Run38763848048 reproduced an empty reopened snapshot (17/18 behaviors pass) and found17 lint errors:
+Java API desugaring, Android version guards/resources, and AppCompat recommendations on existing
+platform keyboard views introduced by the AI-only Material library. These are being repaired.
+The test harness now closes/reset singleton stores between Robolectric applications instead of carrying
+a prior test's app context/SQLite connection into a new application's temporary filesystem.
+No functional/security test has been excluded. Documentation HTTP audits have been removed entirely.

@@ -6,6 +6,7 @@ import java.io.*;import java.nio.*;import java.nio.charset.StandardCharsets;impo
 final class RecoveryVault {
  private static final String ALIAS="heliboard_typing_cloud_v1";
  static void save(Context c,char[] phrase)throws Exception{
+  if(android.os.Build.VERSION.SDK_INT<23)throw new IllegalStateException("Keystore requires Android 6");
   if(phrase.length<20)throw new IllegalArgumentException("Use a long recovery phrase");
   KeyStore store=KeyStore.getInstance("AndroidKeyStore");store.load(null);
   if(!store.containsAlias(ALIAS)){KeyGenerator g=KeyGenerator.getInstance("AES","AndroidKeyStore");

@@ -7,9 +7,11 @@ import org.robolectric.RobolectricTestRunner;
 import static org.junit.Assert.*;
 @RunWith(RobolectricTestRunner.class)
 public class R23LearningTest {
+ private final java.util.List<Object> opened=new java.util.ArrayList<>();
+ private Object track(Object value){if(!opened.contains(value))opened.add(value);return value;}
  private Object store() throws Exception {
-  return Class.forName("helium314.keyboard.latin.ai.local.PersonalTypingStore")
-   .getMethod("get",Context.class).invoke(null,ApplicationProvider.getApplicationContext());
+  return track(Class.forName("helium314.keyboard.latin.ai.local.PersonalTypingStore")
+   .getMethod("get",Context.class).invoke(null,ApplicationProvider.getApplicationContext()));
  }
  private void accept(Object s,String a,String b,String language) throws Exception {
   s.getClass().getMethod("accept",String.class,String.class,String.class).invoke(s,a,b,language);
@@ -17,7 +19,24 @@ public class R23LearningTest {
  private String candidate(Object s,String a,String lang,boolean valid) throws Exception {
   return (String)s.getClass().getMethod("automatic",String.class,String.class,boolean.class).invoke(s,a,lang,valid);
  }
- @Before public void clear() throws Exception {Object s=store();s.getClass().getMethod("erase").invoke(s);}
+ private void closeStore(Object s)throws Exception{
+  java.lang.reflect.Field writer=s.getClass().getDeclaredField("writer");writer.setAccessible(true);
+  java.util.concurrent.ExecutorService executor=(java.util.concurrent.ExecutorService)writer.get(s);
+  executor.shutdown();assertTrue(executor.awaitTermination(10,java.util.concurrent.TimeUnit.SECONDS));
+  java.lang.reflect.Field db=s.getClass().getDeclaredField("database");db.setAccessible(true);
+  android.database.sqlite.SQLiteOpenHelper helper=(android.database.sqlite.SQLiteOpenHelper)db.get(s);if(helper!=null)helper.close();
+ }
+ @Before public void clear() throws Exception {
+  Class<?> type=Class.forName("helium314.keyboard.latin.ai.local.PersonalTypingStore");
+  java.lang.reflect.Field singleton=type.getDeclaredField("instance");singleton.setAccessible(true);
+  Object old=singleton.get(null);if(old!=null)closeStore(old);singleton.set(null,null);
+  Object s=store();s.getClass().getMethod("erase").invoke(s);
+ }
+ @After public void release()throws Exception{
+  for(Object value:opened)closeStore(value);
+  java.lang.reflect.Field singleton=Class.forName("helium314.keyboard.latin.ai.local.PersonalTypingStore").getDeclaredField("instance");
+  singleton.setAccessible(true);singleton.set(null,null);
+ }
  @Test public void learnsRepeatedExplicitPairsAndRejectsImmediately() throws Exception {
   Object s=store();assertNull(candidate(s,"siemore","es-MX",false));
   accept(s,"siemore","siempre","es-MX");assertNull(candidate(s,"siemore","es-MX",false));
@@ -63,7 +82,7 @@ public class R23LearningTest {
   Object s=store();for(int i=0;i<5;i++)accept(s,"siemore","siempre","es-MX");
   byte[] persisted=(byte[])s.getClass().getMethod("exportData").invoke(s);
   java.lang.reflect.Constructor<?> constructor=s.getClass().getDeclaredConstructor(Context.class);constructor.setAccessible(true);
-  Object reopened=constructor.newInstance(ApplicationProvider.getApplicationContext());
+  Object reopened=track(constructor.newInstance(ApplicationProvider.getApplicationContext()));
   assertEquals(new String(persisted,"UTF-8"),new String((byte[])reopened.getClass().getMethod("exportData").invoke(reopened),"UTF-8"));
   assertEquals("siempre",candidate(reopened,"siemore","es-MX",false));
  }
@@ -81,13 +100,43 @@ public class R23LearningTest {
   android.os.UserManager user=(android.os.UserManager)app.getSystemService(Context.USER_SERVICE);
   org.robolectric.Shadows.shadowOf(user).setUserUnlocked(false);
   java.lang.reflect.Constructor<?> constructor=store().getClass().getDeclaredConstructor(Context.class);constructor.setAccessible(true);
-  Object deferred=constructor.newInstance(app);
+  Object deferred=track(constructor.newInstance(app));
   deferred.getClass().getMethod("exportData").invoke(deferred);
   org.robolectric.Shadows.shadowOf(user).setUserUnlocked(true);
   candidate(deferred,"teh","en-US",false);
   deferred.getClass().getMethod("exportData").invoke(deferred);
   for(int n=0;n<5;n++)accept(deferred,"teh","the","en-US");
   assertEquals("the",candidate(deferred,"teh","en-US",false));
+ }
+
+ @Test public void eraseDuringDeferredLoadDoesNotResurrectOldRows() throws Exception {
+  Object original=store();for(int n=0;n<5;n++)accept(original,"teh","the","en-US");
+  original.getClass().getMethod("exportData").invoke(original);
+  Context app=ApplicationProvider.getApplicationContext();
+  android.os.UserManager user=(android.os.UserManager)app.getSystemService(Context.USER_SERVICE);
+  org.robolectric.Shadows.shadowOf(user).setUserUnlocked(false);
+  java.lang.reflect.Constructor<?> constructor=original.getClass().getDeclaredConstructor(Context.class);constructor.setAccessible(true);
+  Object deferred=track(constructor.newInstance(app));
+  java.lang.reflect.Field field=deferred.getClass().getDeclaredField("writer");field.setAccessible(true);
+  java.util.concurrent.ExecutorService writer=(java.util.concurrent.ExecutorService)field.get(deferred);
+  java.util.concurrent.CountDownLatch started=new java.util.concurrent.CountDownLatch(1),release=new java.util.concurrent.CountDownLatch(1);
+  writer.submit(()->{started.countDown();try{release.await();}catch(InterruptedException e){Thread.currentThread().interrupt();}});
+  assertTrue(started.await(5,java.util.concurrent.TimeUnit.SECONDS));
+  org.robolectric.Shadows.shadowOf(user).setUserUnlocked(true);
+  candidate(deferred,"teh","en-US",false);
+  deferred.getClass().getMethod("eraseAsync").invoke(deferred);
+  release.countDown();deferred.getClass().getMethod("exportData").invoke(deferred);
+  assertNull(candidate(deferred,"teh","en-US",false));
+ }
+
+ @Test public void generalEvidenceLearnsTheRequestedTypoClassesWithoutProductionReplacementLists()throws Exception{
+  Object s=store();
+  for(String[] pair:new String[][]{
+   {"siemore","siempre"},{"gusrdaalo","guárdalo"},{"impeemtar","implementar"},
+   {"desiciokn","decisión"},{"actualizarce","actualizarse"},{"cotisacion","cotización"}}){
+   for(int n=0;n<5;n++)accept(s,pair[0],pair[1],"es-MX");
+   assertEquals(pair[0],pair[1],candidate(s,pair[0],"es-MX",false));
+  }
  }
 
 }

@@ -8,10 +8,14 @@ public final class BackupPayload {
  private static final Set<String> VISUAL=new HashSet<>(Arrays.asList(
   "theme_style","theme_colors","theme_colors_night","theme_key_borders","theme_auto_day_night",
   "font_scale","hint_font_scale","emoji_font_scale","popup_on","show_popup_hints"));
- private static boolean allowedKey(String key){return VISUAL.contains(key)||key.matches("keyboard_height_scale[0-9_]{0,12}");}
+ private static boolean allowedKey(String key){return VISUAL.contains(key)||key.matches("keyboard_height_scale_(true|false)_(true|false)");}
  private static boolean validValue(String key,Object value){
-  if(key.equals("theme_style")||key.equals("theme_colors")||key.equals("theme_colors_night"))
-   return value instanceof String&&((String)value).matches("[A-Za-z0-9 _.-]{1,80}");
+  if(key.equals("theme_style"))return value instanceof String&&Arrays.asList("Material","Holo","Rounded").contains(value);
+  if(key.equals("theme_colors")||key.equals("theme_colors_night"))return value instanceof String&&Arrays.asList(
+    "light","holo_white","dark","darker","black","dynamic","dynamic_neutral","dynamic_monochrome",
+    "dynamic_tonal_spot","dynamic_vibrant","dynamic_rainbow","dynamic_expressive","dynamic_fidelity",
+    "dynamic_content","dynamic_fruit_salad","dynamic_cmf","blue_gray","brown","chocolate","cloudy",
+    "forest","indigo","ocean","pink","sand","violette").contains(value);
   if(key.endsWith("scale")||key.startsWith("keyboard_height_scale"))
    return value instanceof Number&&Double.isFinite(((Number)value).doubleValue())
     &&((Number)value).doubleValue()>=.2&&((Number)value).doubleValue()<=3;
