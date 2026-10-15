@@ -183,6 +183,25 @@ class InputLogicTest {
         assertEquals("nincuidando ", text)
     }
 
+    @Test fun R242BusyReviewCoalescesLatestCompletedWordsInsteadOfDroppingThem() {
+        r22Enable("hola ")
+        val assistant = r23Assistant()
+        val busy = assistant.javaClass.getDeclaredField("continuousRunning").apply { isAccessible = true }
+        busy.setBoolean(assistant, true) // Hold the producer; no simulated model output.
+        "nicuidando ".forEach { r22Key(it.code) }
+        val latestField = assistant.javaClass.getDeclaredField("latestReview").apply { isAccessible = true }
+        val latest = latestField.get(assistant)
+        kotlin.test.assertNotNull(latest)
+        val context = latest.javaClass.getDeclaredField("context").apply { isAccessible = true }.get(latest) as String
+        assertEquals("hola nicuidando ", context)
+        busy.setBoolean(assistant, false)
+        // The integration part consumes the real reviewer result for the coalesced context.
+        r242Deliver(assistant, r242Pending(assistant, context))
+        assertEquals("hola ni cuidando ", text)
+        assertEquals(text.length, cursor)
+        checkConnectionConsistency()
+    }
+
     @Test fun R242SendingInvalidatesPendingReviewAndCannotEditSentText() {
         r22Enable("nincuidando ")
         val assistant = r23Assistant()

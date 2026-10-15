@@ -18,7 +18,8 @@ public class R242AnchorGuardTest {
   ContinuousReviewAnchor a=new ContinuousReviewAnchor(editor,"app",0,1,10,"hola ");
   assertTrue(a.matches(editor,"app",0,1,19,19,"0123456789hola más "));
   assertFalse(a.matches(editor,"app",0,1,24,24,"0123456789adiós hola más "));
-  assertFalse(a.matches(editor,"app",0,1,19,19,"hola más "));
+  assertTrue(a.matches(editor,"app",0,1,19,19,"hola más ")); // Complete anchor in a bounded window.
+  assertFalse(a.matches(editor,"app",0,1,19,19,"ola más ")); // Anchor itself is truncated.
  }
  private LocalContextReviewer.Lexicon vocabulary(){
   final Set<String> words=new HashSet<>(Arrays.asList("entonces","vamos","a","hacer","si","ya","mi","escritura","estoy","tecleando","no","quiero","revisa","los","prs","de","archium","envió","envío","yo","mensaje","la","gramática"));

@@ -36,6 +36,10 @@ def main():
    with tempfile.NamedTemporaryFile(mode="w",encoding="utf-8") as request:
     request.write(prompt(case["input"]));request.flush()
     result=subprocess.run([str(executable),str(model),request.name],capture_output=True,text=True,timeout=90)
+    repeat=None
+    if case["id"]=="user-real":
+     second=subprocess.run([str(executable),str(model),request.name],capture_output=True,text=True,timeout=90)
+     repeat=dict(completed=second.returncode==0,identical=result.stdout==second.stdout,output=second.stdout.strip())
    output=result.stdout.strip()
    metrics={}
    for line in result.stderr.splitlines():
@@ -50,7 +54,7 @@ def main():
      componentR241Baseline=baseline,componentBaselineDistance=distance(baseline,case["reference"]),
      afterExplicitAcceptance=accepted,acceptedDistance=distance(accepted,case["reference"]),guardedProposals=count,
      guardedProtectedUnchanged=accepted==case["input"] if case.get("protected") else None,
-     output=output,completed=result.returncode==0,metrics=metrics,
+     output=output,completed=result.returncode==0,metrics=metrics,reproducibility=repeat,
      originalDistance=distance(case["input"],case["reference"]),modelDistance=distance(output,case["reference"]) if output else None,
      protectedUnchanged=output==case["input"] if case.get("protected") else None))
   results.append(dict(model=name,sha256=sha,bytes=model.stat().st_size,cases=rows,

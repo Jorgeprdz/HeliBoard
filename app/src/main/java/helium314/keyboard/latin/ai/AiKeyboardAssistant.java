@@ -166,6 +166,12 @@ public final class AiKeyboardAssistant {
     private final Runnable releaseWritingModel=writingModel::close;
     private long continuousEpoch;
     private boolean continuousRunning;
+    private QueuedReview latestReview;
+    private static final class QueuedReview {
+        final EditorSnapshot base;final String context;
+        final helium314.keyboard.latin.ai.local.ContinuousReviewAnchor anchor;
+        QueuedReview(EditorSnapshot b,String c,helium314.keyboard.latin.ai.local.ContinuousReviewAnchor a){base=b;context=c;anchor=a;}
+    }
     private int lastModelBoundary=-1;
     private final LinkedHashSet<Integer> reviewedWindows=new LinkedHashSet<>(),offeredSpans=new LinkedHashSet<>();
     private final java.util.ArrayDeque<PendingReview> pendingReviews=new java.util.ArrayDeque<>();
@@ -175,7 +181,7 @@ public final class AiKeyboardAssistant {
         PendingReview(helium314.keyboard.latin.ai.local.ContinuousReviewAnchor a,java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> c){anchor=a;corrections=c;}
     }
     private void invalidateContinuous(){
-        continuousEpoch++;continuousSession.cancel();continuousRunning=false;pendingReviews.clear();lastModelBoundary=-1;
+        continuousEpoch++;continuousSession.cancel();continuousRunning=false;latestReview=null;pendingReviews.clear();lastModelBoundary=-1;
         main.removeCallbacks(releaseWritingModel);main.postDelayed(releaseWritingModel,45000);
     }
     private long modelRetryAfter;
@@ -189,7 +195,8 @@ public final class AiKeyboardAssistant {
         return now!=null&&anchor.matches(now.editor,now.packageName,now.fieldId,continuousEpoch,now.start,now.end,before);
     }
     private void queueContinuous(EditorSnapshot base,String context){
-        if(continuousRunning||context.length()>512||base.start<context.length())return;
+        if(context.length()>512||base.start<context.length())return;
+        if(continuousRunning){latestReview=new QueuedReview(base,context,anchor(base,context));return;}
         final helium314.keyboard.latin.DictionaryFacilitator dictionary=ime.getAiDictionary();
         if(dictionary==null||!dictionary.hasAtLeastOneInitializedMainDictionary())return;
         final helium314.keyboard.latin.ai.local.ContinuousReviewAnchor anchor=anchor(base,context);
@@ -233,6 +240,7 @@ public final class AiKeyboardAssistant {
             return "";
         },(unused,error)->{
             continuousRunning=false;if(model)main.postDelayed(releaseWritingModel,45000);
+            try {
             if(error!=null||typingProtected()||!AiSettingsActivity.typingEnabled(ime))return;
             CharSequence current=ime.getAiInputConnection().getTextBeforeCursor(2048,0);
             if(current==null||!anchorMatches(anchor,capture(),current.toString()))return;
@@ -245,7 +253,14 @@ public final class AiKeyboardAssistant {
             // While composing, keep the verified result for the next boundary. Never finish or
             // recreate an active native composition just to apply a background result.
             if(!ime.hasAiComposition())applyPendingReview();
+            } finally {drainLatestReview();}
         },18000);
+    }
+    private void drainLatestReview(){
+        QueuedReview latest=latestReview;latestReview=null;
+        if(latest==null||typingProtected()||!AiSettingsActivity.typingEnabled(ime))return;
+        CharSequence before=ime.getAiInputConnection().getTextBeforeCursor(2048,0);
+        if(before!=null&&anchorMatches(latest.anchor,capture(),before.toString()))queueContinuous(latest.base,latest.context);
     }
     private boolean applyPendingReview(){
         if(typingProtected()||ime.hasAiComposition()||!AiSettingsActivity.typingEnabled(ime))return false;

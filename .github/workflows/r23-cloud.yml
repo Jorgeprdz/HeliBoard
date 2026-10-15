@@ -34,8 +34,6 @@ jobs:
           bash -n scripts/termux/heliboard-r22-auto-install.sh
           bash -n scripts/termux/heliboard-r22-clean-clones.sh
           python3 -m unittest discover -s scripts/tests -v
-      - name: Build pinned local inference runtime on cloud runner only
-        run: bash scripts/ci/build-writing-runtime.sh
       - name: R2.4.2 continuous typing and semantic safety gate
         run: ./gradlew :app:testDebugUnitTest --tests '*R242*'
       - name: R2.4.1 real-world writing acceptance gate
@@ -49,6 +47,8 @@ jobs:
       - name: Android lint gate
         if: always()
         run: ./gradlew :app:lintDebug
+      - name: Build pinned local inference runtime on cloud runner only
+        run: bash scripts/ci/build-writing-runtime.sh
       - name: Evaluate actual quantized models against independent public cases
         run: python3 scripts/ci/evaluate-writing-model.py
       - name: Restore existing persistent signing identity securely
