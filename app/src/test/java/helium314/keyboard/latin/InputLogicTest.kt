@@ -87,7 +87,10 @@ class InputLogicTest {
             Locale.KOREAN,
             "KeyboardLayoutSet=MAIN:qwerty,CombiningRules=hangul,SupportTouchPositionCorrection",
             false, true
-        )
+        ).also {
+            // ShadowKeyboardSwitcher exposes this value to real word-range lookup.
+            currentScript = ScriptUtils.SCRIPT_HANGUL
+        }
 
     private fun r22Enable(text: String) {
         setText(text)

@@ -17,7 +17,7 @@ emoji,az,cldr
 main,az,
 emoji,bn,cldr
 main,bn,
-main,bn2,
+main,bn,legacy
 emoji,eu,cldr
 main,eu,
 emoji,be,cldr
@@ -88,16 +88,16 @@ main,gl,
 main,gl,exp
 emoji,ka,cldr
 main,ka,
-main,de_AT,exp
+main,de_AT,
 emoji,de_CH,cldr
 main,de_CH,
 emoji,de,cldr
 main,de,
-main,de,exp
+main,de,legacy
 main,gom,
 emoji,el,cldr
 main,el,
-main,el2,
+main,el,legacy
 emoji,gu,cldr
 main,gu,
 emoji,ha,cldr
@@ -252,7 +252,7 @@ emoji,tn,cldr
 main,tcy,
 emoji,tr,cldr
 main,tr,
-main,tr2,
+main,tr,legacy
 main,tr,exp
 emoji,tk,cldr
 emoji,uk,

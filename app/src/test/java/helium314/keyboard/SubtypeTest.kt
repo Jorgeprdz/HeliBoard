@@ -52,7 +52,14 @@ class SubtypeTest {
 
     @Test fun subtypeStaysEnabledOnEdits() {
         val prefs = latinIME.prefs()
-        prefs.edit().putString(Settings.PREF_ADDITIONAL_SUBTYPES, "").apply() // clear it for convenience
+        // The iOS Glass fresh-install preset enables EN/ES. This regression
+        // deliberately starts with no enabled subtypes, then enables one.
+        prefs.edit()
+            .putString(Settings.PREF_ADDITIONAL_SUBTYPES, "")
+            .putString(Settings.PREF_ENABLED_SUBTYPES, "")
+            .apply()
+        SubtypeSettings.reloadEnabledSubtypes(latinIME)
+        assertEquals(emptyList(), SubtypeSettings.getEnabledSubtypes(false))
 
         // edit enabled resource subtype
         val from = SubtypeSettings.getResourceSubtypesForLocale("es_419".constructLocale()).first()

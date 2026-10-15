@@ -88,15 +88,20 @@ fun getKnownDictionariesForLocale(locale: Locale, context: Context): List<Pair<S
         val dictLocale = localeString.constructLocale()
         if (LocaleUtils.getMatchLevel(locale, dictLocale) < LocaleUtils.LOCALE_GOOD_MATCH) return@forEachLine
         val rawDictString = "$type: ${dictLocale.getDisplayName(context.resources.configuration.locale())}"
-        val dictString = if (experimental != "exp") rawDictString
-            else context.getString(R.string.available_dictionary_experimental, rawDictString)
-        val dictLinkSuffix = when (experimental) {
-            "cldr" -> Links.DICTIONARY_EMOJI_CLDR_SUFFIX
-            "exp"  -> Links.DICTIONARY_EXPERIMENTAL_SUFFIX
-            else   -> Links.DICTIONARY_NORMAL_SUFFIX
+        val dictString = when (experimental) {
+            "exp" -> context.getString(R.string.available_dictionary_experimental, rawDictString)
+            "legacy" -> "$rawDictString (legacy)"
+            else -> rawDictString
+        }
+        val dictLinkSuffix = if (experimental == "cldr")
+            Links.DICTIONARY_EMOJI_CLDR_SUFFIX else Links.DICTIONARY_NORMAL_SUFFIX
+        val variantSuffix = when (experimental) {
+            "exp" -> "__experimental"
+            "legacy" -> "__legacy"
+            else -> ""
         }
         val dictBaseUrl = Links.DICTIONARY_URL + Links.DICTIONARY_DOWNLOAD_SUFFIX + dictLinkSuffix
-        val dictLink = dictBaseUrl + type + "_" + localeString.lowercase() + ".dict"
+        val dictLink = dictBaseUrl + type + "_" + localeString.lowercase(Locale.ROOT) + variantSuffix + ".dict"
         knownDicts.add(dictString to dictLink)
     }
     return knownDicts
