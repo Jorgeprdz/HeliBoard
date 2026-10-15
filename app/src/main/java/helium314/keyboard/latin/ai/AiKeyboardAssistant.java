@@ -134,12 +134,17 @@ public final class AiKeyboardAssistant {
         if(!AiSettingsActivity.contextualEnabled(ime)||privateField())return;
         if(!words.isPrediction()&&words.size()>0) {
             String typed=words.mTypedWordInfo==null?words.getWord(0):words.mTypedWordInfo.mWord;
-            List<String> candidates=new ArrayList<>();for(int i=0;i<words.size();i++)candidates.add(words.getWord(i));
-            lexicon.record(typed,words.mTypedWordValid,candidates);
+            List<String> candidates=new ArrayList<>();
+            for(int i=0;i<words.size();i++) {
+                helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo info=words.getInfo(i);
+                if(info.isKindOf(helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo.KIND_CORRECTION)
+                        &&info.mSourceDict!=null) candidates.add(info.mWord);
+            }
+            lexicon.record(typed,words.mTypedWordValid,candidates,!words.mIsObsoleteSuggestions&&words.mTypedWordInfo!=null);
             for(String word:candidates)if(!word.equals(typed))lexicon.record(word,true,Collections.emptyList());
         }
         if(view==null||view.isAiActive())return;
-        strip=view;main.removeCallbacks(localDebounce);main.postDelayed(localDebounce,250);
+        strip=view;main.removeCallbacks(localDebounce);main.post(localDebounce);
     }
     private void reviewLocal() {
         if(!AiSettingsActivity.contextualEnabled(ime)||privateField()||strip==null||strip.isAiActive())return;
@@ -165,6 +170,65 @@ public final class AiKeyboardAssistant {
             undoText=replacement;localCorrection=null;localBase=null;show("Corrección aplicada","Deshacer","Cerrar");
         } else show("El editor rechazó la corrección","Cerrar");
     }
+
+    private final helium314.keyboard.latin.ai.local.LocalContextReviewer boundaryReviewer = new helium314.keyboard.latin.ai.local.LocalContextReviewer();
+    private final AiEditTransaction automaticEdits = new AiEditTransaction();
+    private EditorSnapshot automaticAfter;
+    private String automaticContext = "", automaticReplacement = "";
+    private void clearAutomaticUndo() {
+        automaticEdits.clear(); automaticAfter=null;
+        automaticContext=""; automaticReplacement="";
+    }
+
+    /** Runs only at an IME word boundary, after native autocorrection; no network/dictionary IO. */
+    public void onWordBoundary() {
+        if(!AiSettingsActivity.contextualEnabled(ime)||privateField()
+                ||(strip!=null&&strip.isAiActive()))return;
+        EditorSnapshot base=capture();
+        if(base==null||base.start!=base.end||base.start<0
+                ||ime.getAiInputConnection().hasSlowInputConnection())return;
+        CharSequence before=ime.getAiInputConnection().getTextBeforeCursor(512,InputConnection.GET_TEXT_WITH_STYLES);
+        if(before==null||before.length()==0||SensitiveInputPolicy.sensitiveText(before))return;
+        String context=before.toString();
+        int offset=base.start-context.length();
+        if(offset<0)return;
+        // A truncated prefix may begin inside a quote, URL, name or token. Fail closed.
+        if(offset>0)return;
+        final long deadline=System.nanoTime()+8_000_000L;
+        java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> corrections=
+            boundaryReviewer.review(
+                context,lexicon.snapshot(),AiSettingsActivity.rejectedCorrections(ime),
+                ()->System.nanoTime()>deadline);
+        if(System.nanoTime()>deadline)return;
+        for(helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction correction:corrections) {
+            if(!correction.automaticAllowed)continue;
+            if(!base.matches(capture()))return;
+            CharSequence latest=ime.getAiInputConnection().getTextBeforeCursor(512,InputConnection.GET_TEXT_WITH_STYLES);
+            if(latest==null||!context.contentEquals(latest))return;
+            CharSequence original=SpannedString.valueOf(latest.subSequence(correction.start,correction.end));
+            if(automaticEdits.applySpan(base,offset+correction.start,offset+correction.end,
+                    original,correction.replacement,target(original))) {
+                automaticReplacement=correction.replacement;
+                automaticAfter=capture();
+                CharSequence after=ime.getAiInputConnection().getTextBeforeCursor(512,0);
+                automaticContext=after==null?"":after.toString();
+                localSession.cancel();main.removeCallbacks(localDebounce);
+                localBase=null;localCorrection=null;
+            }
+            return; // One confirmed transaction per boundary; never race native composition.
+        }
+    }
+
+    public boolean undoAutomaticOnBackspace() {
+        if(!automaticEdits.hasUndo())return false;
+        CharSequence before=ime.getAiInputConnection().getTextBeforeCursor(512,0);
+        boolean valid=!privateField()&&automaticAfter!=null&&automaticAfter.matches(capture())
+            &&before!=null&&automaticContext.contentEquals(before);
+        boolean undone=valid&&automaticEdits.undo(target(automaticReplacement));
+        clearAutomaticUndo();
+        return undone;
+    }
+
     private final Map<String,EntityRecognizer.Entity> entities = new LinkedHashMap<>();
 
     private EditorSnapshot capture() {
@@ -201,7 +265,11 @@ public final class AiKeyboardAssistant {
     }
     private void fullReview() {
         if(review.result().isEmpty()||review.snapshot()==null||!review.snapshot().matches(capture())) {show("La selección cambió","Cerrar");return;}
-        ScrollView scroll=new ScrollView(ime);TextView text=new TextView(DialogUtilsKt.getPlatformDialogThemeContext(ime));
+        android.content.Context dialogContext=DialogUtilsKt.getPlatformDialogThemeContext(ime);
+        AiMenuTheme aiTheme=AiMenuTheme.resolve(ime);
+        ScrollView scroll=new ScrollView(dialogContext);TextView text=new TextView(dialogContext);
+        scroll.setBackgroundColor(aiTheme.surface);text.setTextColor(aiTheme.onSurface);
+        text.setTextSize(18);
         text.setText((review.meaningRisk()?"Revisa cambios en cifras o negaciones.\n\n":"")+review.result());
         text.setTextIsSelectable(true);int pad=(int)(16*ime.getResources().getDisplayMetrics().density);text.setPadding(pad,pad,pad,pad);scroll.addView(text);
         final AlertDialog dialog=new AlertDialog.Builder(DialogUtilsKt.getPlatformDialogThemeContext(ime))
@@ -213,7 +281,7 @@ public final class AiKeyboardAssistant {
         WindowManager.LayoutParams params=dialog.getWindow().getAttributes();
         params.token=ime.getWindow().getWindow().getDecorView().getWindowToken();params.type=WindowManager.LayoutParams.TYPE_APPLICATION_ATTACHED_DIALOG;
         dialog.getWindow().setAttributes(params);dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM|WindowManager.LayoutParams.FLAG_SECURE);
-        try {dialog.show();}catch(WindowManager.BadTokenException e){reviewDialog=null;show("No se pudo abrir la revisión","Cancelar");}
+        try {dialog.show();aiTheme.styleDialog(dialog);}catch(WindowManager.BadTokenException e){reviewDialog=null;show("No se pudo abrir la revisión","Cancelar");}
     }
 
     public AiKeyboardAssistant(LatinIME ime) { this.ime = ime; }
@@ -236,6 +304,7 @@ public final class AiKeyboardAssistant {
     }
     public void onNewEditor() { reset(true); }
     private void reset(boolean forgetWords) {
+        clearAutomaticUndo();
         generation++; revision++;dictation.cancel();dictationBase=null;if(audioCapture!=null){audioCapture.close();audioCapture=null;}if(recordedAudio!=null){recordedAudio.delete();recordedAudio=null;}if(speech!=null){speech.close();speech=null;} session.cancel();localSession.cancel();main.removeCallbacks(localDebounce);localBase=null;localCorrection=null;localOriginal=null;localContext="";if(forgetWords)lexicon.clear();review.clear();edits.clear();undoText="";pendingAction="";entities.clear();
         if(reviewDialog!=null){AlertDialog old=reviewDialog;reviewDialog=null;old.dismiss();}
         selected = ""; proposed = ""; address = ""; phone = ""; clabe = ""; email = "";
@@ -244,8 +313,14 @@ public final class AiKeyboardAssistant {
     }
     public void close() { onNewEditor(); session.close();localSession.close(); }
     public void onUserInput() { reset(false); }
+    public void onUserInput(boolean backspace) {
+        if(backspace&&automaticEdits.hasUndo())return;
+        reset(false);
+    }
     public void onSelectionChanged(int start, int end) {
         if(ownEdit)return;
+        if(automaticEdits.hasUndo()&&(automaticAfter==null||!automaticAfter.matches(capture())
+                ||start!=automaticAfter.start||end!=automaticAfter.end))clearAutomaticUndo();
         if(dictationBase!=null&&(start!=dictationBase.start||end!=dictationBase.end)){reset(false);return;}
         if(localBase!=null&&(start!=localBase.start||end!=localBase.end)){reset(false);return;}
         if(edits.hasUndo()) {

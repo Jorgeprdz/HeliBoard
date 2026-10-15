@@ -1431,6 +1431,15 @@ public class LatinIME extends InputMethodService implements
         mSubtypeState.switchSubtype(mRichImm);
     }
 
+    public void onLocalWordBoundary() {
+        if (!helium314.keyboard.latin.ai.AiSettingsActivity.contextualEnabled(this)) return;
+        if (mAiKeyboardAssistant == null) mAiKeyboardAssistant = new AiKeyboardAssistant(this);
+        mAiKeyboardAssistant.onWordBoundary();
+    }
+    public boolean undoLocalCorrectionOnBackspace() {
+        return mAiKeyboardAssistant != null && mAiKeyboardAssistant.undoAutomaticOnBackspace();
+    }
+
     public RichInputConnection getAiInputConnection() { return mInputLogic.mConnection; }
     public boolean applyAiReplacement(int start, int end, CharSequence expected, CharSequence replacement) {
         boolean accepted = mInputLogic.applyAiReplacement(start, end, expected, replacement);
@@ -1459,7 +1468,7 @@ public class LatinIME extends InputMethodService implements
             if(mSuggestionStripView!=null)mAiKeyboardAssistant.onAction("Dictado",mSuggestionStripView);
             return;
         }
-        if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onUserInput();
+        if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onUserInput(event.getKeyCode() == KeyCode.DELETE);
         if (KeyCode.VOICE_INPUT == event.getKeyCode()) {
             mRichImm.switchToShortcutIme(this);
         }

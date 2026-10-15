@@ -1,14 +1,19 @@
-name: R2.2 quality gate
+name: HeliBoard R2.2 verified debug APK
 on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: heliboard-r22-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
-  focal:
+  gate-and-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
@@ -18,12 +23,65 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - uses: gradle/actions/setup-gradle@v4
       - run: chmod +x gradlew
-      - name: R2.2 focal RED or GREEN evidence
-        run: ./gradlew :app:testDebugUnitTest --tests 'helium314.keyboard.latin.InputLogicTest.r22*' --tests 'helium314.keyboard.latin.ai.*' --tests 'helium314.keyboard.latin.ai.local.*' --stacktrace
+      - name: Validate Termux installer and cleanup syntax and gates
+        run: |
+          bash -n scripts/termux/heliboard-r22-auto-install.sh
+          bash -n scripts/termux/heliboard-r22-clean-clones.sh
+          python3 -m unittest discover -s scripts/tests -v
+      - name: R2.2 focal IME, undo, safety, strip and light/dark gate
+        run: ./gradlew :app:testDebugUnitTest --tests 'helium314.keyboard.latin.InputLogicTest.r22*' --tests 'helium314.keyboard.latin.ai.*' --tests 'helium314.keyboard.latin.ai.local.*'
+      - name: Complete regression suite (project runTests variant)
+        run: ./gradlew :app:testRunTestsUnitTest
+      - name: Android lint gate
+        run: ./gradlew :app:lintDebug
+      - name: Restore existing persistent signing identity securely
+        env:
+          KEY_B64: ${{ secrets.HELIBOARD_R22_SIGNING_KEY_B64 }}
+          KEY_PASSWORD: ${{ secrets.HELIBOARD_R22_SIGNING_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEY_B64"
+          test -n "$KEY_PASSWORD"
+          mkdir -m 700 "$RUNNER_TEMP/heliboard-signing"
+          printf '%s' "$KEY_B64" | base64 -d > "$RUNNER_TEMP/heliboard-signing/heliboard-r2.p12"
+          printf '%s' "$KEY_PASSWORD" > "$RUNNER_TEMP/heliboard-signing/signing-password"
+          chmod 600 "$RUNNER_TEMP/heliboard-signing/"*
+      - name: Assemble only after every automated gate passes
+        env:
+          HELIBOARD_SIGNING_DIR: ${{ runner.temp }}/heliboard-signing
+        run: ./gradlew :app:assembleDebug
+      - name: Verify APK identity, certificate, checksum and provenance
+        env:
+          EXPECTED_CERT: cfea5c3e180245ec7db199a1d8d799a4a91e0454fef7d02c5313b6d923b66ba2
+        run: |
+          set -euo pipefail
+          mkdir r22-artifact
+          mapfile -t apks < <(find app/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk')
+          test "${#apks[@]}" -eq 1
+          cp "${apks[0]}" r22-artifact/HeliBoard-R2.2-debug.apk
+          tools="$ANDROID_HOME/build-tools/37.0.0"
+          "$tools/apksigner" verify --print-certs r22-artifact/HeliBoard-R2.2-debug.apk > "$RUNNER_TEMP/r22-certificate.txt"
+          "$tools/aapt" dump badging r22-artifact/HeliBoard-R2.2-debug.apk > "$RUNNER_TEMP/r22-badging.txt"
+          python3 scripts/ci/r22-manifest.py
+          (cd r22-artifact && sha256sum -c SHA256SUMS.txt)
       - uses: actions/upload-artifact@v4
+        with:
+          name: HeliBoard-R2.2-debug-apk
+          path: r22-artifact/*
+          if-no-files-found: error
+          retention-days: 14
+      - name: Test and lint evidence
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: R22-focal-reports
+          name: HeliBoard-R2.2-reports
           path: |
-            app/build/reports/tests
+            app/build/reports
             app/build/test-results
+          retention-days: 14
+      - name: Remove runner signing files
+        if: always()
+        run: |
+          if test -d "$RUNNER_TEMP/heliboard-signing"; then
+            rm -rf -- "$RUNNER_TEMP/heliboard-signing"
+          fi

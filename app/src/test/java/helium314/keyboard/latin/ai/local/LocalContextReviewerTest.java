@@ -22,6 +22,7 @@ public class LocalContextReviewerTest {
                 + "are green good afternoon don't can't api release prueba necesito dos esto "
                 + "yo tú ellos dijeron cotizar ubicación casa caza peso beso paso pero gato "
                 + "well do check the software with team shipping tomorrow siemore siempre").split(" ")));
+        public boolean knownInvalid(String word) { return !valid(word); }
         public boolean valid(String word) { return words.contains(word.toLowerCase(Locale.ROOT)); }
         public List<String> candidates(String word) {
             switch (word.toLowerCase(Locale.ROOT)) {

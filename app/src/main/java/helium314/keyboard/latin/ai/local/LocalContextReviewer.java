@@ -26,7 +26,12 @@ public final class LocalContextReviewer {
     private static final Set<String> NEGATIONS = words("no not never nevermore nunca jamás tampoco sin ni neither nor don't can't won't");
     private static final Set<String> IRREGULAR_PARTICIPLES = words("hecho dicho visto puesto escrito roto vuelto abierto muerto resuelto cubierto");
     private static final Set<String> REPORTING = words("digo dices dice decimos dicen dijo dijeron responde respondió contestó afirma afirmó asegura aseguró");
-    public interface Lexicon { boolean valid(String word); List<String> candidates(String word); }
+    public interface Lexicon {
+        boolean valid(String word);
+        List<String> candidates(String word);
+        /** True only after native validity checked the configured languages and personal words. */
+        default boolean knownInvalid(String word) { return false; }
+    }
     public interface Cancellation { boolean cancelled(); }
     public static final class Correction {
         public final int start, end;
@@ -166,7 +171,21 @@ public final class LocalContextReviewer {
         if (best == null || best.equals(t.lower)) return null;
         double confidence = bestScore == secondScore ? .65
                 : Math.min(.97, Math.max(.70, bestScore));
-        return correction(t, best, "native-dictionary-spelling-candidate", confidence, false);
+        // Deliberately narrow: long lowercase words, one s/z/c confusion after accent
+        // normalization, an accented verified target and a decisive candidate margin.
+        // This decision is independent of the heuristic confidence value.
+        String source=withoutAccents(t.lower), target=withoutAccents(best);
+        int differences=0;
+        boolean confusion=true;
+        if(source.length()!=target.length())confusion=false;
+        else for(int j=0;j<source.length();j++)if(source.charAt(j)!=target.charAt(j)) {
+            differences++;
+            if("szc".indexOf(source.charAt(j))<0||"szc".indexOf(target.charAt(j))<0)confusion=false;
+        }
+        boolean automatic=lexicon.knownInvalid(t.lower)&&!lexicon.valid(t.lower)
+            &&source.length()>=8&&confusion&&differences==1
+            &&!best.equals(target)&&bestScore-secondScore>=.12;
+        return correction(t, best, "native-dictionary-spelling-candidate", confidence, automatic);
     }
 
     private static List<Token> tokenize(String text) {
@@ -243,8 +262,8 @@ public final class LocalContextReviewer {
     }
     private static String withoutAccents(String word) {
         // ñ changes lexical identity, unlike vowel stress marks; retain it when ranking.
-        return Normalizer.normalize(word.replace('ñ', '\u0001'), Normalizer.Form.NFD)
-                .replaceAll("\\p{M}+", "").replace('\u0001', 'ñ');
+        return Normalizer.normalize(word.replace('ñ', '^A'), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "").replace('^A', 'ñ');
     }
     private static int distance(String left, String right) {
         if (Math.abs(left.length() - right.length()) > 2) return 3;

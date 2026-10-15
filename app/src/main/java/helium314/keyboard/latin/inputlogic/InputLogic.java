@@ -551,6 +551,11 @@ public final class InputLogic {
             mEnteredText = null;
         }
         mConnection.endBatchEdit();
+        if (!processedEvent.isFunctionalKeyEvent()
+                && processedEvent.getCodePoint()!=Constants.CODE_ENTER
+                && settingsValues.mSpacingAndPunctuations.isWordSeparator(processedEvent.getCodePoint())) {
+            mLatinIME.onLocalWordBoundary();
+        }
         return inputTransaction;
     }
 
@@ -941,6 +946,17 @@ public final class InputLogic {
         if (event.getCodePoint() == Constants.CODE_ENTER) {
             final EditorInfo editorInfo = getCurrentInputEditorInfo();
             final int imeOptionsActionId = InputTypeUtils.getImeOptionsActionIdFromEditorInfo(editorInfo);
+            if (imeOptionsActionId != EditorInfo.IME_ACTION_NONE) {
+                if (mWordComposer.isComposingWord()) {
+                    if (inputTransaction.getSettingsValues().mAutoCorrectEnabled) {
+                        commitCurrentAutoCorrection(inputTransaction.getSettingsValues(),
+                            LastComposedWord.NOT_A_SEPARATOR, handler);
+                    } else {
+                        commitTyped(inputTransaction.getSettingsValues(), LastComposedWord.NOT_A_SEPARATOR);
+                    }
+                }
+                mLatinIME.onLocalWordBoundary();
+            }
             if (InputTypeUtils.IME_ACTION_CUSTOM_LABEL == imeOptionsActionId) {
                 // Either we have an actionLabel and we should performEditorAction with
                 // actionId regardless of its value.
@@ -1281,6 +1297,11 @@ public final class InputLogic {
             final String currentKeyboardScript) {
         mSpaceState = SpaceState.NONE;
         mDeleteCount++;
+        if (mLatinIME.undoLocalCorrectionOnBackspace()) {
+            inputTransaction.setRequiresUpdateSuggestions();
+            inputTransaction.requireShiftUpdate(InputTransaction.SHIFT_UPDATE_NOW);
+            return;
+        }
 
         // In many cases after backspace, we need to update the shift state. Normally we need
         // to do this right away to avoid the shift state being out of date in case the user types
