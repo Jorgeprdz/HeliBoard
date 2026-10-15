@@ -1437,6 +1437,7 @@ public class LatinIME extends InputMethodService implements
         if(mSuggestionStripView!=null&&!mSuggestionStripView.isAiActive())
             mSuggestionStripView.setSuggestions(words,mRichImm.getCurrentSubtype().isRtlSubtype());
     }
+    public void onAiInputSubmitted(){if(mAiKeyboardAssistant!=null)mAiKeyboardAssistant.onInputSubmitted();}
     public void onLocalWordBoundary() {
         if (!helium314.keyboard.latin.ai.AiSettingsActivity.typingEnabled(this)) return;
         if (mAiKeyboardAssistant == null) mAiKeyboardAssistant = new AiKeyboardAssistant(this);
@@ -1479,6 +1480,8 @@ public class LatinIME extends InputMethodService implements
             if(mSuggestionStripView!=null)mAiKeyboardAssistant.onAction("Dictado",mSuggestionStripView);
             return;
         }
+        if(mAiKeyboardAssistant!=null&&event.isFunctionalKeyEvent()&&event.getKeyCode()!=KeyCode.DELETE)
+            mAiKeyboardAssistant.onInputSubmitted();
         if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onUserInput(event.getKeyCode() == KeyCode.DELETE);
         if (KeyCode.VOICE_INPUT == event.getKeyCode()) {
             mRichImm.switchToShortcutIme(this);
@@ -1970,6 +1973,7 @@ public class LatinIME extends InputMethodService implements
         super.onTrimMemory(level);
         switch (level) {
             case TRIM_MEMORY_RUNNING_LOW, TRIM_MEMORY_RUNNING_CRITICAL, TRIM_MEMORY_COMPLETE -> {
+                if(mAiKeyboardAssistant!=null)mAiKeyboardAssistant.onMemoryPressure();
                 KeyboardLayoutSet.Companion.onSystemLocaleChanged(); // clears caches, nothing else
                 mKeyboardSwitcher.trimMemory();
             }

@@ -127,6 +127,81 @@ class InputLogicTest {
         } finally { field.set(settingsValues, original) }
     }
 
+    private fun r242Pending(assistant: helium314.keyboard.latin.ai.AiKeyboardAssistant, original: String): Any {
+        val capture = assistant.javaClass.getDeclaredMethod("capture").apply { isAccessible = true }
+        val snapshot = capture.invoke(assistant) as helium314.keyboard.latin.ai.EditorSnapshot
+        val epoch = assistant.javaClass.getDeclaredField("continuousEpoch").apply { isAccessible = true }.getLong(assistant)
+        val anchor = helium314.keyboard.latin.ai.local.ContinuousReviewAnchor(
+            snapshot.editor, snapshot.packageName, snapshot.fieldId, epoch, snapshot.start - original.length, original)
+        val corrections = helium314.keyboard.latin.ai.local.LocalContextReviewer().review(
+            original, helium314.keyboard.latin.ai.local.R241WritingTest.Vocabulary(), emptySet()) { false }
+        kotlin.test.assertTrue(corrections.isNotEmpty())
+        val type = assistant.javaClass.declaredClasses.single { it.simpleName == "PendingReview" }
+        return type.declaredConstructors.single().apply { isAccessible = true }.newInstance(anchor, corrections)
+    }
+    private fun r242Deliver(assistant: helium314.keyboard.latin.ai.AiKeyboardAssistant, pending: Any) {
+        val field = assistant.javaClass.getDeclaredField("pendingReviews").apply { isAccessible = true }
+        @Suppress("UNCHECKED_CAST")
+        val queue = field.get(assistant) as java.util.ArrayDeque<Any>
+        queue.add(pending)
+        assistant.javaClass.getDeclaredMethod("applyPendingReview").apply { isAccessible = true }.invoke(assistant)
+    }
+
+    @Test fun R242ResultSurvivesRapidAppendAndWaitsForSafeBoundaryWithAtomicUndo() {
+        r22Enable("nicuidando ")
+        val assistant = r23Assistant()
+        val pending = r242Pending(assistant, text)
+        r22Key('x'.code)
+        assertEquals("nicuidando x", text)
+        val compositionBefore = composingText
+        r242Deliver(assistant, pending)
+        assertEquals("nicuidando x", text)
+        assertEquals(compositionBefore, composingText)
+        r22Key(' '.code)
+        assertEquals("ni cuidando x ", text)
+        assertEquals(text.length, cursor)
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("nicuidando x ", text)
+        latinIME.onLocalWordBoundary()
+        assertEquals("nicuidando x ", text)
+        checkConnectionConsistency()
+    }
+
+    @Test fun R242ObsoleteFragmentAndEditorGenerationCannotApplyBackgroundResult() {
+        r22Enable("nincuidando ")
+        val assistant = r23Assistant()
+        val pending = r242Pending(assistant, text)
+        r22Key('x'.code)
+        ShadowInputMethodService.text = "nincuidandX x"
+        r242Deliver(assistant, pending)
+        r22Key(' '.code)
+        assertEquals("nincuidandX x ", text)
+        r22Enable("nincuidando ")
+        val old = r242Pending(assistant, text)
+        assistant.onNewEditor()
+        r242Deliver(assistant, old)
+        assertEquals("nincuidando ", text)
+    }
+
+    @Test fun R242SendingInvalidatesPendingReviewAndCannotEditSentText() {
+        r22Enable("nincuidando ")
+        val assistant = r23Assistant()
+        val pending = r242Pending(assistant, text)
+        assistant.onInputSubmitted()
+        r242Deliver(assistant, pending)
+        assertEquals("nincuidando ", text)
+        checkConnectionConsistency()
+    }
+
+    @Test fun R242FastProtectedInputRemainsExactWithoutModelOrNetwork() {
+        val original = "No quiero 3, quiero 2. Revisa los PRs de Archium. DW."
+        r22Enable("")
+        original.forEach { r22Key(it.code) }
+        assertEquals(original, text)
+        assertEquals(text.length, cursor)
+        checkConnectionConsistency()
+    }
+
     private fun r241Observe(word: String, valid: Boolean = true, candidates: List<String> = emptyList()) {
         val field = r23Assistant().javaClass.getDeclaredField("lexicon").apply { isAccessible = true }
         val observed = field.get(r23Assistant()) as helium314.keyboard.latin.ai.local.ObservedLexicon

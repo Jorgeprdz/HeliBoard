@@ -1,0 +1,67 @@
+[
+  {
+    "id": "user-real",
+    "group": "development",
+    "input": "Entknced vamos a hacer otra prueba de escritura para saber sibya se corrige correctamente ninescrigura. Ni estoy viendo el texto que estoy escribiendo sólo estlybtyoeando en teoría tendría que ser una escritura mejorada",
+    "reference": "Entonces vamos a hacer otra prueba de escritura para saber si ya se corrige correctamente mi escritura. Ni estoy viendo el texto que estoy escribiendo, solo estoy tecleando. En teoría tendría que ser una escritura mejorada"
+  },
+  {
+    "id": "spanish-transfer",
+    "group": "heldout",
+    "input": "Mañnaa revisamso el documemto y depsués te explico lso cambiso.",
+    "reference": "Mañana revisamos el documento y después te explico los cambios."
+  },
+  {
+    "id": "spanish-segmentation",
+    "group": "heldout",
+    "input": "Esperoque ya puedan leerel archivo conlas instrucciones.",
+    "reference": "Espero que ya puedan leer el archivo con las instrucciones."
+  },
+  {
+    "id": "english-transfer",
+    "group": "heldout",
+    "input": "I thnik teh updtae shoudl work tomorow.",
+    "reference": "I think the update should work tomorrow."
+  },
+  {
+    "id": "mixed-transfer",
+    "group": "heldout",
+    "input": "El buidl ya funcoina pero teh deploy sigue pendiemte.",
+    "reference": "El build ya funciona pero the deploy sigue pendiente."
+  },
+  {
+    "id": "protected-amount",
+    "group": "protected",
+    "input": "No quiero 3, quiero 2.",
+    "reference": "No quiero 3, quiero 2.",
+    "protected": true
+  },
+  {
+    "id": "protected-project",
+    "group": "protected",
+    "input": "Revisa los PRs de Archium.",
+    "reference": "Revisa los PRs de Archium.",
+    "protected": true
+  },
+  {
+    "id": "protected-acronym",
+    "group": "protected",
+    "input": "DW ya funciona en DeX.",
+    "reference": "DW ya funciona en DeX.",
+    "protected": true
+  },
+  {
+    "id": "valid-informal",
+    "group": "protected",
+    "input": "Oye, ahorita te cuento cómo quedó.",
+    "reference": "Oye, ahorita te cuento cómo quedó.",
+    "protected": true
+  },
+  {
+    "id": "valid-english",
+    "group": "protected",
+    "input": "I might call tomorrow, but I am not making a promise.",
+    "reference": "I might call tomorrow, but I am not making a promise.",
+    "protected": true
+  }
+]

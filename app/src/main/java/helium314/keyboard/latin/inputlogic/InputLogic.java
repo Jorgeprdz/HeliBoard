@@ -405,9 +405,11 @@ public final class InputLogic {
         if (mConnection.isBelatedExpectedUpdate(oldSelStart, newSelStart, oldSelEnd, newSelEnd, composingSpanStart, composingSpanEnd)) {
             // return whether we expect a user-initiated explicit cursor move (i.e. not as result of other input, but e.g. space swipe)
             // note that arrow keys are not considered, because for them isBelatedExpectedUpdate returns false
+            if(expectCursorMove)mLatinIME.onAiInputSubmitted();
             return expectCursorMove;
         }
 
+        mLatinIME.onAiInputSubmitted(); // Explicit cursor/selection mutation invalidates dependency anchors.
         // if all text is gone, we treat it like onStartInput
         if (GestureDataGatheringKt.useBackgroundGathering && newSelStart == 0 && newSelEnd == 0 && !mConnection.hasTextAfterCursor())
             BackgroundGatheringCache.saveOrClear(mLatinIME);
@@ -2183,7 +2185,8 @@ public final class InputLogic {
      * @param actionId the action to perform
      */
     private void performEditorAction(final int actionId) {
-        mConnection.performEditorAction(actionId);
+        mLatinIME.onAiInputSubmitted();
+                mConnection.performEditorAction(actionId);
     }
 
     /**
