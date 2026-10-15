@@ -31,8 +31,8 @@ jobs:
       - name: R2.2 focal IME, undo, safety, strip and light/dark gate
         if: always()
         run: ./gradlew :app:testDebugUnitTest --tests 'helium314.keyboard.latin.InputLogicTest.r22*' --tests 'helium314.keyboard.latin.ai.*' --tests 'helium314.keyboard.latin.ai.local.*'
-      - name: Complete regression suite (project runTests variant)
-        run: ./gradlew :app:testRunTestsUnitTest
+      - name: Complete regression suite (debug variant; no test filters)
+        run: ./gradlew :app:testDebugUnitTest
       - name: Android lint gate
         run: ./gradlew :app:lintDebug
       - name: Restore existing persistent signing identity securely
