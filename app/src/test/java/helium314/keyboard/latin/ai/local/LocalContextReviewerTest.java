@@ -52,6 +52,16 @@ public class LocalContextReviewerTest {
         }
         return out.toString();
     }
+    @Test public void r22UnambiguousSpellingHasIndependentAutomaticPolicy() {
+        assertTrue(review("necesito cotisacion ").get(0).automaticAllowed);
+        assertFalse(review("casz ").get(0).automaticAllowed);
+        LocalContextReviewer.Lexicon personal = new FixtureLexicon() {
+            @Override public boolean valid(String word) {
+                return word.equals("cotisacion") || super.valid(word);
+            }
+        };
+        assertTrue(reviewer.review("cotisacion ", personal, Collections.emptySet(), ACTIVE).isEmpty());
+    }
     @Test public void nativeCandidatesFixTyposWithoutStoredExamplePhrases() {
         assertEquals("necesito cotización mañana", apply("necesito cotisacion mañana"));
         assertEquals("revisar información y ubicación", apply("revisar informacion y ubicacion"));

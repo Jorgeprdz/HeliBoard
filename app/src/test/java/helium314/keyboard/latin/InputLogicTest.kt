@@ -81,6 +81,62 @@ class InputLogicTest {
         ShadowLog.stream = System.out
     }
 
+    private fun r22Enable(text: String) {
+        setText(text)
+        latinIME.currentInputEditorInfo.packageName = "fixture.editor"
+        latinIME.getSharedPreferences("keyboard_ai_private", 0).edit()
+            .putBoolean("enabled", true).putBoolean("local_context", true).commit()
+    }
+
+    private fun r22Key(code: Int) {
+        latinIME.onEvent(Event.createEventForCodePointFromUnknownSource(code))
+    }
+
+    @Test fun r22ContextEditsThroughRealImeAndBackspaceOnce() {
+        r22Enable("voy haber si puedo")
+        r22Key(' '.code)
+        assertEquals("voy a ver si puedo ", text)
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("voy haber si puedo ", text)
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("voy haber si puedo", text)
+        checkConnectionConsistency()
+    }
+
+    @Test fun r22PunctuationAndUtf16Offsets() {
+        r22Enable("🙂 voy haber si puedo")
+        r22Key('.'.code)
+        assertEquals("🙂 voy a ver si puedo.", text)
+        checkConnectionConsistency()
+    }
+
+    @Test fun r22EnterCompletesLastWordBeforeKeyboardAction() {
+        r22Enable("voy haber si puedo")
+        latinIME.currentInputEditorInfo.imeOptions = EditorInfo.IME_ACTION_SEND
+        r22Key(Constants.CODE_ENTER)
+        assertEquals("voy a ver si puedo", text)
+        checkConnectionConsistency()
+    }
+
+    @Test fun r22LaterTypingInvalidatesUndo() {
+        r22Enable("voy haber si puedo")
+        r22Key(' '.code)
+        r22Key('x'.code)
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("voy a ver si puedo ", text)
+    }
+
+    @Test fun r22PasswordAndQuotedTextStayExact() {
+        r22Enable("\\"voy haber si puedo\\"")
+        r22Key(' '.code)
+        assertEquals("\\"voy haber si puedo\\" ", text)
+        r22Enable("voy haber si puedo")
+        setInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)
+        latinIME.currentInputEditorInfo.packageName = "fixture.editor"
+        r22Key(' '.code)
+        assertEquals("voy haber si puedo ", text)
+    }
+
     @Test fun aiConfirmedReplacementKeepsCacheConsistent() {
         setText("  hola 👋\n")
         val original = text
