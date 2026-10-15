@@ -127,9 +127,9 @@ class InputLogicTest {
     }
 
     @Test fun r22PasswordAndQuotedTextStayExact() {
-        r22Enable("\\"voy haber si puedo\\"")
+        r22Enable("\"voy haber si puedo\"")
         r22Key(' '.code)
-        assertEquals("\\"voy haber si puedo\\" ", text)
+        assertEquals("\"voy haber si puedo\" ", text)
         r22Enable("voy haber si puedo")
         setInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)
         latinIME.currentInputEditorInfo.packageName = "fixture.editor"
