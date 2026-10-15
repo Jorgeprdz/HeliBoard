@@ -24,7 +24,8 @@ public class LocalContextCorpusTest {
         return cases;
     }
     static Set<String> annotated(String value) {
-        return value.isEmpty() ? Collections.emptySet() : new HashSet<>(Arrays.asList(value.split(";")));
+        return value.isEmpty() || value.equals("-") ? Collections.emptySet()
+                : new HashSet<>(Arrays.asList(value.split(";")));
     }
     static Set<String> proposals(List<LocalContextReviewer.Correction> corrections) {
         Set<String> result = new HashSet<>();

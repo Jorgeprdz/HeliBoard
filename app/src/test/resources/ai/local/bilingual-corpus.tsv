@@ -1,5 +1,5 @@
 # Synthetic ES-MX/EN-US/code-switching rule corpus, independently annotated. Not a user dataset.
-# category	input	expected text	UTF-16 start:end=replacement annotations
+# category	input	expected text	UTF-16 start:end=replacement annotations; - means no proposal
 es-motion	mañana voy haber si puedo	mañana voy a ver si puedo	11:16=a ver
 es-motion	mañana voy haber si podemos revisar	mañana voy a ver si podemos revisar	11:16=a ver
 es-motion	mañana voy haber si puedes	mañana voy a ver si puedes	11:16=a ver
@@ -94,66 +94,66 @@ lexical	the team necesita cotisacion	the team necesita cotización	18:28=cotizac
 lexical	the team necesita informacion	the team necesita información	18:29=información
 lexical	the team necesita ubicacion	the team necesita ubicación	18:27=ubicación
 lexical	the team necesita reunion	the team necesita reunión	18:25=reunión
-protected-or-ambiguous	Hey! mañana tenemos meeting con Carlos	Hey! mañana tenemos meeting con Carlos	
-protected-or-ambiguous	build tests are green	build tests are green	
-protected-or-ambiguous	good afternoon team	good afternoon team	
-protected-or-ambiguous	don't change the software	don't change the software	
-protected-or-ambiguous	can't deploy tomorrow	can't deploy tomorrow	
-protected-or-ambiguous	Xochitl shipping mañana	Xochitl shipping mañana	
-protected-or-ambiguous	HTTPServer_v2 build API	HTTPServer_v2 build API	
-protected-or-ambiguous	voy Haber si puedo	voy Haber si puedo	
-protected-or-ambiguous	espero que HALLAS llegado	espero que HALLAS llegado	
-protected-or-ambiguous	el cliente no confirmó que si puedo	el cliente no confirmó que si puedo	
-protected-or-ambiguous	yo confirmo que si puedo	yo confirmo que si puedo	
-protected-or-ambiguous	puede haber si se combina	puede haber si se combina	
-protected-or-ambiguous	voy haber mañana	voy haber mañana	
-protected-or-ambiguous	hay que haber llegado	hay que haber llegado	
-protected-or-ambiguous	¿Qué hallas escondido?	¿Qué hallas escondido?	
-protected-or-ambiguous	espero que hallas la casa	espero que hallas la casa	
-protected-or-ambiguous	no cambiar cifras 123456789	no cambiar cifras 123456789	
-protected-or-ambiguous	la casa no es caza	la casa no es caza	
-protected-or-ambiguous	unobtainium Xochitl GPU	unobtainium Xochitl GPU	
-protected-or-ambiguous	la propuesta necesita tiempo y confianza	la propuesta necesita tiempo y confianza	
-protected-or-ambiguous	si llegas mañana vamos	si llegas mañana vamos	
-protected-or-ambiguous	sin respuesta no hay propuesta	sin respuesta no hay propuesta	
-protected-or-ambiguous	ni Carlos ni Xochitl cambian meeting	ni Carlos ni Xochitl cambian meeting	
-protected-or-ambiguous	cotisacion.js	cotisacion.js	
-protected-or-ambiguous	https://host/cotisacion	https://host/cotisacion	
-protected-or-ambiguous	cotisacion@example.org	cotisacion@example.org	
-protected-or-ambiguous	123-cotisacion	123-cotisacion	
-protected-or-ambiguous	JSON.cotisacion	JSON.cotisacion	
-protected-or-ambiguous	foo/cotisacion	foo/cotisacion	
-protected-or-ambiguous	cotisacion_v2	cotisacion_v2	
-protected-or-ambiguous	voy. haber si puedo	voy. haber si puedo	
-protected-or-ambiguous	confirmo; que si	confirmo; que si	
-protected-or-ambiguous	espero, que hallas llegado	espero, que hallas llegado	
-quotation	dijo "voy haber si puedo"	dijo "voy haber si puedo"	
-quotation	dijo 'voy haber si puedo'	dijo 'voy haber si puedo'	
-quotation	dijo `voy haber si puedo`	dijo `voy haber si puedo`	
-quotation	dijo «voy haber si puedo»	dijo «voy haber si puedo»	
-quotation	dijo “voy haber si puedo”	dijo “voy haber si puedo”	
-quotation	dijo ‘voy haber si puedo’	dijo ‘voy haber si puedo’	
-quotation	dijo "espero que hallas llegado"	dijo "espero que hallas llegado"	
-quotation	dijo 'espero que hallas llegado'	dijo 'espero que hallas llegado'	
-quotation	dijo `espero que hallas llegado`	dijo `espero que hallas llegado`	
-quotation	dijo «espero que hallas llegado»	dijo «espero que hallas llegado»	
-quotation	dijo “espero que hallas llegado”	dijo “espero que hallas llegado”	
-quotation	dijo ‘espero que hallas llegado’	dijo ‘espero que hallas llegado’	
-quotation	dijo "el cliente me confirmo que si"	dijo "el cliente me confirmo que si"	
-quotation	dijo 'el cliente me confirmo que si'	dijo 'el cliente me confirmo que si'	
-quotation	dijo `el cliente me confirmo que si`	dijo `el cliente me confirmo que si`	
-quotation	dijo «el cliente me confirmo que si»	dijo «el cliente me confirmo que si»	
-quotation	dijo “el cliente me confirmo que si”	dijo “el cliente me confirmo que si”	
-quotation	dijo ‘el cliente me confirmo que si’	dijo ‘el cliente me confirmo que si’	
-quotation	dijo "cotisacion"	dijo "cotisacion"	
-quotation	dijo 'cotisacion'	dijo 'cotisacion'	
-quotation	dijo `cotisacion`	dijo `cotisacion`	
-quotation	dijo «cotisacion»	dijo «cotisacion»	
-quotation	dijo “cotisacion”	dijo “cotisacion”	
-quotation	dijo ‘cotisacion’	dijo ‘cotisacion’	
-quotation	dijo "haber qué pasa"	dijo "haber qué pasa"	
-quotation	dijo 'haber qué pasa'	dijo 'haber qué pasa'	
-quotation	dijo `haber qué pasa`	dijo `haber qué pasa`	
-quotation	dijo «haber qué pasa»	dijo «haber qué pasa»	
-quotation	dijo “haber qué pasa”	dijo “haber qué pasa”	
-quotation	dijo ‘haber qué pasa’	dijo ‘haber qué pasa’	
+protected-or-ambiguous	Hey! mañana tenemos meeting con Carlos	Hey! mañana tenemos meeting con Carlos	-
+protected-or-ambiguous	build tests are green	build tests are green	-
+protected-or-ambiguous	good afternoon team	good afternoon team	-
+protected-or-ambiguous	don't change the software	don't change the software	-
+protected-or-ambiguous	can't deploy tomorrow	can't deploy tomorrow	-
+protected-or-ambiguous	Xochitl shipping mañana	Xochitl shipping mañana	-
+protected-or-ambiguous	HTTPServer_v2 build API	HTTPServer_v2 build API	-
+protected-or-ambiguous	voy Haber si puedo	voy Haber si puedo	-
+protected-or-ambiguous	espero que HALLAS llegado	espero que HALLAS llegado	-
+protected-or-ambiguous	el cliente no confirmó que si puedo	el cliente no confirmó que si puedo	-
+protected-or-ambiguous	yo confirmo que si puedo	yo confirmo que si puedo	-
+protected-or-ambiguous	puede haber si se combina	puede haber si se combina	-
+protected-or-ambiguous	voy haber mañana	voy haber mañana	-
+protected-or-ambiguous	hay que haber llegado	hay que haber llegado	-
+protected-or-ambiguous	¿Qué hallas escondido?	¿Qué hallas escondido?	-
+protected-or-ambiguous	espero que hallas la casa	espero que hallas la casa	-
+protected-or-ambiguous	no cambiar cifras 123456789	no cambiar cifras 123456789	-
+protected-or-ambiguous	la casa no es caza	la casa no es caza	-
+protected-or-ambiguous	unobtainium Xochitl GPU	unobtainium Xochitl GPU	-
+protected-or-ambiguous	la propuesta necesita tiempo y confianza	la propuesta necesita tiempo y confianza	-
+protected-or-ambiguous	si llegas mañana vamos	si llegas mañana vamos	-
+protected-or-ambiguous	sin respuesta no hay propuesta	sin respuesta no hay propuesta	-
+protected-or-ambiguous	ni Carlos ni Xochitl cambian meeting	ni Carlos ni Xochitl cambian meeting	-
+protected-or-ambiguous	cotisacion.js	cotisacion.js	-
+protected-or-ambiguous	https://host/cotisacion	https://host/cotisacion	-
+protected-or-ambiguous	cotisacion@example.org	cotisacion@example.org	-
+protected-or-ambiguous	123-cotisacion	123-cotisacion	-
+protected-or-ambiguous	JSON.cotisacion	JSON.cotisacion	-
+protected-or-ambiguous	foo/cotisacion	foo/cotisacion	-
+protected-or-ambiguous	cotisacion_v2	cotisacion_v2	-
+protected-or-ambiguous	voy. haber si puedo	voy. haber si puedo	-
+protected-or-ambiguous	confirmo; que si	confirmo; que si	-
+protected-or-ambiguous	espero, que hallas llegado	espero, que hallas llegado	-
+quotation	dijo "voy haber si puedo"	dijo "voy haber si puedo"	-
+quotation	dijo 'voy haber si puedo'	dijo 'voy haber si puedo'	-
+quotation	dijo `voy haber si puedo`	dijo `voy haber si puedo`	-
+quotation	dijo «voy haber si puedo»	dijo «voy haber si puedo»	-
+quotation	dijo “voy haber si puedo”	dijo “voy haber si puedo”	-
+quotation	dijo ‘voy haber si puedo’	dijo ‘voy haber si puedo’	-
+quotation	dijo "espero que hallas llegado"	dijo "espero que hallas llegado"	-
+quotation	dijo 'espero que hallas llegado'	dijo 'espero que hallas llegado'	-
+quotation	dijo `espero que hallas llegado`	dijo `espero que hallas llegado`	-
+quotation	dijo «espero que hallas llegado»	dijo «espero que hallas llegado»	-
+quotation	dijo “espero que hallas llegado”	dijo “espero que hallas llegado”	-
+quotation	dijo ‘espero que hallas llegado’	dijo ‘espero que hallas llegado’	-
+quotation	dijo "el cliente me confirmo que si"	dijo "el cliente me confirmo que si"	-
+quotation	dijo 'el cliente me confirmo que si'	dijo 'el cliente me confirmo que si'	-
+quotation	dijo `el cliente me confirmo que si`	dijo `el cliente me confirmo que si`	-
+quotation	dijo «el cliente me confirmo que si»	dijo «el cliente me confirmo que si»	-
+quotation	dijo “el cliente me confirmo que si”	dijo “el cliente me confirmo que si”	-
+quotation	dijo ‘el cliente me confirmo que si’	dijo ‘el cliente me confirmo que si’	-
+quotation	dijo "cotisacion"	dijo "cotisacion"	-
+quotation	dijo 'cotisacion'	dijo 'cotisacion'	-
+quotation	dijo `cotisacion`	dijo `cotisacion`	-
+quotation	dijo «cotisacion»	dijo «cotisacion»	-
+quotation	dijo “cotisacion”	dijo “cotisacion”	-
+quotation	dijo ‘cotisacion’	dijo ‘cotisacion’	-
+quotation	dijo "haber qué pasa"	dijo "haber qué pasa"	-
+quotation	dijo 'haber qué pasa'	dijo 'haber qué pasa'	-
+quotation	dijo `haber qué pasa`	dijo `haber qué pasa`	-
+quotation	dijo «haber qué pasa»	dijo «haber qué pasa»	-
+quotation	dijo “haber qué pasa”	dijo “haber qué pasa”	-
+quotation	dijo ‘haber qué pasa’	dijo ‘haber qué pasa’	-
