@@ -123,8 +123,26 @@ class InputLogicTest {
         r22Enable("voy haber si puedo")
         ShadowInputMethodService.editorOptions = EditorInfo.IME_ACTION_NONE
         r22Key(Constants.CODE_ENTER)
-        assertEquals("voy a ver si puedo\\n", text)
+        assertEquals("voy a ver si puedo\n", text)
         checkConnectionConsistency()
+    }
+
+    @Test fun r22ExternalMutationAtSameCursorCannotUndoOldContext() {
+        r22Enable("voy haber si puedo")
+        r22Key(' '.code)
+        assertEquals("voy a ver si puedo ", text)
+        ShadowInputMethodService.text = "hoy a ver si puedo "
+        assertEquals(false, latinIME.undoLocalCorrectionOnBackspace())
+        assertEquals("hoy a ver si puedo ", text)
+    }
+
+    @Test fun r22CompositionChangeAtSameCursorInvalidatesUndo() {
+        r22Enable("voy haber si puedo")
+        r22Key(' '.code)
+        val pos = cursor
+        latinIME.onUpdateSelection(pos, pos, pos, pos, 0, pos)
+        assertEquals(false, latinIME.undoLocalCorrectionOnBackspace())
+        assertEquals("voy a ver si puedo ", text)
     }
 
     @Test fun r22LaterTypingInvalidatesUndo() {
