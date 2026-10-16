@@ -47,7 +47,12 @@ public final class HybridCandidateGenerator {
    String source=context.substring(left.start,right.end);
    if(!source.matches("[\\p{Ll}\\p{M}]+(?:[ \\t]+[\\p{Ll}\\p{M}]+){0,2}"))continue;
    String flat=source.replaceAll("[ \\t]+","");if(flat.length()>48)continue;
-   boolean allValid=true;for(int index=first;index<first+width;index++)allValid&=lex.valid(tokens.get(index).word);
+   boolean allValid=true,anyValid=false;for(int index=first;index<first+width;index++){
+    boolean valid=lex.valid(tokens.get(index).word);allValid&=valid;anyValid|=valid;
+   }
+   // Do not let a nearby typo make a legitimate token an unverified motor-error target.
+   // Invalid tokens are still considered independently at width=1.
+   if(width>1&&anyValid&&!allValid)continue;
    if(allValid){
     // A legitimate source is not a motor-error target. Consider only accent alternatives
     // or alternatives supported by external contextual evidence; never automatic.

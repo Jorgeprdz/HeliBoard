@@ -5,7 +5,7 @@ import helium314.keyboard.latin.ai.local.*;
 public final class HybridWritingTest {
  static int checks;
  static final HybridCandidateGenerator.Lexicon LEX=new HybridCandidateGenerator.Lexicon(){
-  final List<String> words=Arrays.asList("recibir","recbir","buenas","tardes","send","the","file","documento","we","was","were","ready","envio","envío","no","quiero","negocio","mañana","mañnaa","el","archivo","is","this","test");
+  final List<String> words=Arrays.asList("recibir","recbir","buenas","tardes","send","the","file","documento","we","he","was","were","ready","envio","envío","no","quiero","negocio","mañana","mañnaa","el","archivo","is","this","test");
   public Collection<String> vocabulary(){return words;}
   public boolean valid(String w){return words.contains(w)&&!Arrays.asList("recbir","mañnaa").contains(w);}
   public boolean preserved(String w){return w.equals("archium");}
@@ -33,6 +33,8 @@ public final class HybridWritingTest {
  static void validWordContract(){
   check(generate("we",false).isEmpty(),"valid word without context must not receive motor replacements");
   has("we recbir","recbir","recibir",false);
+  check(generate("we recbir",false).stream().noneMatch(e->e.start==0),
+   "valid word within mixed span must not receive motor replacements");
  }
  public static void main(String[] args)throws Exception{
   if(args.length>0&&args[0].equals("valid-word-regression")){validWordContract();return;}

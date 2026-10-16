@@ -67,9 +67,11 @@ No demuestra que relajar el guard sea seguro; el proxy no detecta «foros→foto
 
 ## Reparación aislada y siguientes pasos
 Se añade regresión independiente «we» y «we recbir»: una palabra válida sin evidencia contextual
-no recibe cambios motrices; el typo posterior mantiene candidatos. Se conservan alternativas
+no recibe cambios motrices; se excluyen también spans mixtos que reescribirían tokens válidos.
+El typo posterior mantiene candidatos. Se conservan alternativas
 de acento o con respaldo contextual externo, siempre manuales. No cambia producción.
-Se reproduce el fallo contra c79 y se valida el arreglo con pruebas separadas de componentes.
+Se reproduce el fallo inicial contra c79; la revisión encuentra el mismo problema en spans mixtos,
+y se reproduce contra 46123bf antes de validar el arreglo con pruebas separadas de componentes.
 **No se repuntúa este corpus ni se afirma mejora lingüística del arreglo.**
 Siguiente inversión: separar validez/frecuencia con diccionarios nativos, localizar segmentos
 corregibles sin eliminar protecciones y evaluar en un conjunto nuevo, anotado por personas.
