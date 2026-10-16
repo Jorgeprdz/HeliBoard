@@ -5,6 +5,7 @@ import argparse,base64,collections,hashlib,importlib.util,json,os,re,subprocess,
 from pathlib import Path
 import evaluate as evaluation
 import synthetic_corpus
+from synthetic_diagnostics import candidate_diagnosis
 ROOT=Path(__file__).resolve().parents[2]
 FREQUENCY_REV="525f9b560de45753a5ea01069454e72e9aa541c6"
 MODELS=[
@@ -68,16 +69,25 @@ def synthetic_gate(comparison,all_models_completed,critical):
     if a["incorrectChanges"]>b["incorrectChanges"] or a["residual"]>b["residual"]:return "FAIL"
  return "PASS"
 def main():
- parser=argparse.ArgumentParser();parser.add_argument("--classes",required=True);args=parser.parse_args()
+ parser=argparse.ArgumentParser();parser.add_argument("--classes",default="");parser.add_argument("--prepare-only",action="store_true");parser.add_argument("--frozen",action="store_true");args=parser.parse_args()
  directory=ROOT/"writing-evidence/r243-synthetic";directory.mkdir(parents=True,exist_ok=True)
  (directory/"status.json").write_text(json.dumps(dict(experimental="RUNNING",productionGate="BLOCKED",scope="Synthetic host components; Android integration NOT RUN")))
- versions=verify_versions()
- lexicon,lexical_words=vocabulary(directory)
- corpus_path=synthetic_corpus.build(directory);corpus=json.loads(corpus_path.read_text());rows=corpus["messages"]
- frozen=dict(commit=os.environ.get("GITHUB_SHA"),corpus_sha256=evaluation.digest(corpus_path),lexicon_sha256=evaluation.digest(lexicon),seed=synthetic_corpus.SEED,
-  selectionBudget="first 8 candidates, then remove tail until prompt <=1800 characters; fixed before inference, no reference access",
-  components=versions,productionGate="BLOCKED")
- (directory/"pre-inference-lock.json").write_text(json.dumps(frozen,indent=2))
+ if args.frozen:
+  corpus_path=directory/"synthetic-corpus.json";lexicon=directory/"independent-vocabulary.tsv"
+  frozen=json.loads((directory/"pre-inference-lock.json").read_text())
+  if frozen["commit"]!=os.environ.get("GITHUB_SHA") or frozen["corpus_sha256"]!=evaluation.digest(corpus_path) or frozen["lexicon_sha256"]!=evaluation.digest(lexicon):raise ValueError("Frozen evaluation inputs changed")
+  corpus=json.loads(corpus_path.read_text());lexical_words={line.split("\t")[0] for line in lexicon.read_text().splitlines() if not line.startswith("#")}
+ else:
+  versions=verify_versions()
+  lexicon,lexical_words=vocabulary(directory)
+  corpus_path=synthetic_corpus.build(directory);corpus=json.loads(corpus_path.read_text())
+  frozen=dict(commit=os.environ.get("GITHUB_SHA"),corpus_sha256=evaluation.digest(corpus_path),lexicon_sha256=evaluation.digest(lexicon),seed=synthetic_corpus.SEED,
+   selectionBudget="first 8 candidates, then remove tail until prompt <=1800 characters; fixed before inference, no reference access",
+   components=versions,productionGate="BLOCKED")
+  (directory/"pre-inference-lock.json").write_text(json.dumps(frozen,indent=2))
+ if args.prepare_only:
+  print("Independent source corpus and external vocabulary frozen; no models executed.",flush=True);return 0
+ rows=corpus["messages"]
  model_dir=Path(os.environ["RUNNER_TEMP"])/"r243-comparator-models";model_dir.mkdir(exist_ok=True);models={}
  for key,repo,revision,name in MODELS:
   path=model_dir/name
@@ -157,7 +167,9 @@ def main():
   subset=[r for r in outputs if r["noise_kind"]==kind]
   by_noise[kind]=dict(cases=len(subset),noCandidates=sum(not r["trace"]["candidates"] for r in subset),
    candidateOpportunity=sum(any(r["trace"]["candidateHits"]) for r in subset),
-   usefulCandidateNotSelected=sum(any(r["trace"]["candidateHits"]) and r["metrics"]["r243-prototype"]["assisted"]["tp"]<=r["metrics"]["r241-component"]["automatic"]["tp"] for r in subset),
+   shownCandidateOpportunity=sum(any(r["trace"]["candidateHits"][:r["trace"]["shownCandidates"]]) for r in subset),
+   withheldByPromptBudget=sum(candidate_diagnosis(r["trace"]["candidateHits"],r["trace"]["shownCandidates"],r["metrics"]["r241-component"]["automatic"]["tp"],r["metrics"]["r243-prototype"]["assisted"]["tp"])["withheldByPromptBudget"] for r in subset),
+   usefulCandidateNotSelected=sum(candidate_diagnosis(r["trace"]["candidateHits"],r["trace"]["shownCandidates"],r["metrics"]["r241-component"]["automatic"]["tp"],r["metrics"]["r243-prototype"]["assisted"]["tp"])["shownUsefulNotSelected"] for r in subset),
    rawModelChangesRejected=sum(bool(t["raw"]) and t["raw"]!=t["original"] and not t["guardAccepted"] for r in subset for t in r["trace"]["focusTrace"]),
    hybridResidual=sum(r["metrics"]["r243-prototype"]["assisted"]["residual"] for r in subset))
  report=dict(experimentalGate=decision,productionGate="BLOCKED",reason="Independent human annotations and real Android acceptance remain required",
@@ -181,8 +193,8 @@ def main():
  for group in list(evaluation.COUNTS)+["ALL"]:
   a=comparison["r241-component"][group]["assisted"]["residual"];b=comparison["r242-component"][group]["assisted"]["residual"];c=comparison["r243-prototype"][group]["assisted"]["residual"]
   markdown.append(f"| {group} | {a} | {b} | {c} | {100*(c-a)/a:.1f}% |" if a else f"| {group} | {a} | {b} | {c} | N/A |")
- markdown+=["","## Diagnóstico por ruido","| Ruido | Casos | Sin candidatos | Candidato útil | Útil no seleccionado | Cambio crudo rechazado | Residuales R243 |","|---|---:|---:|---:|---:|---:|---:|"]
- for kind,d in by_noise.items():markdown.append(f"| {kind} | {d['cases']} | {d['noCandidates']} | {d['candidateOpportunity']} | {d['usefulCandidateNotSelected']} | {d['rawModelChangesRejected']} | {d['hybridResidual']} |")
+ markdown+=["","## Diagnóstico por ruido","| Ruido | Casos | Sin candidatos | Útil generado | Útil mostrado | Retenido por presupuesto | Mostrado útil no seleccionado | Cambio crudo rechazado | Residuales R243 |","|---|---:|---:|---:|---:|---:|---:|---:|---:|"]
+ for kind,d in by_noise.items():markdown.append(f"| {kind} | {d['cases']} | {d['noCandidates']} | {d['candidateOpportunity']} | {d['shownCandidateOpportunity']} | {d['withheldByPromptBudget']} | {d['usefulCandidateNotSelected']} | {d['rawModelChangesRejected']} | {d['hybridResidual']} |")
  markdown+=["","## Ejemplos (no seleccionados para ajustar el motor)"]
  example_rows=[r for r in outputs if r["systems"]["r243-prototype"]["assisted"]!=r["input"]][:3]+[r for r in outputs if r["noise_kind"] in ["multiple","concatenation"]][:2]
  for row in example_rows:

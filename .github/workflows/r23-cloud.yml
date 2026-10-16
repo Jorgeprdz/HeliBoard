@@ -166,12 +166,20 @@ jobs:
             ${{ runner.temp }}/writing-host
             ${{ runner.temp }}/r243-comparator-models
           key: r243-host-b5046-two-comparators-${{ hashFiles('native-writing/writing.cpp', 'native-writing/CMakeLists.txt') }}
+      - name: Install PDF source extractor only when absent
+        run: |
+          if ! command -v pdftotext >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends poppler-utils
+          fi
+      - name: Freeze sources, seeds and external vocabulary before model work
+        run: python3 experiments/r243/synthetic_compare.py --prepare-only
       - name: Build existing pinned host decoder only, no Android runtime or APK
         env:
           WRITING_HOST_ONLY: '1'
         run: bash scripts/ci/build-writing-runtime.sh
       - name: Freeze independent synthetic corpus and execute actual comparators
-        run: python3 experiments/r243/synthetic_compare.py --classes "$RUNNER_TEMP/r243-classes"
+        run: python3 experiments/r243/synthetic_compare.py --frozen --classes "$RUNNER_TEMP/r243-classes"
       - name: Publish corpus, licenses, traces and numeric report, never models
         if: always()
         uses: actions/upload-artifact@v4
