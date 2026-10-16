@@ -232,6 +232,28 @@ class InputLogicTest {
         observed.keyboard(positions)
     }
 
+
+    @Test fun R24DictionaryReadinessRejectsMissingAndPartialDictionaries() {
+        r22Enable("voy haber si puedo")
+        ShadowFacilitator2.initializedMain = false
+        ShadowFacilitator2.uninitializedMain = false
+        r22Key(' '.code)
+        assertEquals("voy haber si puedo ", text)
+
+        r22Enable("voy haber si puedo")
+        ShadowFacilitator2.initializedMain = true
+        ShadowFacilitator2.uninitializedMain = true
+        r22Key(' '.code)
+        assertEquals("voy haber si puedo ", text)
+
+        r22Enable("voy haber si puedo")
+        ShadowFacilitator2.initializedMain = true
+        ShadowFacilitator2.uninitializedMain = false
+        r22Key(' '.code)
+        assertEquals("voy a ver si puedo ", text)
+        checkConnectionConsistency()
+    }
+
     @Test fun R241SegmentationUsesAtomicUndoAndPersistentPairVeto() {
         r22Enable("🙂 nincuidando")
         r241Observe("ni")
@@ -979,7 +1001,7 @@ class InputLogicTest {
     @Test fun `no intermediate commit in URL field with protocol`() {
         setInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI)
         chainInput("http://bla.com/img.jpg")
-        assertEquals("http", lastAddedWord) // todo: somehow avoid?
+        assertEquals("", lastAddedWord) // URI fields must not retain protocol in learned history.
         assertEquals("http://bla.com/img.jpg", text)
         assertEquals("bla.com/img.jpg", composingText)
     }
@@ -988,7 +1010,7 @@ class InputLogicTest {
         latinIME.prefs().edit { putBoolean(Settings.PREF_URL_DETECTION, true) }
         setInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI)
         chainInput("http://bla.com/img.jpg")
-        assertEquals("http", lastAddedWord) // todo: somehow avoid?
+        assertEquals("", lastAddedWord) // URI fields must not retain protocol in learned history.
         assertEquals("http://bla.com/img.jpg", text)
         assertEquals("bla.com/img.jpg", composingText)
     }
@@ -1279,6 +1301,8 @@ class InputLogicTest {
         currentScript = ScriptUtils.SCRIPT_LATIN
         ShadowInputMethodService.reset()
         lastAddedWord = ""
+        ShadowFacilitator2.initializedMain = true
+        ShadowFacilitator2.uninitializedMain = false
 
         // reset settings
         latinIME.getSharedPreferences("keyboard_ai_private", 0).edit().clear().commit()
@@ -1523,6 +1547,18 @@ class ShadowKeyboardSwitcher {
 
 @Implements(DictionaryFacilitatorImpl::class)
 class ShadowFacilitator2 {
+    // Robolectric provides no real native dictionaries; model their readiness explicitly,
+    // instead of silently treating an empty fixture as production dictionary availability.
+    @Implementation
+    fun hasAtLeastOneInitializedMainDictionary(): Boolean = initializedMain
+
+    @Implementation
+    fun hasAtLeastOneUninitializedMainDictionary(): Boolean = uninitializedMain
+
+    @Implementation
+    fun isValidSpellingWord(word: String): Boolean =
+        helium314.keyboard.latin.ai.local.R241WritingTest.Vocabulary().valid(word)
+
     @Implementation
     fun addToUserHistory(suggestion: String, wasAutoCapitalized: Boolean,
                          ngramContext: NgramContext, timeStampInSeconds: Long,
@@ -1531,5 +1567,7 @@ class ShadowFacilitator2 {
     }
     companion object {
         var lastAddedWord = ""
+        var initializedMain = true
+        var uninitializedMain = false
     }
 }

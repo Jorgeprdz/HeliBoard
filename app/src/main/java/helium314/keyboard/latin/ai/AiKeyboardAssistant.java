@@ -548,9 +548,17 @@ public final class AiKeyboardAssistant {
         final helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon observed=personalLexicon();
         for(helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction correction:corrections) {
             if(!correction.automaticAllowed)continue;
-            // Never auto-apply a spelling edit when native evidence is absent or incomplete.
-            String source=correction.original.toLowerCase(Locale.ROOT);
-            if(!observed.valid(source)&&!observed.knownInvalid(source))continue;
+            // Only motor/dictionary corrections require observed lexical proof. A bounded
+            // explicit grammar rule can safely transform an otherwise valid source word
+            // (e.g. "voy haber si" -> "voy a ver si") after the dictionary readiness gate.
+            final boolean motorEdit="motor-error-native-context-ranking".equals(correction.reason)
+                    ||"sentence-initial-dictionary-candidate".equals(correction.reason)
+                    ||"dictionary-boundary-segmentation".equals(correction.reason)
+                    ||"personal-explicit-evidence".equals(correction.reason);
+            if(motorEdit) {
+                String source=correction.original.toLowerCase(Locale.ROOT);
+                if(!observed.valid(source)&&!observed.knownInvalid(source))continue;
+            }
             applyBoundary(base,context,correction);
             return; // One confirmed transaction per boundary; never race native composition.
         }
