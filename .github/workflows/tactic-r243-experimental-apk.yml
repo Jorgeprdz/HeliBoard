@@ -1,0 +1,120 @@
+name: Tactic Keyboard experimental APK
+on:
+  push:
+    branches: [feat/tactic-r243-hybrid-writing]
+    paths: ['.github/workflows/tactic-r243-experimental-apk.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-experimental:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    env:
+      APK_NAME: Tactic-Keyboard-Experimental-R243-snapshot-debug.apk
+      EXPECTED_CERT: cfea5c3e180245ec7db199a1d8d799a4a91e0454fef7d02c5313b6d923b66ba2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Allocate update versionCode
+        run: echo "HELIBOARD_VERSION_CODE=$((4600 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Cache existing local writing runtime
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ runner.temp }}/writing-source
+            ${{ runner.temp }}/writing-host
+            ${{ runner.temp }}/writing-arm64
+          key: tactic-r243-android-b5046-${{ hashFiles('native-writing/writing.cpp','native-writing/CMakeLists.txt') }}
+      - name: Build existing ARM64 runtime
+        run: |
+          chmod +x gradlew
+          bash scripts/ci/build-writing-runtime.sh
+      - name: Restore original persistent owner signing identity
+        env:
+          KEY_B64: ${{ secrets.HELIBOARD_R22_SIGNING_KEY_B64 }}
+          KEY_PASSWORD: ${{ secrets.HELIBOARD_R22_SIGNING_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEY_B64" && test -n "$KEY_PASSWORD"
+          install -d -m 700 "$RUNNER_TEMP/tactic-signing"
+          printf '%s' "$KEY_B64" | base64 -d > "$RUNNER_TEMP/tactic-signing/heliboard-r2.p12"
+          printf '%s' "$KEY_PASSWORD" > "$RUNNER_TEMP/tactic-signing/signing-password"
+          chmod 600 "$RUNNER_TEMP/tactic-signing/"*
+      - name: Assemble current experimental app (quality gate remains blocked)
+        env:
+          HELIBOARD_SIGNING_DIR: ${{ runner.temp }}/tactic-signing
+        run: ./gradlew :app:assembleDebug
+      - name: Verify APK, brand, ARM64 payload and signer
+        run: |
+          set -euo pipefail
+          mapfile -t apks < <(find app/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk')
+          test "${#apks[@]}" -eq 1
+          mkdir tactic-artifact
+          cp "${apks[0]}" "tactic-artifact/$APK_NAME"
+          sdkmanager --install 'build-tools;37.0.0' >/dev/null
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs "tactic-artifact/$APK_NAME" > "$RUNNER_TEMP/cert.txt"
+          "$ANDROID_HOME/build-tools/37.0.0/aapt" dump badging "tactic-artifact/$APK_NAME" > "$RUNNER_TEMP/badging.txt"
+          unzip -p "tactic-artifact/$APK_NAME" lib/arm64-v8a/libheliboard_writing.so > "$RUNNER_TEMP/writing.so"
+          test -s "$RUNNER_TEMP/writing.so"
+          readelf -h "$RUNNER_TEMP/writing.so" | grep -q AArch64
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, hashlib, os, re
+          d=Path(os.environ["RUNNER_TEMP"])
+          badging=(d/"badging.txt").read_text()
+          signing=(d/"cert.txt").read_text()
+          m=re.search(r"^package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'",badging,re.M)
+          assert m, "APK package metadata missing"
+          assert m[1]=="com.jorgeprdz.ioskeyboard.debug", m[1]
+          assert int(m[2])==int(os.environ["HELIBOARD_VERSION_CODE"])
+          assert "application-label:'Tactic Keyboard'" in badging, "Branding Tactic Keyboard missing"
+          certs=set(x.lower() for x in re.findall(r"^Signer #\d+ certificate SHA-256 digest:\s*([a-fA-F0-9]{64})",signing,re.M))
+          assert certs=={os.environ["EXPECTED_CERT"].lower()}, "Wrong signing identity"
+          apk=Path("tactic-artifact")/os.environ["APK_NAME"]
+          digest=hashlib.sha256(apk.read_bytes()).hexdigest()
+          (apk.parent/"SHA256SUMS.txt").write_text(f"{digest}  {apk.name}\n")
+          report={"app":"Tactic Keyboard","apk":apk.name,"package":m[1],"versionCode":int(m[2]),
+                  "versionName":m[3],"sha256":digest,"certificateSha256":next(iter(certs)),
+                  "commit":os.environ["GITHUB_SHA"],
+                  "R243_hybrid_motor":"HOST PROTOTYPE - NOT INTEGRATED IN APK",
+                  "linguistic_quality":"EXPERIMENTAL FAIL / PRODUCTION BLOCKED",
+                  "physical_device":"NOT VERIFIED"}
+          (apk.parent/"build-manifest.json").write_text(json.dumps(report,indent=2)+"\n")
+          print(json.dumps(report,indent=2))
+          PY
+          (cd tactic-artifact && sha256sum -c SHA256SUMS.txt)
+      - name: Upload signed APK and manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tactic-Keyboard-signed-experimental-debug
+          path: tactic-artifact/*
+          if-no-files-found: error
+          retention-days: 14
+      - name: Android regressions (advisory; separate from linguistic gate)
+        continue-on-error: true
+        run: ./gradlew :app:testDebugUnitTest
+      - name: Upload test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tactic-Keyboard-build-tests
+          path: |
+            app/build/reports
+            app/build/test-results
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Remove temporary private key
+        if: always()
+        run: |
+          if test -d "$RUNNER_TEMP/tactic-signing"; then
+            rm -rf -- "$RUNNER_TEMP/tactic-signing"
+          fi
