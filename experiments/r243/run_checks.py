@@ -6,6 +6,8 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2];HERE=Path(__file__).resolve().parent
 def command(args,**kw):return subprocess.run([str(a) for a in args],cwd=ROOT,text=True,check=True,**kw)
 def main():
+ output=ROOT/"writing-evidence";output.mkdir(exist_ok=True)
+ (output/"r243-component-checks.json").write_text(json.dumps({"componentChecks":"RUNNING","linguisticGate":"BLOCKED: independent corpus absent"}))
  if not os.environ.get("GITHUB_ACTIONS"):raise SystemExit("Run Java checks on the ephemeral cloud runner, not the phone.")
  with tempfile.TemporaryDirectory(prefix="tactic-components-",dir=os.environ.get("RUNNER_TEMP")) as tmp:
   tmp=Path(tmp);classes=tmp/"classes";classes.mkdir()

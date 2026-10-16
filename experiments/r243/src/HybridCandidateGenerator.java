@@ -36,7 +36,7 @@ public final class HybridCandidateGenerator {
    tokens.add(new Token(m.start(),m.end(),w));
   }
   if(tokens.size()>32)return Collections.emptyList();
-  Map<String,Edit> unique=new HashMap<>();int[] budget={4096};
+  Map<String,Edit> unique=new HashMap<>(),contextual=new HashMap<>();int[] budget={4096};
   for(int width=1;width<=3;width++)for(int first=0;first+width<=tokens.size();first++){
    if(cancel.cancelled())return Collections.emptyList();if(budget[0]<=0)break;
    Token left=tokens.get(first),right=tokens.get(first+width-1);
@@ -55,6 +55,15 @@ public final class HybridCandidateGenerator {
        for(int n=0;n<Math.min(64,options.size());n++){
         if(cancel.cancelled())return Collections.emptyList();if(--budget[0]<0)break;
         String word=options.get(n);
+        // Grammar is a distinct candidate channel. Explicit external contextual evidence
+        // may support a valid-word alternative that is not physically close on the keyboard.
+        if(depth==0&&state.pos==0&&take==flat.length()&&width==1&&lex.valid(source)&&!word.equals(source)&&!lex.rejected(source,word)){
+         double evidence=lex.contextual(context.substring(0,left.start),word,context.substring(right.end));
+         if(Double.isFinite(evidence)&&evidence>0){
+          String key=left.start+":"+right.end+":"+word;
+          contextual.put(key,new Edit(left.start,right.end,word,-evidence));
+         }
+        }
         double cost=state.cost+TypingCandidateRanker.editCost(fragment,word,lex::keyDistance);
         if(cost>2.8)continue;
         String replacement=state.text.isEmpty()?word:state.text+" "+word;int end=state.pos+take;
@@ -80,6 +89,18 @@ public final class HybridCandidateGenerator {
   }
   List<Edit> out=new ArrayList<>(unique.values());
   out.sort(Comparator.comparingDouble((Edit e)->e.score).thenComparingInt(e->e.start).thenComparing(e->e.replacement));
-  return Collections.unmodifiableList(new ArrayList<>(out.subList(0,Math.min(24,out.size()))));
+  List<Edit> result=new ArrayList<>(out.subList(0,Math.min(16,out.size())));
+  List<Edit> grammar=new ArrayList<>(contextual.values());
+  grammar.sort(Comparator.comparingDouble((Edit e)->e.score).thenComparing(e->e.replacement));
+  for(Edit e:grammar){
+   if(result.size()==24)break;
+   boolean duplicate=result.stream().anyMatch(v->v.start==e.start&&v.end==e.end&&v.replacement.equals(e.replacement));
+   if(!duplicate)result.add(e);
+  }
+  for(Edit e:out){
+   if(result.size()==24)break;
+   if(!result.contains(e))result.add(e);
+  }
+  return Collections.unmodifiableList(result);
  }
 }
