@@ -25,7 +25,8 @@ public final class PrototypeBridge {
    }
    public List<String> candidates(String w){
     List<String> candidates=new ArrayList<>(vocabulary());
-    candidates.sort(Comparator.comparingDouble(c->TypingCandidateRanker.editCost(w,c,TypingCandidateRanker.QWERTY)));
+    Map<String,Double> costs=new HashMap<>();
+    candidates.sort(Comparator.comparingDouble(c->costs.computeIfAbsent(c,key->TypingCandidateRanker.editCost(w,key,TypingCandidateRanker.QWERTY))));
     return candidates.subList(0,Math.min(24,candidates.size()));
    }
   };
@@ -50,5 +51,12 @@ public final class PrototypeBridge {
   List<LocalContextReviewer.Correction> corrections=new LocalContextReviewer().review(input,lex,Collections.emptySet(),()->false);
   for(int i=corrections.size()-1;i>=0;i--){LocalContextReviewer.Correction c=corrections.get(i);if(c.automaticAllowed)auto.replace(c.start,c.end,c.replacement);}
   System.out.println("automatic\t"+enc(auto.toString()));
+  if(args[1].equals("legacy-all")){
+   LocalContextReviewer.Correction suggestion=null;
+   for(LocalContextReviewer.Correction c:corrections)if(!c.automaticAllowed){suggestion=c;break;}
+   StringBuilder assisted=new StringBuilder(input);
+   for(int i=corrections.size()-1;i>=0;i--){LocalContextReviewer.Correction c=corrections.get(i);if(c.automaticAllowed||c==suggestion)assisted.replace(c.start,c.end,c.replacement);}
+   System.out.println("assisted\t"+enc(assisted.toString()));
+  }
  }
 }

@@ -10,7 +10,7 @@ def main():
  (output/"r243-component-checks.json").write_text(json.dumps({"componentChecks":"RUNNING","linguisticGate":"BLOCKED: independent corpus absent"}))
  if not os.environ.get("GITHUB_ACTIONS"):raise SystemExit("Run Java checks on the ephemeral cloud runner, not the phone.")
  with tempfile.TemporaryDirectory(prefix="tactic-components-",dir=os.environ.get("RUNNER_TEMP")) as tmp:
-  tmp=Path(tmp);classes=tmp/"classes";classes.mkdir()
+  tmp=Path(tmp);classes=Path(os.environ.get("TACTIC_CLASSES_OUT",str(tmp/"classes")));classes.mkdir(parents=True,exist_ok=True)
   jars=[]
   for relative,sha in [("junit/junit/4.13.2/junit-4.13.2.jar","8ac9e16d933b6fb43bc7f576336b8f4d7eb5ba12"),("org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar","42a25dc3219429f0e5d060061f71acb49bf010a0")]:
    path=tmp/Path(relative).name;urllib.request.urlretrieve("https://repo.maven.apache.org/maven2/"+relative,path)
