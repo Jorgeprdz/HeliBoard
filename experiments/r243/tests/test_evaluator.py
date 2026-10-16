@@ -23,6 +23,20 @@ class EvaluationTests(unittest.TestCase):
  def test_missing_corpus_blocks_before_runtime_or_download(self):
   result=evaluation.run(argparse.Namespace(corpus=None))
   self.assertEqual(result["gate"],"BLOCKED");self.assertIsNone(result["comparativeResults"])
+ def comparison_fixture(self):
+  # Hand-built metric totals exercise gate decisions, not a fabricated language benchmark.
+  return {system:{group:{mode:{"residual":10 if system!="r243-prototype" else 8,"incorrectChanges":0} for mode in ["automatic","assisted"]} for group in ["es-MX","en-US","mixed","protected"]} for system in evaluation.SYSTEMS}
+ def test_mixed_language_regression_cannot_pass(self):
+  comparison=self.comparison_fixture();comparison["r243-prototype"]["mixed"]["assisted"]["residual"]=11
+  self.assertEqual(evaluation.gate(comparison,True),"FAIL")
+ def test_candidate_must_not_regress_against_r242(self):
+  comparison=self.comparison_fixture();comparison["r242-component"]["es-MX"]["assisted"]["residual"]=7
+  self.assertEqual(evaluation.gate(comparison,True),"FAIL")
+ def test_protected_change_blocks_otherwise_improved_candidate(self):
+  comparison=self.comparison_fixture();comparison["r243-prototype"]["protected"]["assisted"]["incorrectChanges"]=1
+  self.assertEqual(evaluation.gate(comparison,True),"FAIL")
+ def test_component_totals_meeting_all_conditions_can_pass(self):
+  self.assertEqual(evaluation.gate(self.comparison_fixture(),True),"PASS")
  def test_no_human_review_cannot_pass(self):
   self.assertEqual(evaluation.gate({},False),"BLOCKED")
  def test_reference_derived_vocabulary_rejected(self):

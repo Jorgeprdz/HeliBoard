@@ -40,9 +40,13 @@ def gate(comparison,meaning_reviewed):
  for language in ["es-MX","en-US"]:
   baseline=comparison["r241-component"][language]["automatic"]
   candidate=comparison["r243-prototype"][language]["assisted"]
-  candidate_auto=comparison["r243-prototype"][language]["automatic"]
   if baseline["residual"]==0 or candidate["residual"]>baseline["residual"]*.8:return "FAIL"
-  if candidate["incorrectChanges"]>baseline["incorrectChanges"] or candidate_auto["incorrectChanges"]>baseline["incorrectChanges"]:return "FAIL"
+ for language in ["es-MX","en-US","mixed"]:
+  for baseline_name in ["r241-component","r242-component"]:
+   for mode in ["automatic","assisted"]:
+    baseline=comparison[baseline_name][language][mode]
+    candidate=comparison["r243-prototype"][language][mode]
+    if candidate["residual"]>baseline["residual"] or candidate["incorrectChanges"]>baseline["incorrectChanges"]:return "FAIL"
  for system in comparison.values():
   if system["protected"]["automatic"]["incorrectChanges"] or system["protected"]["assisted"]["incorrectChanges"]:return "FAIL"
  return "PASS"
