@@ -1,0 +1,2517 @@
+{
+  "provenance": {
+    "evaluation_type": "independent-source synthetic keyboard noise",
+    "human_annotated": false,
+    "human_blind": false,
+    "seed": 2026101601,
+    "sources": [
+      {
+        "id": "inegi-molec2025",
+        "language": "es-MX",
+        "url": "https://www.inegi.org.mx/contenidos/saladeprensa/boletines/2025/molec/molec2025_RR.pdf",
+        "license": "INEGI Terminos de Libre Uso",
+        "license_url": "https://www.inegi.org.mx/inegi/terminos.html",
+        "credit": "Fuente: INEGI, Modulo sobre Lectura (MOLEC) 2025",
+        "sha256": "b16f8369b255d820d90911f335bb12b7016e2230d7256ac99ef790697922936e",
+        "download_sha256": "b16f8369b255d820d90911f335bb12b7016e2230d7256ac99ef790697922936e",
+        "normalized_text_sha256": "3162aa65ea15353c5ff72133963c386acd18bd9fb62878b9244960c37949baff",
+        "window_count": 567
+      },
+      {
+        "id": "usgs-hydrology",
+        "language": "en-US",
+        "url": "https://www.usgs.gov/water-science-school/science/what-hydrology",
+        "license": "US Government public domain (USGS-authored text)",
+        "license_url": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+        "credit": "U.S. Geological Survey, Water Science School, What is Hydrology?",
+        "download_sha256": "aa1919749a95edf6c4d17dae7e277309ba48743f0e0d9db6278ade9989d0b6d1",
+        "normalized_text_sha256": "6fcd0e46a45f9a8cfe450f1c10b1f7d9b41731bcec2e9ad073635471b5b7c86e",
+        "window_count": 153
+      }
+    ],
+    "source_selection": "disjoint 14-word windows, shuffled before inference; no engine-dependent filtering",
+    "warning": "INEGI and USGS formal prose; synthetic code-switching; may contain original author/PDF extraction errors. Not WhatsApp, not independence from LLM pretraining. Corruptions are ours, not endorsed by sources."
+  },
+  "messages": [
+    {
+      "id": "es-MX-01",
+      "group": "es-MX",
+      "text": "sexo 2025 (distribuciónporcentual) 36.0 37.3 34.8 40.9 43.3 38.4 23.1 24.3 21.9 De",
+      "reference": "sexo 2025 (distribución porcentual) 36.0 37.3 34.8 40.9 43.3 38.4 23.1 24.3 21.9 De",
+      "noise_kind": "concatenation",
+      "seed": 2026101601,
+      "mutations": [
+        {
+          "kind": "concatenation",
+          "before": "sexo 2025 (distribución porcentual) 36.0 37.3 34.8 40.9 43.3 38.4 23.1 24.3 21.9 De",
+          "after": "sexo 2025 (distribuciónporcentual) 36.0 37.3 34.8 40.9 43.3 38.4 23.1 24.3 21.9 De"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "sexo 2025 (distribución porcentual) 36.0 37.3 34.8 40.9 43.3 38.4 23.1 24.3 21.9 De",
+          "start": 45138,
+          "end": 45221,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-02",
+      "group": "es-MX",
+      "text": "códigos en palabras y frqses dotadas de sgnificado. • Publicación diigtal. Obra disponible en",
+      "reference": "códigos en palabras y frases dotadas de significado. • Publicación digital. Obra disponible en",
+      "noise_kind": "multiple",
+      "seed": 2026101602,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "códigos en palabras y frases dotadas de significado. • Publicación digital. Obra disponible en",
+          "after": "códigos en palabras y frqses dotadas de significado. • Publicación digital. Obra disponible en"
+        },
+        {
+          "kind": "omit",
+          "before": "códigos en palabras y frqses dotadas de significado. • Publicación digital. Obra disponible en",
+          "after": "códigos en palabras y frqses dotadas de sgnificado. • Publicación digital. Obra disponible en"
+        },
+        {
+          "kind": "transpose",
+          "before": "códigos en palabras y frqses dotadas de sgnificado. • Publicación digital. Obra disponible en",
+          "after": "códigos en palabras y frqses dotadas de sgnificado. • Publicación diigtal. Obra disponible en"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "códigos en palabras y frases dotadas de significado. • Publicación digital. Obra disponible en",
+          "start": 6915,
+          "end": 7009,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-03",
+      "group": "es-MX",
+      "text": "lectura con otras actividades oActividadessimultáneas a la lectura o Velocidad de la",
+      "reference": "lectura con otras actividades o Actividades simultáneas a la lectura o Velocidad de la",
+      "noise_kind": "concatenation",
+      "seed": 2026101603,
+      "mutations": [
+        {
+          "kind": "concatenation",
+          "before": "lectura con otras actividades o Actividades simultáneas a la lectura o Velocidad de la",
+          "after": "lectura con otras actividades oActividadessimultáneas a la lectura o Velocidad de la"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "lectura con otras actividades o Actividades simultáneas a la lectura o Velocidad de la",
+          "start": 9815,
+          "end": 9901,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-04",
+      "group": "es-MX",
+      "text": "lectura a persona informante por partedepadres, madres o tutores(as) o Persona que",
+      "reference": "lectura a persona informante por parte de padres, madres o tutores(as) o Persona que",
+      "noise_kind": "concatenation",
+      "seed": 2026101604,
+      "mutations": [
+        {
+          "kind": "concatenation",
+          "before": "lectura a persona informante por parte de padres, madres o tutores(as) o Persona que",
+          "after": "lectura a persona informante por partedepadres, madres o tutores(as) o Persona que"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "lectura a persona informante por parte de padres, madres o tutores(as) o Persona que",
+          "start": 10231,
+          "end": 10315,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-05",
+      "group": "es-MX",
+      "text": "Población lectorade redes sociales, por condición de lectura de materiales MOLEC 2025 (distribución",
+      "reference": "Población lectora de redes sociales, por condición de lectura de materiales MOLEC 2025 (distribución",
+      "noise_kind": "missing-space",
+      "seed": 2026101605,
+      "mutations": [
+        {
+          "kind": "missing-space",
+          "before": "Población lectora de redes sociales, por condición de lectura de materiales MOLEC 2025 (distribución",
+          "after": "Población lectorade redes sociales, por condición de lectura de materiales MOLEC 2025 (distribución"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "Población lectora de redes sociales, por condición de lectura de materiales MOLEC 2025 (distribución",
+          "start": 52142,
+          "end": 52242,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-06",
+      "group": "es-MX",
+      "text": "La lectura de periódicos fue referida por tresdecada 10 hombres y dos",
+      "reference": "La lectura de periódicos fue referida por tres de cada 10 hombres y dos",
+      "noise_kind": "concatenation",
+      "seed": 2026101606,
+      "mutations": [
+        {
+          "kind": "concatenation",
+          "before": "La lectura de periódicos fue referida por tres de cada 10 hombres y dos",
+          "after": "La lectura de periódicos fue referida por tresdecada 10 hombres y dos"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "La lectura de periódicos fue referida por tres de cada 10 hombres y dos",
+          "start": 15064,
+          "end": 15135,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-07",
+      "group": "es-MX",
+      "text": "tiempo que se deidca al día a la lectur de este materiql, 40.9 %",
+      "reference": "tiempo que se dedica al día a la lectura de este material, 40.9 %",
+      "noise_kind": "multiple",
+      "seed": 2026101607,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "tiempo que se dedica al día a la lectura de este material, 40.9 %",
+          "after": "tiempo que se dedica al día a la lectura de este materiql, 40.9 %"
+        },
+        {
+          "kind": "omit",
+          "before": "tiempo que se dedica al día a la lectura de este materiql, 40.9 %",
+          "after": "tiempo que se dedica al día a la lectur de este materiql, 40.9 %"
+        },
+        {
+          "kind": "transpose",
+          "before": "tiempo que se dedica al día a la lectur de este materiql, 40.9 %",
+          "after": "tiempo que se deidca al día a la lectur de este materiql, 40.9 %"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "tiempo que se dedica al día a la lectura de este material, 40.9 %",
+          "start": 44545,
+          "end": 44610,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-08",
+      "group": "es-MX",
+      "text": "decaró leer más de 30 minutos; 36.0 %, de 16 a 30 minutos y",
+      "reference": "declaró leer más de 30 minutos; 36.0 %, de 16 a 30 minutos y",
+      "noise_kind": "omit",
+      "seed": 2026101608,
+      "mutations": [
+        {
+          "kind": "omit",
+          "before": "declaró leer más de 30 minutos; 36.0 %, de 16 a 30 minutos y",
+          "after": "decaró leer más de 30 minutos; 36.0 %, de 16 a 30 minutos y"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "declaró leer más de 30 minutos; 36.0 %, de 16 a 30 minutos y",
+          "start": 44611,
+          "end": 44671,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-09",
+      "group": "es-MX",
+      "text": "años y más lectora de revistas en las 32 áreas de 100 milhabitantes",
+      "reference": "años y más lectora de revistas en las 32 áreas de 100 mil habitantes",
+      "noise_kind": "missing-space",
+      "seed": 2026101609,
+      "mutations": [
+        {
+          "kind": "missing-space",
+          "before": "años y más lectora de revistas en las 32 áreas de 100 mil habitantes",
+          "after": "años y más lectora de revistas en las 32 áreas de 100 milhabitantes"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "años y más lectora de revistas en las 32 áreas de 100 mil habitantes",
+          "start": 1500,
+          "end": 1568,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-10",
+      "group": "es-MX",
+      "text": "esenciales que desarrollan la capacidad de pensar, expresarse, domunicarse e interactuar. Dichas habilidaes son",
+      "reference": "esenciales que desarrollan la capacidad de pensar, expresarse, comunicarse e interactuar. Dichas habilidades son",
+      "noise_kind": "multiple",
+      "seed": 2026101610,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "esenciales que desarrollan la capacidad de pensar, expresarse, comunicarse e interactuar. Dichas habilidades son",
+          "after": "esenciales que desarrollan la capacidad de pensar, expresarse, domunicarse e interactuar. Dichas habilidades son"
+        },
+        {
+          "kind": "omit",
+          "before": "esenciales que desarrollan la capacidad de pensar, expresarse, domunicarse e interactuar. Dichas habilidades son",
+          "after": "esenciales que desarrollan la capacidad de pensar, expresarse, domunicarse e interactuar. Dichas habiliades son"
+        },
+        {
+          "kind": "transpose",
+          "before": "esenciales que desarrollan la capacidad de pensar, expresarse, domunicarse e interactuar. Dichas habiliades son",
+          "after": "esenciales que desarrollan la capacidad de pensar, expresarse, domunicarse e interactuar. Dichas habilidaes son"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "esenciales que desarrollan la capacidad de pensar, expresarse, comunicarse e interactuar. Dichas habilidades son",
+          "start": 3773,
+          "end": 3885,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-11",
+      "group": "es-MX",
+      "text": "de lectura, 86.0 % leyó periódicos principalmente por gusto y 14.0 %, por necesiddad.",
+      "reference": "de lectura, 86.0 % leyó periódicos principalmente por gusto y 14.0 %, por necesidad.",
+      "noise_kind": "duplicate",
+      "seed": 2026101611,
+      "mutations": [
+        {
+          "kind": "duplicate",
+          "before": "de lectura, 86.0 % leyó periódicos principalmente por gusto y 14.0 %, por necesidad.",
+          "after": "de lectura, 86.0 % leyó periódicos principalmente por gusto y 14.0 %, por necesiddad."
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "de lectura, 86.0 % leyó periódicos principalmente por gusto y 14.0 %, por necesidad.",
+          "start": 39649,
+          "end": 39733,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-12",
+      "group": "es-MX",
+      "text": "de 30 minutos. En su distinción según sxeo, 63.4 % de mujeres y 54.2",
+      "reference": "de 30 minutos. En su distinción según sexo, 63.4 % de mujeres y 54.2",
+      "noise_kind": "transpose",
+      "seed": 2026101612,
+      "mutations": [
+        {
+          "kind": "transpose",
+          "before": "de 30 minutos. En su distinción según sexo, 63.4 % de mujeres y 54.2",
+          "after": "de 30 minutos. En su distinción según sxeo, 63.4 % de mujeres y 54.2"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "de 30 minutos. En su distinción según sexo, 63.4 % de mujeres y 54.2",
+          "start": 46273,
+          "end": 46341,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-13",
+      "group": "es-MX",
+      "text": "se registró en el gupo de cinco a siete días, con una brecha de",
+      "reference": "se registró en el grupo de cinco a siete días, con una brecha de",
+      "noise_kind": "omit",
+      "seed": 2026101613,
+      "mutations": [
+        {
+          "kind": "omit",
+          "before": "se registró en el grupo de cinco a siete días, con una brecha de",
+          "after": "se registró en el gupo de cinco a siete días, con una brecha de"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "se registró en el grupo de cinco a siete días, con una brecha de",
+          "start": 40754,
+          "end": 40818,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-14",
+      "group": "es-MX",
+      "text": "ssgún sexo. Población de 18 años y más lectora de revistas en las 32",
+      "reference": "según sexo. Población de 18 años y más lectora de revistas en las 32",
+      "noise_kind": "neighbor",
+      "seed": 2026101614,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "según sexo. Población de 18 años y más lectora de revistas en las 32",
+          "after": "ssgún sexo. Población de 18 años y más lectora de revistas en las 32"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "según sexo. Población de 18 años y más lectora de revistas en las 32",
+          "start": 36925,
+          "end": 36993,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-15",
+      "group": "es-MX",
+      "text": "mujeres y 56.7 % de hombres lyeron hasta 30 minutos (ver gráfica 34). El",
+      "reference": "mujeres y 56.7 % de hombres leyeron hasta 30 minutos (ver gráfica 34). El",
+      "noise_kind": "omit",
+      "seed": 2026101615,
+      "mutations": [
+        {
+          "kind": "omit",
+          "before": "mujeres y 56.7 % de hombres leyeron hasta 30 minutos (ver gráfica 34). El",
+          "after": "mujeres y 56.7 % de hombres lyeron hasta 30 minutos (ver gráfica 34). El"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "mujeres y 56.7 % de hombres leyeron hasta 30 minutos (ver gráfica 34). El",
+          "start": 44735,
+          "end": 44808,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-16",
+      "group": "es-MX",
+      "text": "última semana. El rango de edad con mayor porcentaje de lecturs de este material",
+      "reference": "última semana. El rango de edad con mayor porcentaje de lectura de este material",
+      "noise_kind": "neighbor",
+      "seed": 2026101616,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "última semana. El rango de edad con mayor porcentaje de lectura de este material",
+          "after": "última semana. El rango de edad con mayor porcentaje de lecturs de este material"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "última semana. El rango de edad con mayor porcentaje de lectura de este material",
+          "start": 37860,
+          "end": 37940,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-17",
+      "group": "es-MX",
+      "text": "de 16 minutos a 30 monutos, con 33.4 por ciento. En su distinción, según",
+      "reference": "de 16 minutos a 30 minutos, con 33.4 por ciento. En su distinción, según",
+      "noise_kind": "neighbor",
+      "seed": 2026101617,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "de 16 minutos a 30 minutos, con 33.4 por ciento. En su distinción, según",
+          "after": "de 16 minutos a 30 monutos, con 33.4 por ciento. En su distinción, según"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "de 16 minutos a 30 minutos, con 33.4 por ciento. En su distinción, según",
+          "start": 29490,
+          "end": 29562,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-18",
+      "group": "es-MX",
+      "text": "escuela primaria o Fomento de llectura de libros con excepción de los libros de",
+      "reference": "escuela primaria o Fomento de lectura de libros con excepción de los libros de",
+      "noise_kind": "duplicate",
+      "seed": 2026101618,
+      "mutations": [
+        {
+          "kind": "duplicate",
+          "before": "escuela primaria o Fomento de lectura de libros con excepción de los libros de",
+          "after": "escuela primaria o Fomento de llectura de libros con excepción de los libros de"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "escuela primaria o Fomento de lectura de libros con excepción de los libros de",
+          "start": 10479,
+          "end": 10557,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-19",
+      "group": "es-MX",
+      "text": "Gráfica 26 Población de 18 años y más en áreasurbanas, lectora de revistas1/",
+      "reference": "Gráfica 26 Población de 18 años y más en áreas urbanas, lectora de revistas1/",
+      "noise_kind": "missing-space",
+      "seed": 2026101619,
+      "mutations": [
+        {
+          "kind": "missing-space",
+          "before": "Gráfica 26 Población de 18 años y más en áreas urbanas, lectora de revistas1/",
+          "after": "Gráfica 26 Población de 18 años y más en áreasurbanas, lectora de revistas1/"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "Gráfica 26 Población de 18 años y más en áreas urbanas, lectora de revistas1/",
+          "start": 37375,
+          "end": 37452,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-20",
+      "group": "es-MX",
+      "text": "de páginasde Internet, foros o blogs o Lectura en redes sociales (nueva) Verificación",
+      "reference": "de páginas de Internet, foros o blogs o Lectura en redes sociales (nueva) Verificación",
+      "noise_kind": "missing-space",
+      "seed": 2026101620,
+      "mutations": [
+        {
+          "kind": "missing-space",
+          "before": "de páginas de Internet, foros o blogs o Lectura en redes sociales (nueva) Verificación",
+          "after": "de páginasde Internet, foros o blogs o Lectura en redes sociales (nueva) Verificación"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "de páginas de Internet, foros o blogs o Lectura en redes sociales (nueva) Verificación",
+          "start": 7889,
+          "end": 7975,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-21",
+      "group": "es-MX",
+      "text": "INEGI. Módulo sober Lectura (MOLEC), 2025. Según el motivo de lectura, se identificó que",
+      "reference": "INEGI. Módulo sobre Lectura (MOLEC), 2025. Según el motivo de lectura, se identificó que",
+      "noise_kind": "transpose",
+      "seed": 2026101621,
+      "mutations": [
+        {
+          "kind": "transpose",
+          "before": "INEGI. Módulo sobre Lectura (MOLEC), 2025. Según el motivo de lectura, se identificó que",
+          "after": "INEGI. Módulo sober Lectura (MOLEC), 2025. Según el motivo de lectura, se identificó que"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "INEGI. Módulo sobre Lectura (MOLEC), 2025. Según el motivo de lectura, se identificó que",
+          "start": 23293,
+          "end": 23381,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-22",
+      "group": "es-MX",
+      "text": "28.0 % fueron compradosy 18.2 %, regaladoso prestados. El comportamiento según sexo",
+      "reference": "28.0 % fueron comprados y 18.2 %, regalados o prestados. El comportamiento según sexo",
+      "noise_kind": "concatenation",
+      "seed": 2026101622,
+      "mutations": [
+        {
+          "kind": "concatenation",
+          "before": "28.0 % fueron comprados y 18.2 %, regalados o prestados. El comportamiento según sexo",
+          "after": "28.0 % fueron compradosy 18.2 %, regaladoso prestados. El comportamiento según sexo"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "28.0 % fueron comprados y 18.2 %, regalados o prestados. El comportamiento según sexo",
+          "start": 39827,
+          "end": 39912,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-23",
+      "group": "es-MX",
+      "text": "personal o religiosls 47.5 29.1 30.7 Cultura general 25.2 26.7 Específicos de aguna mateira",
+      "reference": "personal o religiosos 47.5 29.1 30.7 Cultura general 25.2 26.7 Específicos de alguna materia",
+      "noise_kind": "multiple",
+      "seed": 2026101623,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "personal o religiosos 47.5 29.1 30.7 Cultura general 25.2 26.7 Específicos de alguna materia",
+          "after": "personal o religiosls 47.5 29.1 30.7 Cultura general 25.2 26.7 Específicos de alguna materia"
+        },
+        {
+          "kind": "omit",
+          "before": "personal o religiosls 47.5 29.1 30.7 Cultura general 25.2 26.7 Específicos de alguna materia",
+          "after": "personal o religiosls 47.5 29.1 30.7 Cultura general 25.2 26.7 Específicos de aguna materia"
+        },
+        {
+          "kind": "transpose",
+          "before": "personal o religiosls 47.5 29.1 30.7 Cultura general 25.2 26.7 Específicos de aguna materia",
+          "after": "personal o religiosls 47.5 29.1 30.7 Cultura general 25.2 26.7 Específicos de aguna mateira"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "personal o religiosos 47.5 29.1 30.7 Cultura general 25.2 26.7 Específicos de alguna materia",
+          "start": 22977,
+          "end": 23069,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-24",
+      "group": "es-MX",
+      "text": "INEGI. Módulo sobre Lectura (MOLEC), 2025. Respecto al número de libros leídoos, 28.7 %",
+      "reference": "INEGI. Módulo sobre Lectura (MOLEC), 2025. Respecto al número de libros leídos, 28.7 %",
+      "noise_kind": "duplicate",
+      "seed": 2026101624,
+      "mutations": [
+        {
+          "kind": "duplicate",
+          "before": "INEGI. Módulo sobre Lectura (MOLEC), 2025. Respecto al número de libros leídos, 28.7 %",
+          "after": "INEGI. Módulo sobre Lectura (MOLEC), 2025. Respecto al número de libros leídoos, 28.7 %"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "INEGI. Módulo sobre Lectura (MOLEC), 2025. Respecto al número de libros leídos, 28.7 %",
+          "start": 27254,
+          "end": 27340,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-25",
+      "group": "es-MX",
+      "text": "revistas, periódicos, historietas, cómics, mangas, páginas de internet, foros o blogs. De seta población,",
+      "reference": "revistas, periódicos, historietas, cómics, mangas, páginas de internet, foros o blogs. De esta población,",
+      "noise_kind": "transpose",
+      "seed": 2026101625,
+      "mutations": [
+        {
+          "kind": "transpose",
+          "before": "revistas, periódicos, historietas, cómics, mangas, páginas de internet, foros o blogs. De esta población,",
+          "after": "revistas, periódicos, historietas, cómics, mangas, páginas de internet, foros o blogs. De seta población,"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "revistas, periódicos, historietas, cómics, mangas, páginas de internet, foros o blogs. De esta población,",
+          "start": 54929,
+          "end": 55034,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-26",
+      "group": "es-MX",
+      "text": "gráfica 46). Gráfica 46 Población no eñctora de materials MOLEC, por motivo principal de",
+      "reference": "gráfica 46). Gráfica 46 Población no lectora de materiales MOLEC, por motivo principal de",
+      "noise_kind": "multiple",
+      "seed": 2026101626,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "gráfica 46). Gráfica 46 Población no lectora de materiales MOLEC, por motivo principal de",
+          "after": "gráfica 46). Gráfica 46 Población no ñectora de materiales MOLEC, por motivo principal de"
+        },
+        {
+          "kind": "omit",
+          "before": "gráfica 46). Gráfica 46 Población no ñectora de materiales MOLEC, por motivo principal de",
+          "after": "gráfica 46). Gráfica 46 Población no ñectora de materials MOLEC, por motivo principal de"
+        },
+        {
+          "kind": "transpose",
+          "before": "gráfica 46). Gráfica 46 Población no ñectora de materials MOLEC, por motivo principal de",
+          "after": "gráfica 46). Gráfica 46 Población no eñctora de materials MOLEC, por motivo principal de"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "gráfica 46). Gráfica 46 Población no lectora de materiales MOLEC, por motivo principal de",
+          "start": 55775,
+          "end": 55864,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-27",
+      "group": "es-MX",
+      "text": "por número de libros leídos, según sexo 2025 (distribución porcentuaal) 28.7 32.9 31.1 35.6",
+      "reference": "por número de libros leídos, según sexo 2025 (distribución porcentual) 28.7 32.9 31.1 35.6",
+      "noise_kind": "duplicate",
+      "seed": 2026101627,
+      "mutations": [
+        {
+          "kind": "duplicate",
+          "before": "por número de libros leídos, según sexo 2025 (distribución porcentual) 28.7 32.9 31.1 35.6",
+          "after": "por número de libros leídos, según sexo 2025 (distribución porcentuaal) 28.7 32.9 31.1 35.6"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "por número de libros leídos, según sexo 2025 (distribución porcentual) 28.7 32.9 31.1 35.6",
+          "start": 27654,
+          "end": 27744,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-28",
+      "group": "es-MX",
+      "text": "86.0 Al menos una vez a la semqna Ocasionalmente 1/ Corresponde a la población",
+      "reference": "86.0 Al menos una vez a la semana Ocasionalmente 1/ Corresponde a la población",
+      "noise_kind": "neighbor",
+      "seed": 2026101628,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "86.0 Al menos una vez a la semana Ocasionalmente 1/ Corresponde a la población",
+          "after": "86.0 Al menos una vez a la semqna Ocasionalmente 1/ Corresponde a la población"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "86.0 Al menos una vez a la semana Ocasionalmente 1/ Corresponde a la población",
+          "start": 51552,
+          "end": 51630,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-29",
+      "group": "es-MX",
+      "text": "21.2 %, dos ejemplares; 17.2 %, tres jwemplares y 32.9 %, cuato o más",
+      "reference": "21.2 %, dos ejemplares; 17.2 %, tres ejemplares y 32.9 %, cuatro o más",
+      "noise_kind": "multiple",
+      "seed": 2026101629,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "21.2 %, dos ejemplares; 17.2 %, tres ejemplares y 32.9 %, cuatro o más",
+          "after": "21.2 %, dos ejemplares; 17.2 %, tres wjemplares y 32.9 %, cuatro o más"
+        },
+        {
+          "kind": "omit",
+          "before": "21.2 %, dos ejemplares; 17.2 %, tres wjemplares y 32.9 %, cuatro o más",
+          "after": "21.2 %, dos ejemplares; 17.2 %, tres wjemplares y 32.9 %, cuato o más"
+        },
+        {
+          "kind": "transpose",
+          "before": "21.2 %, dos ejemplares; 17.2 %, tres wjemplares y 32.9 %, cuato o más",
+          "after": "21.2 %, dos ejemplares; 17.2 %, tres jwemplares y 32.9 %, cuato o más"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "21.2 %, dos ejemplares; 17.2 %, tres ejemplares y 32.9 %, cuatro o más",
+          "start": 27417,
+          "end": 27487,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-30",
+      "group": "es-MX",
+      "text": "de 25 a 39 años dedicó más de 30 minutos. Según nvel de escolaridad,",
+      "reference": "de 25 a 39 años dedicó más de 30 minutos. Según nivel de escolaridad,",
+      "noise_kind": "omit",
+      "seed": 2026101630,
+      "mutations": [
+        {
+          "kind": "omit",
+          "before": "de 25 a 39 años dedicó más de 30 minutos. Según nivel de escolaridad,",
+          "after": "de 25 a 39 años dedicó más de 30 minutos. Según nvel de escolaridad,"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "de 25 a 39 años dedicó más de 30 minutos. Según nivel de escolaridad,",
+          "start": 29787,
+          "end": 29856,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-31",
+      "group": "es-MX",
+      "text": "se identificó la clara preferencia por los libros, pues ocho decada 10 lectoras",
+      "reference": "se identificó la clara preferencia por los libros, pues ocho de cada 10 lectoras",
+      "noise_kind": "concatenation",
+      "seed": 2026101631,
+      "mutations": [
+        {
+          "kind": "concatenation",
+          "before": "se identificó la clara preferencia por los libros, pues ocho de cada 10 lectoras",
+          "after": "se identificó la clara preferencia por los libros, pues ocho decada 10 lectoras"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "se identificó la clara preferencia por los libros, pues ocho de cada 10 lectoras",
+          "start": 17085,
+          "end": 17165,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-32",
+      "group": "es-MX",
+      "text": "2025 18 de noviembre de 2025 Página 30/36 Gráfica 35 Población lectora de pááginas",
+      "reference": "2025 18 de noviembre de 2025 Página 30/36 Gráfica 35 Población lectora de páginas",
+      "noise_kind": "duplicate",
+      "seed": 2026101632,
+      "mutations": [
+        {
+          "kind": "duplicate",
+          "before": "2025 18 de noviembre de 2025 Página 30/36 Gráfica 35 Población lectora de páginas",
+          "after": "2025 18 de noviembre de 2025 Página 30/36 Gráfica 35 Población lectora de pááginas"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "2025 18 de noviembre de 2025 Página 30/36 Gráfica 35 Población lectora de páginas",
+          "start": 46583,
+          "end": 46664,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-33",
+      "group": "es-MX",
+      "text": "la leftura (diccionarios, enciclopedias, entre otros). En contraste, de la población lectora de libros",
+      "reference": "la lectura (diccionarios, enciclopedias, entre otros). En contraste, de la población lectora de libros",
+      "noise_kind": "neighbor",
+      "seed": 2026101633,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "la lectura (diccionarios, enciclopedias, entre otros). En contraste, de la población lectora de libros",
+          "after": "la leftura (diccionarios, enciclopedias, entre otros). En contraste, de la población lectora de libros"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "la lectura (diccionarios, enciclopedias, entre otros). En contraste, de la población lectora de libros",
+          "start": 28987,
+          "end": 29089,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-34",
+      "group": "es-MX",
+      "text": "de 18 y más aoñs en las 32 ciudades de 100 mil habitantes y",
+      "reference": "de 18 y más años en las 32 ciudades de 100 mil habitantes y",
+      "noise_kind": "transpose",
+      "seed": 2026101634,
+      "mutations": [
+        {
+          "kind": "transpose",
+          "before": "de 18 y más años en las 32 ciudades de 100 mil habitantes y",
+          "after": "de 18 y más aoñs en las 32 ciudades de 100 mil habitantes y"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "de 18 y más años en las 32 ciudades de 100 mil habitantes y",
+          "start": 42472,
+          "end": 42531,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-35",
+      "group": "es-MX",
+      "text": "libros, por grupos de edad, según número delibrosleídos 2025 (distribución porcentual) 60",
+      "reference": "libros, por grupos de edad, según número de libros leídos 2025 (distribución porcentual) 60",
+      "noise_kind": "concatenation",
+      "seed": 2026101635,
+      "mutations": [
+        {
+          "kind": "concatenation",
+          "before": "libros, por grupos de edad, según número de libros leídos 2025 (distribución porcentual) 60",
+          "after": "libros, por grupos de edad, según número delibrosleídos 2025 (distribución porcentual) 60"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "libros, por grupos de edad, según número de libros leídos 2025 (distribución porcentual) 60",
+          "start": 28455,
+          "end": 28546,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-36",
+      "group": "es-MX",
+      "text": "Entre los mrnos comunes figuraron los libros de cultura general, como biografías, temas sociales",
+      "reference": "Entre los menos comunes figuraron los libros de cultura general, como biografías, temas sociales",
+      "noise_kind": "neighbor",
+      "seed": 2026101636,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "Entre los menos comunes figuraron los libros de cultura general, como biografías, temas sociales",
+          "after": "Entre los mrnos comunes figuraron los libros de cultura general, como biografías, temas sociales"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "Entre los menos comunes figuraron los libros de cultura general, como biografías, temas sociales",
+          "start": 19873,
+          "end": 19969,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-37",
+      "group": "es-MX",
+      "text": "58.6 % de lapoblacióncon educación básica incompleta leyó hasta 30 minutos al",
+      "reference": "58.6 % de la población con educación básica incompleta leyó hasta 30 minutos al",
+      "noise_kind": "concatenation",
+      "seed": 2026101637,
+      "mutations": [
+        {
+          "kind": "concatenation",
+          "before": "58.6 % de la población con educación básica incompleta leyó hasta 30 minutos al",
+          "after": "58.6 % de lapoblacióncon educación básica incompleta leyó hasta 30 minutos al"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "58.6 % de la población con educación básica incompleta leyó hasta 30 minutos al",
+          "start": 29857,
+          "end": 29936,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-38",
+      "group": "es-MX",
+      "text": "sea en papdl o digital, en los lútimos 12 meses, aunque no lo aya",
+      "reference": "sea en papel o digital, en los últimos 12 meses, aunque no lo haya",
+      "noise_kind": "multiple",
+      "seed": 2026101638,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "sea en papel o digital, en los últimos 12 meses, aunque no lo haya",
+          "after": "sea en papdl o digital, en los últimos 12 meses, aunque no lo haya"
+        },
+        {
+          "kind": "omit",
+          "before": "sea en papdl o digital, en los últimos 12 meses, aunque no lo haya",
+          "after": "sea en papdl o digital, en los últimos 12 meses, aunque no lo aya"
+        },
+        {
+          "kind": "transpose",
+          "before": "sea en papdl o digital, en los últimos 12 meses, aunque no lo aya",
+          "after": "sea en papdl o digital, en los lútimos 12 meses, aunque no lo aya"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "sea en papel o digital, en los últimos 12 meses, aunque no lo haya",
+          "start": 13397,
+          "end": 13463,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-39",
+      "group": "es-MX",
+      "text": "Fuente: INEGI. Módulosobre Lectura (MOLEC), 2025. En cuanto a las prácticas de lectura",
+      "reference": "Fuente: INEGI. Módulo sobre Lectura (MOLEC), 2025. En cuanto a las prácticas de lectura",
+      "noise_kind": "missing-space",
+      "seed": 2026101639,
+      "mutations": [
+        {
+          "kind": "missing-space",
+          "before": "Fuente: INEGI. Módulo sobre Lectura (MOLEC), 2025. En cuanto a las prácticas de lectura",
+          "after": "Fuente: INEGI. Módulosobre Lectura (MOLEC), 2025. En cuanto a las prácticas de lectura"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "Fuente: INEGI. Módulo sobre Lectura (MOLEC), 2025. En cuanto a las prácticas de lectura",
+          "start": 53911,
+          "end": 53998,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "es-MX-40",
+      "group": "es-MX",
+      "text": "personas con lgún grado aprobado en educación superior leyó alguno de estos materiales (ver",
+      "reference": "personas con algún grado aprobado en educación superior leyó alguno de estos materiales (ver",
+      "noise_kind": "omit",
+      "seed": 2026101640,
+      "mutations": [
+        {
+          "kind": "omit",
+          "before": "personas con algún grado aprobado en educación superior leyó alguno de estos materiales (ver",
+          "after": "personas con lgún grado aprobado en educación superior leyó alguno de estos materiales (ver"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "personas con algún grado aprobado en educación superior leyó alguno de estos materiales (ver",
+          "start": 16374,
+          "end": 16466,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-01",
+      "group": "en-US",
+      "text": "of a landfill with watertight materials, collecting any leachate withdrains, andkeeping the",
+      "reference": "of a landfill with watertight materials, collecting any leachate with drains, and keeping the",
+      "noise_kind": "concatenation",
+      "seed": 2026101641,
+      "mutations": [
+        {
+          "kind": "concatenation",
+          "before": "of a landfill with watertight materials, collecting any leachate with drains, and keeping the",
+          "after": "of a landfill with watertight materials, collecting any leachate withdrains, andkeeping the"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "of a landfill with watertight materials, collecting any leachate with drains, and keeping the",
+          "start": 12651,
+          "end": 12744,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-02",
+      "group": "en-US",
+      "text": "to the health of peoople, plants and animals. Hydrologists assist public health officials in",
+      "reference": "to the health of people, plants and animals. Hydrologists assist public health officials in",
+      "noise_kind": "duplicate",
+      "seed": 2026101642,
+      "mutations": [
+        {
+          "kind": "duplicate",
+          "before": "to the health of people, plants and animals. Hydrologists assist public health officials in",
+          "after": "to the health of peoople, plants and animals. Hydrologists assist public health officials in"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "to the health of people, plants and animals. Hydrologists assist public health officials in",
+          "start": 8145,
+          "end": 8236,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-03",
+      "group": "en-US",
+      "text": "no life on earth. The supply of water avaliabe for our use is limifed",
+      "reference": "no life on earth. The supply of water available for our use is limited",
+      "noise_kind": "multiple",
+      "seed": 2026101643,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "no life on earth. The supply of water available for our use is limited",
+          "after": "no life on earth. The supply of water available for our use is limifed"
+        },
+        {
+          "kind": "omit",
+          "before": "no life on earth. The supply of water available for our use is limifed",
+          "after": "no life on earth. The supply of water availabe for our use is limifed"
+        },
+        {
+          "kind": "transpose",
+          "before": "no life on earth. The supply of water availabe for our use is limifed",
+          "after": "no life on earth. The supply of water avaliabe for our use is limifed"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "no life on earth. The supply of water available for our use is limited",
+          "start": 81,
+          "end": 151,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-04",
+      "group": "en-US",
+      "text": "must be coordinated with other reservoir managers along the river. Hydrologists collect the necessaryy",
+      "reference": "must be coordinated with other reservoir managers along the river. Hydrologists collect the necessary",
+      "noise_kind": "duplicate",
+      "seed": 2026101644,
+      "mutations": [
+        {
+          "kind": "duplicate",
+          "before": "must be coordinated with other reservoir managers along the river. Hydrologists collect the necessary",
+          "after": "must be coordinated with other reservoir managers along the river. Hydrologists collect the necessaryy"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "must be coordinated with other reservoir managers along the river. Hydrologists collect the necessary",
+          "start": 7585,
+          "end": 7686,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-05",
+      "group": "en-US",
+      "text": "It is used for a variety of activities such as househholds, businesses and industries;",
+      "reference": "It is used for a variety of activities such as households, businesses and industries;",
+      "noise_kind": "duplicate",
+      "seed": 2026101645,
+      "mutations": [
+        {
+          "kind": "duplicate",
+          "before": "It is used for a variety of activities such as households, businesses and industries;",
+          "after": "It is used for a variety of activities such as househholds, businesses and industries;"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "It is used for a variety of activities such as households, businesses and industries;",
+          "start": 3461,
+          "end": 3546,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-06",
+      "group": "en-US",
+      "text": "work relies on computers to help organize data, make statistical summaries of thedata",
+      "reference": "work relies on computers to help organize data, make statistical summaries of the data",
+      "noise_kind": "missing-space",
+      "seed": 2026101646,
+      "mutations": [
+        {
+          "kind": "missing-space",
+          "before": "work relies on computers to help organize data, make statistical summaries of the data",
+          "after": "work relies on computers to help organize data, make statistical summaries of thedata"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "work relies on computers to help organize data, make statistical summaries of the data",
+          "start": 5675,
+          "end": 5761,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-07",
+      "group": "en-US",
+      "text": "areas of deep ground water and impermeable soils. Other prctices include lining the bottom",
+      "reference": "areas of deep ground water and impermeable soils. Other practices include lining the bottom",
+      "noise_kind": "omit",
+      "seed": 2026101647,
+      "mutations": [
+        {
+          "kind": "omit",
+          "before": "areas of deep ground water and impermeable soils. Other practices include lining the bottom",
+          "after": "areas of deep ground water and impermeable soils. Other prctices include lining the bottom"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "areas of deep ground water and impermeable soils. Other practices include lining the bottom",
+          "start": 12559,
+          "end": 12650,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-08",
+      "group": "en-US",
+      "text": "but more insidious and difficult to clean up, than pollution in riversandlakes.",
+      "reference": "but more insidious and difficult to clean up, than pollution in rivers and lakes.",
+      "noise_kind": "concatenation",
+      "seed": 2026101648,
+      "mutations": [
+        {
+          "kind": "concatenation",
+          "before": "but more insidious and difficult to clean up, than pollution in rivers and lakes.",
+          "after": "but more insidious and difficult to clean up, than pollution in riversandlakes."
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "but more insidious and difficult to clean up, than pollution in rivers and lakes.",
+          "start": 11185,
+          "end": 11266,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-09",
+      "group": "en-US",
+      "text": "car has in the past rsquired about 32,000 gallons of water. Similarly, the steel",
+      "reference": "car has in the past required about 32,000 gallons of water. Similarly, the steel",
+      "noise_kind": "neighbor",
+      "seed": 2026101649,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "car has in the past required about 32,000 gallons of water. Similarly, the steel",
+          "after": "car has in the past rsquired about 32,000 gallons of water. Similarly, the steel"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "car has in the past required about 32,000 gallons of water. Similarly, the steel",
+          "start": 1757,
+          "end": 1837,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-10",
+      "group": "en-US",
+      "text": "for recreation or for generatoin of hydroelectric power, those requirements must be considered. Decisions",
+      "reference": "for recreation or for generation of hydroelectric power, those requirements must be considered. Decisions",
+      "noise_kind": "transpose",
+      "seed": 2026101650,
+      "mutations": [
+        {
+          "kind": "transpose",
+          "before": "for recreation or for generation of hydroelectric power, those requirements must be considered. Decisions",
+          "after": "for recreation or for generatoin of hydroelectric power, those requirements must be considered. Decisions"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "for recreation or for generation of hydroelectric power, those requirements must be considered. Decisions",
+          "start": 7479,
+          "end": 7584,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-11",
+      "group": "en-US",
+      "text": "investigations and office work. In the field, they may measure the fñow of awte",
+      "reference": "investigations and office work. In the field, they may measure the flow of water",
+      "noise_kind": "multiple",
+      "seed": 2026101651,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "investigations and office work. In the field, they may measure the flow of water",
+          "after": "investigations and office work. In the field, they may measure the fñow of water"
+        },
+        {
+          "kind": "omit",
+          "before": "investigations and office work. In the field, they may measure the fñow of water",
+          "after": "investigations and office work. In the field, they may measure the fñow of wate"
+        },
+        {
+          "kind": "transpose",
+          "before": "investigations and office work. In the field, they may measure the fñow of wate",
+          "after": "investigations and office work. In the field, they may measure the fñow of awte"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "investigations and office work. In the field, they may measure the flow of water",
+          "start": 5129,
+          "end": 5209,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-12",
+      "group": "en-US",
+      "text": "a laboraatory, or check the calibration of instruments deployed in streams and groundwater. Many",
+      "reference": "a laboratory, or check the calibration of instruments deployed in streams and groundwater. Many",
+      "noise_kind": "duplicate",
+      "seed": 2026101652,
+      "mutations": [
+        {
+          "kind": "duplicate",
+          "before": "a laboratory, or check the calibration of instruments deployed in streams and groundwater. Many",
+          "after": "a laboraatory, or check the calibration of instruments deployed in streams and groundwater. Many"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "a laboratory, or check the calibration of instruments deployed in streams and groundwater. Many",
+          "start": 5297,
+          "end": 5392,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-13",
+      "group": "en-US",
+      "text": "less than in 1980. Much of our water use is hidden. Think aboyt what",
+      "reference": "less than in 1980. Much of our water use is hidden. Think about what",
+      "noise_kind": "neighbor",
+      "seed": 2026101653,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "less than in 1980. Much of our water use is hidden. Think about what",
+          "after": "less than in 1980. Much of our water use is hidden. Think aboyt what"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "less than in 1980. Much of our water use is hidden. Think about what",
+          "start": 1176,
+          "end": 1244,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-14",
+      "group": "en-US",
+      "text": "by nature. Although there is plenty of water on earth, it isnot always",
+      "reference": "by nature. Although there is plenty of water on earth, it is not always",
+      "noise_kind": "missing-space",
+      "seed": 2026101654,
+      "mutations": [
+        {
+          "kind": "missing-space",
+          "before": "by nature. Although there is plenty of water on earth, it is not always",
+          "after": "by nature. Although there is plenty of water on earth, it isnot always"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "by nature. Although there is plenty of water on earth, it is not always",
+          "start": 152,
+          "end": 223,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-15",
+      "group": "en-US",
+      "text": "in the pumped well and in its nearest neighbors. Pumping the well too vast",
+      "reference": "in the pumped well and in its nearest neighbors. Pumping the well too fast",
+      "noise_kind": "neighbor",
+      "seed": 2026101655,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "in the pumped well and in its nearest neighbors. Pumping the well too fast",
+          "after": "in the pumped well and in its nearest neighbors. Pumping the well too vast"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "in the pumped well and in its nearest neighbors. Pumping the well too fast",
+          "start": 10836,
+          "end": 10910,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-16",
+      "group": "en-US",
+      "text": "17 percent since 1980. Fresh groundwaterwithdrawals (76.0 Bgal/d) during 2010 were 8 percent",
+      "reference": "17 percent since 1980. Fresh groundwater withdrawals (76.0 Bgal/d) during 2010 were 8 percent",
+      "noise_kind": "missing-space",
+      "seed": 2026101656,
+      "mutations": [
+        {
+          "kind": "missing-space",
+          "before": "17 percent since 1980. Fresh groundwater withdrawals (76.0 Bgal/d) during 2010 were 8 percent",
+          "after": "17 percent since 1980. Fresh groundwaterwithdrawals (76.0 Bgal/d) during 2010 were 8 percent"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "17 percent since 1980. Fresh groundwater withdrawals (76.0 Bgal/d) during 2010 were 8 percent",
+          "start": 990,
+          "end": 1083,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-17",
+      "group": "en-US",
+      "text": "generally serve many purposes. Reservoirs incerase the reliability of local water supplies. Hydrologists use",
+      "reference": "generally serve many purposes. Reservoirs increase the reliability of local water supplies. Hydrologists use",
+      "noise_kind": "transpose",
+      "seed": 2026101657,
+      "mutations": [
+        {
+          "kind": "transpose",
+          "before": "generally serve many purposes. Reservoirs increase the reliability of local water supplies. Hydrologists use",
+          "after": "generally serve many purposes. Reservoirs incerase the reliability of local water supplies. Hydrologists use"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "generally serve many purposes. Reservoirs increase the reliability of local water supplies. Hydrologists use",
+          "start": 6857,
+          "end": 6965,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-18",
+      "group": "en-US",
+      "text": "interpreting hydrologic data and perforing analyses for determining possible water supplies. Much of their",
+      "reference": "interpreting hydrologic data and performing analyses for determining possible water supplies. Much of their",
+      "noise_kind": "omit",
+      "seed": 2026101658,
+      "mutations": [
+        {
+          "kind": "omit",
+          "before": "interpreting hydrologic data and performing analyses for determining possible water supplies. Much of their",
+          "after": "interpreting hydrologic data and perforing analyses for determining possible water supplies. Much of their"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "interpreting hydrologic data and performing analyses for determining possible water supplies. Much of their",
+          "start": 5567,
+          "end": 5674,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-19",
+      "group": "en-US",
+      "text": "in polar ice caps. It may flow to rivers and fially to the sea.",
+      "reference": "in polar ice caps. It may flow to rivers and finally to the sea.",
+      "noise_kind": "omit",
+      "seed": 2026101659,
+      "mutations": [
+        {
+          "kind": "omit",
+          "before": "in polar ice caps. It may flow to rivers and finally to the sea.",
+          "after": "in polar ice caps. It may flow to rivers and fially to the sea."
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "in polar ice caps. It may flow to rivers and finally to the sea.",
+          "start": 2885,
+          "end": 2949,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "en-US-20",
+      "group": "en-US",
+      "text": "meal uses abuot 1,500 gallons of water — enough to fill a small swimming",
+      "reference": "meal uses about 1,500 gallons of water — enough to fill a small swimming",
+      "noise_kind": "transpose",
+      "seed": 2026101660,
+      "mutations": [
+        {
+          "kind": "transpose",
+          "before": "meal uses about 1,500 gallons of water — enough to fill a small swimming",
+          "after": "meal uses abuot 1,500 gallons of water — enough to fill a small swimming"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "meal uses about 1,500 gallons of water — enough to fill a small swimming",
+          "start": 1471,
+          "end": 1543,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "mixed-01",
+      "group": "mixed",
+      "text": "no leer materiales MOLEC y puede o no haber leído redes sociales. Fuente: INEGI.; snofall and returning to the atmosphere. It may be captured for millions of years",
+      "reference": "no leer materiales MOLEC y puede o no haber leído redes sociales. Fuente: INEGI.; snowfall and returning to the atmosphere. It may be captured for millions of years",
+      "noise_kind": "omit",
+      "seed": 2026101661,
+      "mutations": [
+        {
+          "kind": "omit",
+          "before": "no leer materiales MOLEC y puede o no haber leído redes sociales. Fuente: INEGI.; snowfall and returning to the atmosphere. It may be captured for millions of years",
+          "after": "no leer materiales MOLEC y puede o no haber leído redes sociales. Fuente: INEGI.; snofall and returning to the atmosphere. It may be captured for millions of years"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "no leer materiales MOLEC y puede o no haber leído redes sociales. Fuente: INEGI.",
+          "start": 56218,
+          "end": 56298,
+          "source_id": "inegi-molec2025"
+        },
+        {
+          "original": "snowfall and returning to the atmosphere. It may be captured for millions of years",
+          "start": 2802,
+          "end": 2884,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "mixed-02",
+      "group": "mixed",
+      "text": "de tipos de materiales, con cuatro o cinco tipos diferentes y un porcentaje de; treatment, which often poses aproblem for downstream users. The hydrologist studies the fundamental",
+      "reference": "de tipos de materiales, con cuatro o cinco tipos diferentes y un porcentaje de; treatment, which often poses a problem for downstream users. The hydrologist studies the fundamental",
+      "noise_kind": "missing-space",
+      "seed": 2026101662,
+      "mutations": [
+        {
+          "kind": "missing-space",
+          "before": "de tipos de materiales, con cuatro o cinco tipos diferentes y un porcentaje de; treatment, which often poses a problem for downstream users. The hydrologist studies the fundamental",
+          "after": "de tipos de materiales, con cuatro o cinco tipos diferentes y un porcentaje de; treatment, which often poses aproblem for downstream users. The hydrologist studies the fundamental"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "de tipos de materiales, con cuatro o cinco tipos diferentes y un porcentaje de",
+          "start": 18757,
+          "end": 18835,
+          "source_id": "inegi-molec2025"
+        },
+        {
+          "original": "treatment, which often poses a problem for downstream users. The hydrologist studies the fundamental",
+          "start": 3801,
+          "end": 3901,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "mixed-03",
+      "group": "mixed",
+      "text": "dedic de 31 minjtos a una hora, con 33.5 por ciento. Siguió la opción; Ground water pollution most often results from improper disposal of wastes on alnd. Major",
+      "reference": "dedicó de 31 minutos a una hora, con 33.5 por ciento. Siguió la opción; Ground water pollution most often results from improper disposal of wastes on land. Major",
+      "noise_kind": "multiple",
+      "seed": 2026101663,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "dedicó de 31 minutos a una hora, con 33.5 por ciento. Siguió la opción; Ground water pollution most often results from improper disposal of wastes on land. Major",
+          "after": "dedicó de 31 minjtos a una hora, con 33.5 por ciento. Siguió la opción; Ground water pollution most often results from improper disposal of wastes on land. Major"
+        },
+        {
+          "kind": "omit",
+          "before": "dedicó de 31 minjtos a una hora, con 33.5 por ciento. Siguió la opción; Ground water pollution most often results from improper disposal of wastes on land. Major",
+          "after": "dedic de 31 minjtos a una hora, con 33.5 por ciento. Siguió la opción; Ground water pollution most often results from improper disposal of wastes on land. Major"
+        },
+        {
+          "kind": "transpose",
+          "before": "dedic de 31 minjtos a una hora, con 33.5 por ciento. Siguió la opción; Ground water pollution most often results from improper disposal of wastes on land. Major",
+          "after": "dedic de 31 minjtos a una hora, con 33.5 por ciento. Siguió la opción; Ground water pollution most often results from improper disposal of wastes on alnd. Major"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "dedicó de 31 minutos a una hora, con 33.5 por ciento. Siguió la opción",
+          "start": 29419,
+          "end": 29489,
+          "source_id": "inegi-molec2025"
+        },
+        {
+          "original": "Ground water pollution most often results from improper disposal of wastes on land. Major",
+          "start": 11267,
+          "end": 11356,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "mixed-04",
+      "group": "mixed",
+      "text": "de noviembre de 2025 Página 11/36 Gráfica 7 Población lectora de libros, por tipo; All of the physical, chemical and biological procsses involving water as it travels its",
+      "reference": "de noviembre de 2025 Página 11/36 Gráfica 7 Población lectora de libros, por tipo; All of the physical, chemical and biological processes involving water as it travels its",
+      "noise_kind": "omit",
+      "seed": 2026101664,
+      "mutations": [
+        {
+          "kind": "omit",
+          "before": "de noviembre de 2025 Página 11/36 Gráfica 7 Población lectora de libros, por tipo; All of the physical, chemical and biological processes involving water as it travels its",
+          "after": "de noviembre de 2025 Página 11/36 Gráfica 7 Población lectora de libros, por tipo; All of the physical, chemical and biological procsses involving water as it travels its"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "de noviembre de 2025 Página 11/36 Gráfica 7 Población lectora de libros, por tipo",
+          "start": 20132,
+          "end": 20213,
+          "source_id": "inegi-molec2025"
+        },
+        {
+          "original": "All of the physical, chemical and biological processes involving water as it travels its",
+          "start": 2465,
+          "end": 2553,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "mixed-05",
+      "group": "mixed",
+      "text": "La estructura conceptual es: - - Actualización temática - - - Percepción del hábito; determine the extent, depth and thickness of water-bearinng sediments and rocks. Before an investment",
+      "reference": "La estructura conceptual es: - - Actualización temática - - - Percepción del hábito; determine the extent, depth and thickness of water-bearing sediments and rocks. Before an investment",
+      "noise_kind": "duplicate",
+      "seed": 2026101665,
+      "mutations": [
+        {
+          "kind": "duplicate",
+          "before": "La estructura conceptual es: - - Actualización temática - - - Percepción del hábito; determine the extent, depth and thickness of water-bearing sediments and rocks. Before an investment",
+          "after": "La estructura conceptual es: - - Actualización temática - - - Percepción del hábito; determine the extent, depth and thickness of water-bearinng sediments and rocks. Before an investment"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "La estructura conceptual es: - - Actualización temática - - - Percepción del hábito",
+          "start": 7563,
+          "end": 7646,
+          "source_id": "inegi-molec2025"
+        },
+        {
+          "original": "determine the extent, depth and thickness of water-bearing sediments and rocks. Before an investment",
+          "start": 10295,
+          "end": 10395,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "mixed-06",
+      "group": "mixed",
+      "text": "parte de maestras o maestros Además, en todas las preguntasy opciones de respuesta; safe disposal of hazardous wastes. Persons trained in hydrology may have a wide variety",
+      "reference": "parte de maestras o maestros Además, en todas las preguntas y opciones de respuesta; safe disposal of hazardous wastes. Persons trained in hydrology may have a wide variety",
+      "noise_kind": "missing-space",
+      "seed": 2026101666,
+      "mutations": [
+        {
+          "kind": "missing-space",
+          "before": "parte de maestras o maestros Además, en todas las preguntas y opciones de respuesta; safe disposal of hazardous wastes. Persons trained in hydrology may have a wide variety",
+          "after": "parte de maestras o maestros Además, en todas las preguntasy opciones de respuesta; safe disposal of hazardous wastes. Persons trained in hydrology may have a wide variety"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "parte de maestras o maestros Además, en todas las preguntas y opciones de respuesta",
+          "start": 10725,
+          "end": 10808,
+          "source_id": "inegi-molec2025"
+        },
+        {
+          "original": "safe disposal of hazardous wastes. Persons trained in hydrology may have a wide variety",
+          "start": 4958,
+          "end": 5045,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "mixed-07",
+      "group": "mixed",
+      "text": "De la población lectora en págnias de internet, foros o blogs, 41.5 % leyó; school or to the store? To produce the amount of finished steel in a",
+      "reference": "De la población lectora en páginas de internet, foros o blogs, 41.5 % leyó; school or to the store? To produce the amount of finished steel in a",
+      "noise_kind": "transpose",
+      "seed": 2026101667,
+      "mutations": [
+        {
+          "kind": "transpose",
+          "before": "De la población lectora en páginas de internet, foros o blogs, 41.5 % leyó; school or to the store? To produce the amount of finished steel in a",
+          "after": "De la población lectora en págnias de internet, foros o blogs, 41.5 % leyó; school or to the store? To produce the amount of finished steel in a"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "De la población lectora en páginas de internet, foros o blogs, 41.5 % leyó",
+          "start": 46973,
+          "end": 47047,
+          "source_id": "inegi-molec2025"
+        },
+        {
+          "original": "school or to the store? To produce the amount of finished steel in a",
+          "start": 1688,
+          "end": 1756,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "mixed-08",
+      "group": "mixed",
+      "text": "a la lectura de este material fue de 46 minutos: las mujeers con 42; you had for lunch. A hamburger, for example, requires water to raise wheat for",
+      "reference": "a la lectura de este material fue de 46 minutos: las mujeres con 42; you had for lunch. A hamburger, for example, requires water to raise wheat for",
+      "noise_kind": "transpose",
+      "seed": 2026101668,
+      "mutations": [
+        {
+          "kind": "transpose",
+          "before": "a la lectura de este material fue de 46 minutos: las mujeres con 42; you had for lunch. A hamburger, for example, requires water to raise wheat for",
+          "after": "a la lectura de este material fue de 46 minutos: las mujeers con 42; you had for lunch. A hamburger, for example, requires water to raise wheat for"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "a la lectura de este material fue de 46 minutos: las mujeres con 42",
+          "start": 46428,
+          "end": 46495,
+          "source_id": "inegi-molec2025"
+        },
+        {
+          "original": "you had for lunch. A hamburger, for example, requires water to raise wheat for",
+          "start": 1245,
+          "end": 1323,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "mixed-09",
+      "group": "mixed",
+      "text": "de nivel superior, 88.9 % reportó que legó libros. El tipo de libro más; advising governmental leaders or informing the general public on water issues. Hydrology offers a",
+      "reference": "de nivel superior, 88.9 % reportó que leyó libros. El tipo de libro más; advising governmental leaders or informing the general public on water issues. Hydrology offers a",
+      "noise_kind": "neighbor",
+      "seed": 2026101669,
+      "mutations": [
+        {
+          "kind": "neighbor",
+          "before": "de nivel superior, 88.9 % reportó que leyó libros. El tipo de libro más; advising governmental leaders or informing the general public on water issues. Hydrology offers a",
+          "after": "de nivel superior, 88.9 % reportó que legó libros. El tipo de libro más; advising governmental leaders or informing the general public on water issues. Hydrology offers a"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "de nivel superior, 88.9 % reportó que leyó libros. El tipo de libro más",
+          "start": 19541,
+          "end": 19612,
+          "source_id": "inegi-molec2025"
+        },
+        {
+          "original": "advising governmental leaders or informing the general public on water issues. Hydrology offers a",
+          "start": 13501,
+          "end": 13598,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "mixed-10",
+      "group": "mixed",
+      "text": "tipo de material de lectura, pues 32.6 % leyó un solo un tipo de; coast, overpumping can cause saltwater intrusion. By plotting and analzying these data, hydrologists can",
+      "reference": "tipo de material de lectura, pues 32.6 % leyó un solo un tipo de; coast, overpumping can cause saltwater intrusion. By plotting and analyzing these data, hydrologists can",
+      "noise_kind": "transpose",
+      "seed": 2026101670,
+      "mutations": [
+        {
+          "kind": "transpose",
+          "before": "tipo de material de lectura, pues 32.6 % leyó un solo un tipo de; coast, overpumping can cause saltwater intrusion. By plotting and analyzing these data, hydrologists can",
+          "after": "tipo de material de lectura, pues 32.6 % leyó un solo un tipo de; coast, overpumping can cause saltwater intrusion. By plotting and analzying these data, hydrologists can"
+        }
+      ],
+      "source_parts": [
+        {
+          "original": "tipo de material de lectura, pues 32.6 % leyó un solo un tipo de",
+          "start": 18391,
+          "end": 18455,
+          "source_id": "inegi-molec2025"
+        },
+        {
+          "original": "coast, overpumping can cause saltwater intrusion. By plotting and analyzing these data, hydrologists can",
+          "start": 10989,
+          "end": 11093,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-01",
+      "group": "protected",
+      "text": "Módulo sobre Lectura (MOLEC), 2025. De la población lectora de revistas, 49.1 % declaró",
+      "reference": "Módulo sobre Lectura (MOLEC), 2025. De la población lectora de revistas, 49.1 % declaró",
+      "noise_kind": "clean",
+      "seed": 2026101671,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "Módulo sobre Lectura (MOLEC), 2025. De la población lectora de revistas, 49.1 % declaró",
+          "start": 35285,
+          "end": 35372,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-02",
+      "group": "protected",
+      "text": "foros o blogs De acuerdo con el MOLEC 2025, 55.9 % de mujeres lectoras",
+      "reference": "foros o blogs De acuerdo con el MOLEC 2025, 55.9 % de mujeres lectoras",
+      "noise_kind": "clean",
+      "seed": 2026101672,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "foros o blogs De acuerdo con el MOLEC 2025, 55.9 % de mujeres lectoras",
+          "start": 45525,
+          "end": 45595,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-03",
+      "group": "protected",
+      "text": "cuatro o más ejemplares lo tuvo el rango de 12 a 24 años, con",
+      "reference": "cuatro o más ejemplares lo tuvo el rango de 12 a 24 años, con",
+      "noise_kind": "clean",
+      "seed": 2026101673,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "cuatro o más ejemplares lo tuvo el rango de 12 a 24 años, con",
+          "start": 28087,
+          "end": 28148,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-04",
+      "group": "protected",
+      "text": "un día; 39.6 % leyó de dos a cuatro días y 23.1 % lo",
+      "reference": "un día; 39.6 % leyó de dos a cuatro días y 23.1 % lo",
+      "noise_kind": "clean",
+      "seed": 2026101674,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "un día; 39.6 % leyó de dos a cuatro días y 23.1 % lo",
+          "start": 40624,
+          "end": 40676,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-05",
+      "group": "protected",
+      "text": "fue de 25 a 39 años, con 37.1 por ciento. De acuerdo con el",
+      "reference": "fue de 25 a 39 años, con 37.1 por ciento. De acuerdo con el",
+      "noise_kind": "clean",
+      "seed": 2026101675,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "fue de 25 a 39 años, con 37.1 por ciento. De acuerdo con el",
+          "start": 37941,
+          "end": 38000,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-06",
+      "group": "protected",
+      "text": "un comparativo con la serie MOLEC del porcentaje de población de 18 años y",
+      "reference": "un comparativo con la serie MOLEC del porcentaje de población de 18 años y",
+      "noise_kind": "clean",
+      "seed": 2026101676,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "un comparativo con la serie MOLEC del porcentaje de población de 18 años y",
+          "start": 11561,
+          "end": 11635,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-07",
+      "group": "protected",
+      "text": "de libros que más leyeron las mujeres fueron los de literatura (48.3%) y los",
+      "reference": "de libros que más leyeron las mujeres fueron los de literatura (48.3%) y los",
+      "noise_kind": "clean",
+      "seed": 2026101677,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "de libros que más leyeron las mujeres fueron los de literatura (48.3%) y los",
+          "start": 20639,
+          "end": 20715,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-08",
+      "group": "protected",
+      "text": "mayor en la lectura de este material (28.4 %) en comparación con las mujeres",
+      "reference": "mayor en la lectura de este material (28.4 %) en comparación con las mujeres",
+      "noise_kind": "clean",
+      "seed": 2026101678,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "mayor en la lectura de este material (28.4 %) en comparación con las mujeres",
+          "start": 43474,
+          "end": 43550,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-09",
+      "group": "protected",
+      "text": "sexo, el comportamiento fue similar (ver gráfica 1). 1 Por ejemplo, la pregunta directa",
+      "reference": "sexo, el comportamiento fue similar (ver gráfica 1). 1 Por ejemplo, la pregunta directa",
+      "noise_kind": "clean",
+      "seed": 2026101679,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "sexo, el comportamiento fue similar (ver gráfica 1). 1 Por ejemplo, la pregunta directa",
+          "start": 13225,
+          "end": 13312,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-10",
+      "group": "protected",
+      "text": "lectura o Comprensión de la lectura o Consulta de materiales de apoyo (ajuste) o",
+      "reference": "lectura o Comprensión de la lectura o Consulta de materiales de apoyo (ajuste) o",
+      "noise_kind": "clean",
+      "seed": 2026101680,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "lectura o Comprensión de la lectura o Consulta de materiales de apoyo (ajuste) o",
+          "start": 9902,
+          "end": 9982,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-11",
+      "group": "protected",
+      "text": "Población lectora de MOLEC y características principales de lectura ................................................................... 8 Lectura de libros",
+      "reference": "Población lectora de MOLEC y características principales de lectura ................................................................... 8 Lectura de libros",
+      "noise_kind": "clean",
+      "seed": 2026101681,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "Población lectora de MOLEC y características principales de lectura ................................................................... 8 Lectura de libros",
+          "start": 919,
+          "end": 1074,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-12",
+      "group": "protected",
+      "text": "sexo, el comportamiento fue similar (ver gráfica 18). Según grupos de edad, 45.3 %",
+      "reference": "sexo, el comportamiento fue similar (ver gráfica 18). Según grupos de edad, 45.3 %",
+      "noise_kind": "clean",
+      "seed": 2026101682,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "sexo, el comportamiento fue similar (ver gráfica 18). Según grupos de edad, 45.3 %",
+          "start": 29563,
+          "end": 29645,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-13",
+      "group": "protected",
+      "text": "entre los hombres, con 35.8 %, mientras que entre las mujeres fue de 27.4",
+      "reference": "entre los hombres, con 35.8 %, mientras que entre las mujeres fue de 27.4",
+      "noise_kind": "clean",
+      "seed": 2026101683,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "entre los hombres, con 35.8 %, mientras que entre las mujeres fue de 27.4",
+          "start": 17647,
+          "end": 17720,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-14",
+      "group": "protected",
+      "text": "alto de lectura de revistas por gusto (88.5 %). Gráfica 23 Población lectora de",
+      "reference": "alto de lectura de revistas por gusto (88.5 %). Gráfica 23 Población lectora de",
+      "noise_kind": "clean",
+      "seed": 2026101684,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "alto de lectura de revistas por gusto (88.5 %). Gráfica 23 Población lectora de",
+          "start": 35010,
+          "end": 35089,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-15",
+      "group": "protected",
+      "text": "o mangas, con tres de cada 10 personas lectoras. En la información según sexo,",
+      "reference": "o mangas, con tres de cada 10 personas lectoras. En la información según sexo,",
+      "noise_kind": "clean",
+      "seed": 2026101685,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "o mangas, con tres de cada 10 personas lectoras. En la información según sexo,",
+          "start": 17415,
+          "end": 17493,
+          "source_id": "inegi-molec2025"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-16",
+      "group": "protected",
+      "text": "help answer questions about flooding, water availability, the consequences of reservoir releases likely impacts",
+      "reference": "help answer questions about flooding, water availability, the consequences of reservoir releases likely impacts",
+      "noise_kind": "clean",
+      "seed": 2026101686,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "help answer questions about flooding, water availability, the consequences of reservoir releases likely impacts",
+          "start": 5857,
+          "end": 5968,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-17",
+      "group": "protected",
+      "text": "and compiled by hydrologists in various government agencies. They inventory the extent river flow",
+      "reference": "and compiled by hydrologists in various government agencies. They inventory the extent river flow",
+      "noise_kind": "clean",
+      "seed": 2026101687,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "and compiled by hydrologists in various government agencies. They inventory the extent river flow",
+          "start": 6671,
+          "end": 6768,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-18",
+      "group": "protected",
+      "text": "ground water. In polluted areas, hydrologists may collect soil and water samples to identify",
+      "reference": "ground water. In polluted areas, hydrologists may collect soil and water samples to identify",
+      "noise_kind": "clean",
+      "seed": 2026101688,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "ground water. In polluted areas, hydrologists may collect soil and water samples to identify",
+          "start": 11857,
+          "end": 11949,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-19",
+      "group": "protected",
+      "text": "the Great Lakes. In some areas, ground water may be the only option. Some",
+      "reference": "the Great Lakes. In some areas, ground water may be the only option. Some",
+      "noise_kind": "clean",
+      "seed": 2026101689,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "the Great Lakes. In some areas, ground water may be the only option. Some",
+          "start": 10017,
+          "end": 10090,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-20",
+      "group": "protected",
+      "text": "systems of the Earth and help solve water problems. Hydrologists play a vital role",
+      "reference": "systems of the Earth and help solve water problems. Hydrologists play a vital role",
+      "noise_kind": "clean",
+      "seed": 2026101690,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "systems of the Earth and help solve water problems. Hydrologists play a vital role",
+          "start": 551,
+          "end": 633,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-21",
+      "group": "protected",
+      "text": "effects on aquatic life, and the behavior of toxic metals and organic chemicals in",
+      "reference": "effects on aquatic life, and the behavior of toxic metals and organic chemicals in",
+      "noise_kind": "clean",
+      "seed": 2026101691,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "effects on aquatic life, and the behavior of toxic metals and organic chemicals in",
+          "start": 8621,
+          "end": 8703,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-22",
+      "group": "protected",
+      "text": "variety of interesting and challenging career choices for today and tomorrow. It's a field",
+      "reference": "variety of interesting and challenging career choices for today and tomorrow. It's a field",
+      "noise_kind": "clean",
+      "seed": 2026101692,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "variety of interesting and challenging career choices for today and tomorrow. It's a field",
+          "start": 13599,
+          "end": 13689,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-23",
+      "group": "protected",
+      "text": "various paths in the atmosphere, over and beneath the earth's surface and through growing",
+      "reference": "various paths in the atmosphere, over and beneath the earth's surface and through growing",
+      "noise_kind": "clean",
+      "seed": 2026101693,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "various paths in the atmosphere, over and beneath the earth's surface and through growing",
+          "start": 2554,
+          "end": 2643,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-24",
+      "group": "protected",
+      "text": "and industries realize that the amount of money invested in prevention is far less",
+      "reference": "and industries realize that the amount of money invested in prevention is far less",
+      "noise_kind": "clean",
+      "seed": 2026101694,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "and industries realize that the amount of money invested in prevention is far less",
+          "start": 12298,
+          "end": 12380,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-25",
+      "group": "protected",
+      "text": "pollution than surface water. Therefore, it is commonly used for public water supplies. Groundwater",
+      "reference": "pollution than surface water. Therefore, it is commonly used for public water supplies. Groundwater",
+      "noise_kind": "clean",
+      "seed": 2026101695,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "pollution than surface water. Therefore, it is commonly used for public water supplies. Groundwater",
+          "start": 9732,
+          "end": 9831,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-26",
+      "group": "protected",
+      "text": "it moves through the cycle (evaporation, precipitation, streamflow, infiltration, groundwater flow, and other components).",
+      "reference": "it moves through the cycle (evaporation, precipitation, streamflow, infiltration, groundwater flow, and other components).",
+      "noise_kind": "clean",
+      "seed": 2026101696,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "it moves through the cycle (evaporation, precipitation, streamflow, infiltration, groundwater flow, and other components).",
+          "start": 3982,
+          "end": 4104,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-27",
+      "group": "protected",
+      "text": "landfill surface covered as much as possible. Careful monitoring is always necessary. Students who",
+      "reference": "landfill surface covered as much as possible. Careful monitoring is always necessary. Students who",
+      "noise_kind": "clean",
+      "seed": 2026101697,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "landfill surface covered as much as possible. Careful monitoring is always necessary. Students who",
+          "start": 12745,
+          "end": 12843,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-28",
+      "group": "protected",
+      "text": "water is returned to another part of the cycle: perhaps discharged downstream or allowed",
+      "reference": "water is returned to another part of the cycle: perhaps discharged downstream or allowed",
+      "noise_kind": "clean",
+      "seed": 2026101698,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "water is returned to another part of the cycle: perhaps discharged downstream or allowed",
+          "start": 3635,
+          "end": 3723,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-29",
+      "group": "protected",
+      "text": "properties of the waters of the earth and their relationship with the environment within",
+      "reference": "properties of the waters of the earth and their relationship with the environment within",
+      "noise_kind": "clean",
+      "seed": 2026101699,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "properties of the waters of the earth and their relationship with the environment within",
+          "start": 2121,
+          "end": 2209,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    },
+    {
+      "id": "protected-30",
+      "group": "protected",
+      "text": "in remote and rugged terrain. In the office, hydrologists do many things such as",
+      "reference": "in remote and rugged terrain. In the office, hydrologists do many things such as",
+      "noise_kind": "clean",
+      "seed": 2026101700,
+      "mutations": [],
+      "source_parts": [
+        {
+          "original": "in remote and rugged terrain. In the office, hydrologists do many things such as",
+          "start": 5486,
+          "end": 5566,
+          "source_id": "usgs-hydrology"
+        }
+      ],
+      "known_diagnostic": false,
+      "annotation": "synthetic restoration target, NOT human grammar/meaning annotation"
+    }
+  ]
+}

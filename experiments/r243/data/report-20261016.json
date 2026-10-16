@@ -1,0 +1,443 @@
+{
+  "experimentalGate": "FAIL",
+  "productionGate": "BLOCKED",
+  "reason": "Independent human annotations and real Android acceptance remain required",
+  "comparisonScope": "Actual frozen production Java reviewer/focus/guard components with shared external vocabulary, actual GGUF decoder and isolated hybrid prototype. Complete native Android IMEs NOT RUN.",
+  "corpusSha256": "5f44e8fd374e1c78af57547979a7c03cfbc51a83c8b0c0dc275b54a1ed0ae2ac",
+  "lexiconSha256": "f0ad0fb78cfb9fbab41350a692e7727d88185e39178eb214ea5f8ee2e3dc00a3",
+  "commit": "c79e3edfc17a0de823e9ec2b46e91c01508f115e",
+  "models": {
+    "qwen05": {
+      "attempted": 164,
+      "completed": 164
+    },
+    "qwen15": {
+      "attempted": 9,
+      "completed": 9
+    }
+  },
+  "comparativeResults": {
+    "r241-component": {
+      "es-MX": {
+        "automatic": {
+          "precision": 0.6296296296296297,
+          "recall": 0.2537313432835821,
+          "f05": 0.4857142857142857,
+          "tp": 17,
+          "incorrectChanges": 10,
+          "residual": 60,
+          "coverage": 0.475,
+          "abstentions": 21
+        },
+        "assisted": {
+          "precision": 0.35365853658536583,
+          "recall": 0.43283582089552236,
+          "f05": 0.3670886075949367,
+          "tp": 29,
+          "incorrectChanges": 53,
+          "residual": 91,
+          "coverage": 0.925,
+          "abstentions": 3
+        }
+      },
+      "en-US": {
+        "automatic": {
+          "precision": 0.5333333333333333,
+          "recall": 0.25806451612903225,
+          "f05": 0.43956043956043955,
+          "tp": 8,
+          "incorrectChanges": 7,
+          "residual": 30,
+          "coverage": 0.35,
+          "abstentions": 13
+        },
+        "assisted": {
+          "precision": 0.2564102564102564,
+          "recall": 0.3225806451612903,
+          "f05": 0.26737967914438504,
+          "tp": 10,
+          "incorrectChanges": 29,
+          "residual": 50,
+          "coverage": 0.9,
+          "abstentions": 2
+        }
+      },
+      "mixed": {
+        "automatic": {
+          "precision": 0.45454545454545453,
+          "recall": 0.3125,
+          "f05": 0.4166666666666667,
+          "tp": 5,
+          "incorrectChanges": 6,
+          "residual": 17,
+          "coverage": 0.6,
+          "abstentions": 4
+        },
+        "assisted": {
+          "precision": 0.20833333333333334,
+          "recall": 0.3125,
+          "f05": 0.22321428571428573,
+          "tp": 5,
+          "incorrectChanges": 19,
+          "residual": 30,
+          "coverage": 1.0,
+          "abstentions": 0
+        }
+      },
+      "protected": {
+        "automatic": {
+          "precision": 0.0,
+          "recall": null,
+          "f05": 0.0,
+          "tp": 0,
+          "incorrectChanges": 4,
+          "residual": 4,
+          "coverage": 0.13333333333333333,
+          "abstentions": 26
+        },
+        "assisted": {
+          "precision": 0.0,
+          "recall": null,
+          "f05": 0.0,
+          "tp": 0,
+          "incorrectChanges": 33,
+          "residual": 33,
+          "coverage": 0.6333333333333333,
+          "abstentions": 11
+        }
+      },
+      "ALL": {
+        "automatic": {
+          "precision": 0.5263157894736842,
+          "recall": 0.2631578947368421,
+          "f05": 0.43859649122807015,
+          "tp": 30,
+          "incorrectChanges": 27,
+          "residual": 111,
+          "coverage": 0.36,
+          "abstentions": 64
+        },
+        "assisted": {
+          "precision": 0.24719101123595505,
+          "recall": 0.38596491228070173,
+          "f05": 0.26634382566585957,
+          "tp": 44,
+          "incorrectChanges": 134,
+          "residual": 204,
+          "coverage": 0.84,
+          "abstentions": 16
+        }
+      }
+    },
+    "r242-component": {
+      "es-MX": {
+        "automatic": {
+          "precision": 0.6296296296296297,
+          "recall": 0.2537313432835821,
+          "f05": 0.4857142857142857,
+          "tp": 17,
+          "incorrectChanges": 10,
+          "residual": 60,
+          "coverage": 0.475,
+          "abstentions": 21
+        },
+        "assisted": {
+          "precision": 0.3493975903614458,
+          "recall": 0.43283582089552236,
+          "f05": 0.3634085213032581,
+          "tp": 29,
+          "incorrectChanges": 54,
+          "residual": 92,
+          "coverage": 0.925,
+          "abstentions": 3
+        }
+      },
+      "en-US": {
+        "automatic": {
+          "precision": 0.5333333333333333,
+          "recall": 0.25806451612903225,
+          "f05": 0.43956043956043955,
+          "tp": 8,
+          "incorrectChanges": 7,
+          "residual": 30,
+          "coverage": 0.35,
+          "abstentions": 13
+        },
+        "assisted": {
+          "precision": 0.28205128205128205,
+          "recall": 0.3548387096774194,
+          "f05": 0.29411764705882354,
+          "tp": 11,
+          "incorrectChanges": 28,
+          "residual": 48,
+          "coverage": 0.9,
+          "abstentions": 2
+        }
+      },
+      "mixed": {
+        "automatic": {
+          "precision": 0.45454545454545453,
+          "recall": 0.3125,
+          "f05": 0.4166666666666667,
+          "tp": 5,
+          "incorrectChanges": 6,
+          "residual": 17,
+          "coverage": 0.6,
+          "abstentions": 4
+        },
+        "assisted": {
+          "precision": 0.20833333333333334,
+          "recall": 0.3125,
+          "f05": 0.22321428571428573,
+          "tp": 5,
+          "incorrectChanges": 19,
+          "residual": 30,
+          "coverage": 1.0,
+          "abstentions": 0
+        }
+      },
+      "protected": {
+        "automatic": {
+          "precision": 0.0,
+          "recall": null,
+          "f05": 0.0,
+          "tp": 0,
+          "incorrectChanges": 4,
+          "residual": 4,
+          "coverage": 0.13333333333333333,
+          "abstentions": 26
+        },
+        "assisted": {
+          "precision": 0.0,
+          "recall": null,
+          "f05": 0.0,
+          "tp": 0,
+          "incorrectChanges": 33,
+          "residual": 33,
+          "coverage": 0.6333333333333333,
+          "abstentions": 11
+        }
+      },
+      "ALL": {
+        "automatic": {
+          "precision": 0.5263157894736842,
+          "recall": 0.2631578947368421,
+          "f05": 0.43859649122807015,
+          "tp": 30,
+          "incorrectChanges": 27,
+          "residual": 111,
+          "coverage": 0.36,
+          "abstentions": 64
+        },
+        "assisted": {
+          "precision": 0.25139664804469275,
+          "recall": 0.39473684210526316,
+          "f05": 0.2710843373493976,
+          "tp": 45,
+          "incorrectChanges": 134,
+          "residual": 203,
+          "coverage": 0.84,
+          "abstentions": 16
+        }
+      }
+    },
+    "r243-prototype": {
+      "es-MX": {
+        "automatic": {
+          "precision": 0.6296296296296297,
+          "recall": 0.2537313432835821,
+          "f05": 0.4857142857142857,
+          "tp": 17,
+          "incorrectChanges": 10,
+          "residual": 60,
+          "coverage": 0.475,
+          "abstentions": 21
+        },
+        "assisted": {
+          "precision": 0.32926829268292684,
+          "recall": 0.40298507462686567,
+          "f05": 0.34177215189873417,
+          "tp": 27,
+          "incorrectChanges": 55,
+          "residual": 95,
+          "coverage": 0.925,
+          "abstentions": 3
+        }
+      },
+      "en-US": {
+        "automatic": {
+          "precision": 0.5333333333333333,
+          "recall": 0.25806451612903225,
+          "f05": 0.43956043956043955,
+          "tp": 8,
+          "incorrectChanges": 7,
+          "residual": 30,
+          "coverage": 0.35,
+          "abstentions": 13
+        },
+        "assisted": {
+          "precision": 0.2631578947368421,
+          "recall": 0.3225806451612903,
+          "f05": 0.273224043715847,
+          "tp": 10,
+          "incorrectChanges": 28,
+          "residual": 49,
+          "coverage": 0.9,
+          "abstentions": 2
+        }
+      },
+      "mixed": {
+        "automatic": {
+          "precision": 0.45454545454545453,
+          "recall": 0.3125,
+          "f05": 0.4166666666666667,
+          "tp": 5,
+          "incorrectChanges": 6,
+          "residual": 17,
+          "coverage": 0.6,
+          "abstentions": 4
+        },
+        "assisted": {
+          "precision": 0.20833333333333334,
+          "recall": 0.3125,
+          "f05": 0.22321428571428573,
+          "tp": 5,
+          "incorrectChanges": 19,
+          "residual": 30,
+          "coverage": 1.0,
+          "abstentions": 0
+        }
+      },
+      "protected": {
+        "automatic": {
+          "precision": 0.0,
+          "recall": null,
+          "f05": 0.0,
+          "tp": 0,
+          "incorrectChanges": 4,
+          "residual": 4,
+          "coverage": 0.13333333333333333,
+          "abstentions": 26
+        },
+        "assisted": {
+          "precision": 0.0,
+          "recall": null,
+          "f05": 0.0,
+          "tp": 0,
+          "incorrectChanges": 33,
+          "residual": 33,
+          "coverage": 0.6333333333333333,
+          "abstentions": 11
+        }
+      },
+      "ALL": {
+        "automatic": {
+          "precision": 0.5263157894736842,
+          "recall": 0.2631578947368421,
+          "f05": 0.43859649122807015,
+          "tp": 30,
+          "incorrectChanges": 27,
+          "residual": 111,
+          "coverage": 0.36,
+          "abstentions": 64
+        },
+        "assisted": {
+          "precision": 0.23728813559322035,
+          "recall": 0.3684210526315789,
+          "f05": 0.25547445255474455,
+          "tp": 42,
+          "incorrectChanges": 135,
+          "residual": 207,
+          "coverage": 0.84,
+          "abstentions": 16
+        }
+      }
+    }
+  },
+  "diagnosticsByNoise": {
+    "neighbor": {
+      "cases": 10,
+      "noCandidates": 10,
+      "candidateOpportunity": 0,
+      "shownCandidateOpportunity": 0,
+      "withheldByPromptBudget": 0,
+      "usefulCandidateNotSelected": 0,
+      "rawModelChangesRejected": 6,
+      "hybridResidual": 14
+    },
+    "duplicate": {
+      "cases": 10,
+      "noCandidates": 10,
+      "candidateOpportunity": 0,
+      "shownCandidateOpportunity": 0,
+      "withheldByPromptBudget": 0,
+      "usefulCandidateNotSelected": 0,
+      "rawModelChangesRejected": 4,
+      "hybridResidual": 15
+    },
+    "omit": {
+      "cases": 10,
+      "noCandidates": 8,
+      "candidateOpportunity": 0,
+      "shownCandidateOpportunity": 0,
+      "withheldByPromptBudget": 0,
+      "usefulCandidateNotSelected": 0,
+      "rawModelChangesRejected": 3,
+      "hybridResidual": 24
+    },
+    "transpose": {
+      "cases": 10,
+      "noCandidates": 10,
+      "candidateOpportunity": 0,
+      "shownCandidateOpportunity": 0,
+      "withheldByPromptBudget": 0,
+      "usefulCandidateNotSelected": 0,
+      "rawModelChangesRejected": 9,
+      "hybridResidual": 30
+    },
+    "missing-space": {
+      "cases": 10,
+      "noCandidates": 9,
+      "candidateOpportunity": 0,
+      "shownCandidateOpportunity": 0,
+      "withheldByPromptBudget": 0,
+      "usefulCandidateNotSelected": 0,
+      "rawModelChangesRejected": 4,
+      "hybridResidual": 24
+    },
+    "concatenation": {
+      "cases": 10,
+      "noCandidates": 8,
+      "candidateOpportunity": 0,
+      "shownCandidateOpportunity": 0,
+      "withheldByPromptBudget": 0,
+      "usefulCandidateNotSelected": 0,
+      "rawModelChangesRejected": 6,
+      "hybridResidual": 28
+    },
+    "multiple": {
+      "cases": 10,
+      "noCandidates": 10,
+      "candidateOpportunity": 0,
+      "shownCandidateOpportunity": 0,
+      "withheldByPromptBudget": 0,
+      "usefulCandidateNotSelected": 0,
+      "rawModelChangesRejected": 10,
+      "hybridResidual": 39
+    },
+    "clean": {
+      "cases": 30,
+      "noCandidates": 26,
+      "candidateOpportunity": 0,
+      "shownCandidateOpportunity": 0,
+      "withheldByPromptBudget": 0,
+      "usefulCandidateNotSelected": 0,
+      "rawModelChangesRejected": 12,
+      "hybridResidual": 33
+    }
+  },
+  "criticalProtectedProxyChanges": 0,
+  "meaningLoss": "NOT VERIFIED: proxy checks do not establish meaning preservation",
+  "integration": "NOT RUN: host engine experiment only",
+  "physicalPerformance": "NOT VERIFIED"
+}

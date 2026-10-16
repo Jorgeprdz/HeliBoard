@@ -26,6 +26,10 @@ public final class HybridCandidateGenerator {
    lengths.computeIfAbsent(w.length(),k->new ArrayList<>()).add(w);
   for(List<String> words:lengths.values()){words.sort(Comparator.<String>comparingDouble(lex::frequency).reversed().thenComparing(Comparator.naturalOrder()));}
  }
+ private static String accentFamily(String text){
+  return java.text.Normalizer.normalize(text.replace('ñ',(char)1),java.text.Normalizer.Form.NFD)
+   .replaceAll("\\p{M}+","").replace((char)1,'ñ');
+ }
  private static final class Token {int start,end;String word;Token(int s,int e,String w){start=s;end=e;word=w;}}
  private static final class State {int pos;String text;double cost;State(int p,String t,double c){pos=p;text=t;cost=c;}}
  public List<Edit> generate(String context,LocalContextReviewer.Cancellation cancel){
@@ -43,6 +47,24 @@ public final class HybridCandidateGenerator {
    String source=context.substring(left.start,right.end);
    if(!source.matches("[\\p{Ll}\\p{M}]+(?:[ \\t]+[\\p{Ll}\\p{M}]+){0,2}"))continue;
    String flat=source.replaceAll("[ \\t]+","");if(flat.length()>48)continue;
+   boolean allValid=true;for(int index=first;index<first+width;index++)allValid&=lex.valid(tokens.get(index).word);
+   if(allValid){
+    // A legitimate source is not a motor-error target. Consider only accent alternatives
+    // or alternatives supported by external contextual evidence; never automatic.
+    if(width==1)for(int size=Math.max(1,source.length()-2);size<=Math.min(32,source.length()+2);size++){
+     List<String> options=lengths.getOrDefault(size,Collections.emptyList());
+     for(int n=0;n<Math.min(64,options.size());n++){
+      if(cancel.cancelled())return Collections.emptyList();
+      String target=options.get(n);if(target.equals(source)||lex.rejected(source,target))continue;
+      double evidence=lex.contextual(context.substring(0,left.start),target,context.substring(right.end));
+      String key=left.start+":"+right.end+":"+target;
+      if(Double.isFinite(evidence)&&evidence>0)contextual.put(key,new Edit(left.start,right.end,target,-evidence));
+      else if(accentFamily(source).equals(accentFamily(target)))
+       unique.put(key,new Edit(left.start,right.end,target,TypingCandidateRanker.editCost(source,target,lex::keyDistance)));
+     }
+    }
+    continue;
+   }
    List<State> beam=new ArrayList<>();beam.add(new State(0,"",0));
    for(int depth=0;depth<3&&!beam.isEmpty();depth++){
     List<State> next=new ArrayList<>();
@@ -55,15 +77,6 @@ public final class HybridCandidateGenerator {
        for(int n=0;n<Math.min(64,options.size());n++){
         if(cancel.cancelled())return Collections.emptyList();if(--budget[0]<0)break;
         String word=options.get(n);
-        // Grammar is a distinct candidate channel. Explicit external contextual evidence
-        // may support a valid-word alternative that is not physically close on the keyboard.
-        if(depth==0&&state.pos==0&&take==flat.length()&&width==1&&lex.valid(source)&&!word.equals(source)&&!lex.rejected(source,word)){
-         double evidence=lex.contextual(context.substring(0,left.start),word,context.substring(right.end));
-         if(Double.isFinite(evidence)&&evidence>0){
-          String key=left.start+":"+right.end+":"+word;
-          contextual.put(key,new Edit(left.start,right.end,word,-evidence));
-         }
-        }
         double cost=state.cost+TypingCandidateRanker.editCost(fragment,word,lex::keyDistance);
         if(cost>2.8)continue;
         String replacement=state.text.isEmpty()?word:state.text+" "+word;int end=state.pos+take;

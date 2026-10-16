@@ -28,6 +28,14 @@ def main():
   red=subprocess.run(["java","-cp",fullpath,"tactic.experimental.HybridWritingTest","red"],cwd=ROOT,text=True,capture_output=True)
   if red.returncode==0 or "AssertionError" not in red.stderr:raise AssertionError("New contract did not expose unsupported legacy behavior: "+red.stdout+red.stderr)
   print("EXPECTED RED against existing reviewer: "+red.stderr.splitlines()[0],flush=True)
+  # Reproduce the independently specified valid-word regression against the frozen old prototype.
+  previous=tmp/"previous";previous.mkdir()
+  previous_source=previous/"HybridCandidateGenerator.java"
+  urllib.request.urlretrieve("https://raw.githubusercontent.com/Jorgeprdz/HeliBoard/c79e3edfc17a0de823e9ec2b46e91c01508f115e/experiments/r243/src/HybridCandidateGenerator.java",previous_source)
+  command(["javac","-cp",fullpath,"-d",previous,previous_source])
+  prior=subprocess.run(["java","-cp",str(previous)+os.pathsep+fullpath,"tactic.experimental.HybridWritingTest","valid-word-regression"],cwd=ROOT,text=True,capture_output=True)
+  if prior.returncode==0 or "valid word without context" not in prior.stderr:raise AssertionError("Frozen prototype did not reproduce valid-word defect")
+  print("EXPECTED RED against frozen prototype: "+prior.stderr.splitlines()[0],flush=True)
   command(["java","-cp",fullpath,"tactic.experimental.HybridWritingTest"])
   regression=command(["java","-cp",fullpath,"org.junit.runner.JUnitCore"]+["helium314.keyboard.latin.ai.local."+name for name in tests],capture_output=True)
   print(regression.stdout,flush=True)

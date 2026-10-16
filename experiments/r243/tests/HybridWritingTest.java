@@ -30,7 +30,12 @@ public final class HybridWritingTest {
  static void has(String text,String source,String target,boolean baseline){
   check(generate(text,baseline).stream().anyMatch(e->text.substring(e.start,e.end).equals(source)&&e.replacement.equals(target)),source+" -> "+target);
  }
+ static void validWordContract(){
+  check(generate("we",false).isEmpty(),"valid word without context must not receive motor replacements");
+  has("we recbir","recbir","recibir",false);
+ }
  public static void main(String[] args)throws Exception{
+  if(args.length>0&&args[0].equals("valid-word-regression")){validWordContract();return;}
   boolean baseline=args.length>0&&args[0].equals("red");
   has("recbir el archivo","recbir","recibir",baseline);
   has("buenastardes","buenastardes","buenas tardes",baseline);
@@ -68,6 +73,7 @@ public final class HybridWritingTest {
    check(running.await(2,TimeUnit.SECONDS),"obsolete job starts");queue.invalidate();unblock.countDown();
    queue.close();check(!outputs.contains("obsolete"),"invalidated result never delivered");
   }
+  validWordContract();
   System.out.println("Hybrid component assertions PASS: "+checks);
  }
 }
