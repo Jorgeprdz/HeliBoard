@@ -201,6 +201,9 @@ public final class AiKeyboardAssistant {
             ||dictionary.hasAtLeastOneUninitializedMainDictionary())return;
         final helium314.keyboard.latin.ai.local.ContinuousReviewAnchor anchor=anchor(base,context);
         final helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon observed=personalLexicon();
+        // Snapshot observed native spellings on the IME thread before worker submission.
+        // Only configured dictionaries may confirm these candidates on the worker.
+        final Collection<String> nativeWords=lexicon.nativeValidVocabulary();
         final Set<String> rejected=AiSettingsActivity.rejectedCorrections(ime);
         final boolean model=android.os.SystemClock.elapsedRealtime()>=modelRetryAfter
             &&helium314.keyboard.latin.ai.local.WritingModelFiles.enabled(ime)
@@ -228,6 +231,17 @@ public final class AiKeyboardAssistant {
             found.set(boundaryReviewer.review(context,vocabulary,rejected,stop));
             for(helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction repair:found.get())
                 if(repair.automaticAllowed)return ""; // Local repairs never wait for generation.
+            // Only suggestions; native correction, explicit grammar and user-approved edits
+            // retain sole responsibility for committing/reversing text.
+            if(!stop.cancelled()&&!nativeWords.isEmpty()) {
+                java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> hybrid=
+                    helium314.keyboard.latin.ai.local.HybridImeReview.propose(context,nativeWords,vocabulary,rejected,stop);
+                if(!hybrid.isEmpty()){
+                    java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> combined=
+                        new ArrayList<>(found.get());
+                    combined.addAll(hybrid);found.set(combined);
+                }
+            }
             if(model&&!cancel.cancelled()){
                 helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon focusLexicon=
                     new helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon(observed,dictionary::isValidSpellingWord,cancel::cancelled);

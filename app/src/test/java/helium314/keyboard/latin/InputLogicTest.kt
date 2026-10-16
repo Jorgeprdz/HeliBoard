@@ -341,6 +341,19 @@ class InputLogicTest {
         checkConnectionConsistency()
     }
 
+    @Test fun R243ObservedNativeSuggestionsFeedHybridWithoutChangingEditor() {
+        r22Enable("tecmaod")
+        r22NativeCandidates("tecmaod", false, listOf("teclado"))
+        val assistantField = LatinIME::class.java.getDeclaredField("mAiKeyboardAssistant").apply { isAccessible = true }
+        val assistant = assistantField.get(latinIME) as helium314.keyboard.latin.ai.AiKeyboardAssistant
+        val lexiconField = assistant.javaClass.getDeclaredField("lexicon").apply { isAccessible = true }
+        val observed = lexiconField.get(assistant) as helium314.keyboard.latin.ai.local.ObservedLexicon
+        kotlin.test.assertTrue(observed.nativeValidVocabulary().contains("teclado"))
+        kotlin.test.assertTrue(observed.snapshot().candidates("tecmaod").contains("teclado"))
+        assertEquals("tecmaod", text) // No new automatic edits from hybrid.
+        checkConnectionConsistency()
+    }
+
     @Test fun R24MotorCorrectionAndUndoReuseNativeTransaction() {
         r22Enable("poryectos")
         r22NativeCandidates("poryectos", false, listOf("proyectos"))

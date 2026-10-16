@@ -2,7 +2,10 @@ name: R243 Android unit regression gate (no APK)
 on:
   push:
     branches: [feat/tactic-r243-hybrid-writing]
-    paths: ['.github/workflows/tactic-r243-test-gate.yml']
+    paths:
+      - '.github/workflows/tactic-r243-test-gate.yml'
+      - 'app/src/main/java/helium314/keyboard/latin/ai/**'
+      - 'app/src/test/java/helium314/keyboard/latin/**'
   workflow_dispatch:
 permissions:
   contents: read
@@ -31,6 +34,24 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew :app:testDebugUnitTest --no-daemon
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          reports=sorted(Path('app/build/test-results/testDebugUnitTest').glob('TEST-*.xml'))
+          assert reports, 'No Android test XML reports'
+          totals={k:0 for k in ('tests','failures','errors','skipped')}
+          suites=set()
+          for path in reports:
+              root=ET.parse(path).getroot()
+              suites.add(root.attrib.get('name',''))
+              for key in totals: totals[key]+=int(root.attrib.get(key,'0'))
+          print('STRICT_ANDROID_JVM', totals)
+          assert totals['tests']>=494, 'Existing 486 plus 8 new integration checks missing'
+          assert all(totals[k]==0 for k in ('failures','errors','skipped'))
+          assert any(v.endswith('InputLogicTest') for v in suites)
+          assert any(v.endswith('R242FocusTest') for v in suites)
+          assert any(v.endswith('R243HybridImeReviewTest') for v in suites)
+          PY
       - name: Preserve XML and HTML results even on failure
         if: always()
         uses: actions/upload-artifact@v4

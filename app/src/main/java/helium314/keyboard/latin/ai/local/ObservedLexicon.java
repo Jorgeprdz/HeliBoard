@@ -41,5 +41,14 @@ public final class ObservedLexicon {
   public boolean knownInvalid(String word){Entry e=copy.get(word.toLowerCase(Locale.ROOT));return e!=null&&e.complete&&!e.valid;}
   public List<String> candidates(String word){Entry e=copy.get(word.toLowerCase(Locale.ROOT));return e==null?Collections.emptyList():e.candidates;}
  };}
+ /** Bounded native-confirmed candidates already seen in this editor; no text context retained. */
+ public Collection<String> nativeValidVocabulary(){
+  ArrayList<String> result=new ArrayList<>();
+  for(Map.Entry<String,Entry> entry:words.entrySet()){
+   String word=entry.getKey();
+   if(entry.getValue().valid&&word.matches("[\\p{Ll}\\p{M}]{2,32}"))result.add(word);
+  }
+  return Collections.unmodifiableList(result);
+ }
  public void clear(){words.clear();priors.clear();keys=null;}
 }
