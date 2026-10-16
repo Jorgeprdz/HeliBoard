@@ -10,10 +10,24 @@ public final class AiEditTransaction {
     private EditorSnapshot original, after;
     private int replacementLength;
 
+    /** Reject edits which would insert or restore half of a UTF-16 surrogate pair. */
+    private static boolean completeUtf16(CharSequence value) {
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (Character.isHighSurrogate(c)) {
+                if (++i >= value.length() || !Character.isLowSurrogate(value.charAt(i))) return false;
+            } else if (Character.isLowSurrogate(c)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public boolean apply(EditorSnapshot expected, CharSequence replacement, Target target) {
         clear();
         if (expected == null || !expected.hasSelection() || replacement == null
                 || replacement.length() == 0 || replacement.length() > 16384
+                || !completeUtf16(expected.original) || !completeUtf16(replacement)
                 || target == null || !expected.matches(target.capture())) return false;
         int start = Math.min(expected.start, expected.end), end = Math.max(expected.start, expected.end);
         if (!target.replace(start, end, replacement)) return false;
@@ -28,6 +42,7 @@ public final class AiEditTransaction {
         if(expected==null||expected.start!=expected.end||expected.start<0||start<0||end<start||end>expected.start
             ||originalText==null||originalText.length()!=end-start||originalText.length()>4096
             ||replacement==null||replacement.length()==0||replacement.length()>16384
+            ||!completeUtf16(originalText)||!completeUtf16(replacement)
             ||target==null||!expected.matches(target.capture()))return false;
         if(start==end&&start!=expected.start)return false;
         if(!target.replace(start,end,replacement))return false;
