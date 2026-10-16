@@ -10,7 +10,7 @@ public final class R25ContextReviewTest {
    ("este teclado funciona en casa hola esto y estoy escribiendo rápido "+
     "juan salto saltó por la ventana seguimos naciendo haciendo pruebas "+
     "aun aún tiene tienen sentido de manera los foros quiero no "+
-    "fe archium una palabra").split(" ")));
+    "archium una palabra").split(" ")));
  private static final class Lex implements LocalContextReviewer.Lexicon {
   final Set<String> unknown=new HashSet<>();
   public boolean valid(String word){return WORDS.contains(word);}
