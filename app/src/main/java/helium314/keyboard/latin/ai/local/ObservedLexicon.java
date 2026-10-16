@@ -48,6 +48,9 @@ public final class ObservedLexicon {
    String word=entry.getKey();
    if(entry.getValue().valid&&word.matches("[\\p{Ll}\\p{M}]{2,32}"))result.add(word);
   }
+  // Keep only the most recent observations: native dictionary probes are bounded,
+  // and the hybrid now recovers additional candidates on demand.
+  if(result.size()>64)result=new ArrayList<>(result.subList(result.size()-64,result.size()));
   return Collections.unmodifiableList(result);
  }
  public void clear(){words.clear();priors.clear();keys=null;}

@@ -233,7 +233,7 @@ public final class AiKeyboardAssistant {
                 if(repair.automaticAllowed)return ""; // Local repairs never wait for generation.
             // Only suggestions; native correction, explicit grammar and user-approved edits
             // retain sole responsibility for committing/reversing text.
-            if(!stop.cancelled()&&!nativeWords.isEmpty()) {
+            if(!stop.cancelled()) {
                 java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> hybrid=
                     helium314.keyboard.latin.ai.local.HybridImeReview.propose(context,nativeWords,vocabulary,rejected,stop);
                 if(!hybrid.isEmpty()){
@@ -447,13 +447,14 @@ public final class AiKeyboardAssistant {
     }
     private void offerContextCorrection(EditorSnapshot base,String context,
             helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction correction){
-        if(nativeSuggestions==null||(strip!=null&&strip.isAiActive()))return;
+        if(strip!=null&&strip.isAiActive())return;
         ArrayList<helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo> candidates=new ArrayList<>();
         candidates.add(new ContextSuggestion(this,base,context,correction));
-        if(nativeSuggestions.isPrediction())for(int i=0;i<nativeSuggestions.size()&&candidates.size()<18;i++)
+        if(nativeSuggestions!=null&&nativeSuggestions.isPrediction())for(int i=0;i<nativeSuggestions.size()&&candidates.size()<18;i++)
             if(nativeSuggestions.getInfo(i).isKindOf(helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo.KIND_PREDICTION))candidates.add(nativeSuggestions.getInfo(i));
         ime.showAiContextSuggestions(new helium314.keyboard.latin.SuggestedWords(candidates,null,null,
-            true,false,false,helium314.keyboard.latin.SuggestedWords.INPUT_STYLE_PREDICTION,nativeSuggestions.mSequenceNumber));
+            true,false,false,helium314.keyboard.latin.SuggestedWords.INPUT_STYLE_PREDICTION,
+            nativeSuggestions==null?0:nativeSuggestions.mSequenceNumber));
     }
     public void acceptContextSuggestion(ContextSuggestion suggestion){
         if(suggestion.owner!=this||("local-model-explicit-choice".equals(suggestion.correction.reason)

@@ -46,11 +46,12 @@ jobs:
               suites.add(root.attrib.get('name',''))
               for key in totals: totals[key]+=int(root.attrib.get(key,'0'))
           print('STRICT_ANDROID_JVM', totals)
-          assert totals['tests']>=494, 'Existing 486 plus 8 new integration checks missing'
+          assert totals['tests']>=504, 'Existing 494 plus 10 R2.5 regression checks missing'
           assert all(totals[k]==0 for k in ('failures','errors','skipped'))
           assert any(v.endswith('InputLogicTest') for v in suites)
           assert any(v.endswith('R242FocusTest') for v in suites)
           assert any(v.endswith('R243HybridImeReviewTest') for v in suites)
+          assert any(v.endswith('R25ContextReviewTest') for v in suites)
           PY
       - name: Preserve XML and HTML results even on failure
         if: always()

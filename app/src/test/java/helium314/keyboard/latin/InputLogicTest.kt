@@ -341,6 +341,19 @@ class InputLogicTest {
         checkConnectionConsistency()
     }
 
+    @Test fun R25AmbiguousContextNeverAutoCommitsAndBackspaceStillEditsNormally() {
+        for (source in listOf("Hola esto y escribiendo rápido",
+                "Juan salto por la ventana", "Seguimos naciendo pruebas",
+                "Aun tienensentido")) {
+            r22Enable(source)
+            r22Key(' '.code)
+            assertEquals("$source ", text)
+            functionalKeyPress(KeyCode.DELETE)
+            assertEquals(source, text)
+            checkConnectionConsistency()
+        }
+    }
+
     @Test fun R243ObservedNativeSuggestionsFeedHybridWithoutChangingEditor() {
         r22Enable("tecmaod")
         r22NativeCandidates("tecmaod", false, listOf("teclado"))

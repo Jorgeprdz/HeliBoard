@@ -17,7 +17,7 @@ public final class HybridImeReview {
             LocalContextReviewer.Lexicon dictionary, Set<String> rejected,
             LocalContextReviewer.Cancellation cancelled) {
         if (context == null || context.isEmpty() || context.length() > 256
-                || observedNativeWords == null || observedNativeWords.isEmpty()
+                || observedNativeWords == null
                 || observedNativeWords.size() > 256 || dictionary == null
                 || cancelled == null || cancelled.cancelled()
                 || SensitiveInputPolicy.sensitiveText(context)) return Collections.emptyList();
@@ -31,6 +31,10 @@ public final class HybridImeReview {
                         || !dictionary.valid(word)) continue;
                 vocabulary.add(word);
             }
+            // The old prototype could only find words seen in a recent suggestion strip.
+            // Probe a strict, small set of keyboard-local edit neighbors against the
+            // *already configured* native dictionaries, without storing a new word list.
+            recoverNativeCandidates(context,dictionary,cancelled,unique,vocabulary);
             if (vocabulary.isEmpty()) return Collections.emptyList();
             final HashSet<String> veto = new HashSet<>();
             if (rejected != null) for (String item : rejected) {
@@ -85,6 +89,62 @@ public final class HybridImeReview {
             return Collections.unmodifiableList(out);
         } catch (RuntimeException dictionariesUnavailable) {
             return Collections.emptyList();
+        }
+    }
+
+    private static final String[] KEYS = {"qwertyuiop", "asdfghjklñ", "zxcvbnm"};
+    private static final java.util.regex.Pattern WORD =
+            java.util.regex.Pattern.compile("[\\p{L}\\p{M}]{2,24}");
+
+    /** Maximum 96 dictionary probes per context and 16 recovered words; worker only. */
+    private static void recoverNativeCandidates(String context, LocalContextReviewer.Lexicon lexicon,
+            LocalContextReviewer.Cancellation cancel, Set<String> seen, List<String> out) {
+        final int[] probes={0}, recovered={0};
+        final HashSet<String> examined=new HashSet<>();
+        java.util.regex.Matcher matcher=WORD.matcher(context);
+        int inspected=0;
+        while(matcher.find() && inspected++<5 && probes[0]<96 && recovered[0]<16) {
+            if(cancel.cancelled())return;
+            String source=matcher.group();
+            if(!source.equals(source.toLowerCase(Locale.ROOT))
+                    ||lexicon.preserved(source)||lexicon.valid(source)
+                    ||!lexicon.knownInvalid(source))continue;
+            final char[] letters=source.toCharArray();
+            // Transposition and a missing/duplicated boundary are cheaper to test than
+            // a blind all-dictionary search. All hits remain MANUAL suggestions.
+            for(int i=0;i+1<letters.length&&probes[0]<96;i++){
+                char[] candidate=letters.clone();char v=candidate[i];
+                candidate[i]=candidate[i+1];candidate[i+1]=v;
+                probe(new String(candidate),lexicon,cancel,seen,examined,out,probes,recovered);
+            }
+            for(int i=0;i<letters.length&&probes[0]<96;i++){
+                String candidate=source.substring(0,i)+source.substring(i+1);
+                probe(candidate,lexicon,cancel,seen,examined,out,probes,recovered);
+            }
+            for(int i=0;i<letters.length&&probes[0]<96;i++){
+                final char original=letters[i];
+                for(String row:KEYS){
+                    int x=row.indexOf(original);
+                    if(x<0)continue;
+                    for(int delta=-2;delta<=2&&probes[0]<96;delta++){
+                        if(delta==0||x+delta<0||x+delta>=row.length())continue;
+                        char[] candidate=letters.clone();candidate[i]=row.charAt(x+delta);
+                        probe(new String(candidate),lexicon,cancel,seen,examined,out,probes,recovered);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void probe(String word,LocalContextReviewer.Lexicon lexicon,
+            LocalContextReviewer.Cancellation cancel,Set<String> seen,Set<String> examined,
+            List<String> out,int[] probes,int[] recovered){
+        if(probes[0]>=96||recovered[0]>=16||cancel.cancelled()
+                ||word.length()<2||!word.matches("[\\p{Ll}\\p{M}]{2,32}")
+                ||seen.contains(word)||!examined.add(word))return;
+        probes[0]++;
+        if(lexicon.valid(word)&&!lexicon.preserved(word)){
+            seen.add(word);out.add(word);recovered[0]++;
         }
     }
 }

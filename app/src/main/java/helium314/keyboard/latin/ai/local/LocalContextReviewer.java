@@ -74,7 +74,10 @@ public final class LocalContextReviewer {
                 if (token.protectedText || token.word.length() > MAX_WORD_LENGTH
                         || NEGATIONS.contains(token.lower) || lexicon.preserved(token.lower)) continue;
                 Correction proposal = hasCapital(token.word) ? title(text,tokens,i,lexicon,cancellation) : mechanics(text,tokens,i,lexicon);
-                if(proposal==null&&!hasCapital(token.word))proposal=grammar(text,tokens,i,lexicon);
+                // Explicit, locally licensed grammar may offer an initial adverbial accent.
+                // Never treat an arbitrary capitalized token as a motor typo.
+                if(proposal==null&&(!hasCapital(token.word)||(i==0&&token.lower.equals("aun"))))
+                    proposal=grammar(text,tokens,i,lexicon);
                 if(proposal==null&&!hasCapital(token.word)){
                     WordBoundarySegmenter.Choice split=WordBoundarySegmenter.choose(token.lower,lexicon,cancellation);
                     if(split!=null)proposal=correction(token,split.text,"dictionary-boundary-segmentation",.9,split.automatic);
@@ -102,6 +105,48 @@ public final class LocalContextReviewer {
 
     private static Correction grammar(String text, List<Token> tokens, int i, Lexicon lexicon) {
         Token t = tokens.get(i);
+        // Context changes between independently valid words are offered, never auto-committed.
+        // "esto y escribiendo" may be a separated "estoy escribiendo", but intent is not certain.
+        if (t.lower.equals("esto") && i+2<tokens.size()
+                && tokens.get(i+1).lower.equals("y")
+                && linked(text,tokens,i,i+2)
+                && isGerund(tokens.get(i+2).lower)
+                && lexicon.valid("esto") && lexicon.valid("y")
+                && lexicon.valid("estoy") && lexicon.valid(tokens.get(i+2).lower)) {
+            Token y=tokens.get(i+1);
+            return new Correction(t.start,y.end,text.substring(t.start,y.end),"estoy",
+                    "contextual-boundary-join",.87,false);
+        }
+        // A past-tense reading is plausible after a proper-name subject. Do not infer tense
+        // from word shape alone or rewrite an already-valid present-tense form automatically.
+        if (t.lower.equals("salto") && i>0 && i+1<tokens.size()
+                && linked(text,tokens,i-1,i+1)
+                && tokens.get(i-1).word.matches("[\\p{Lu}][\\p{Ll}]{2,}")
+                && Arrays.asList("por","desde","hacia").contains(tokens.get(i+1).lower)
+                && lexicon.valid("salto") && lexicon.valid("saltó")
+                && lexicon.valid(tokens.get(i+1).lower)) {
+            return correction(t,"saltó","contextual-third-person-past-accent",.78,false);
+        }
+        // A syntactically plausible phrase with a valid but unintended gerund.
+        // This needs semantics; preserve both words until the user explicitly selects it.
+        if (t.lower.equals("naciendo") && i>0 && i+1<tokens.size()
+                && tokens.get(i-1).lower.equals("seguimos")
+                && tokens.get(i+1).lower.equals("pruebas")
+                && linked(text,tokens,i-1,i+1)
+                && lexicon.valid("naciendo") && lexicon.valid("haciendo")
+                && lexicon.valid("pruebas")) {
+            return correction(t,"haciendo","contextual-semantic-explicit-choice",.68,false);
+        }
+        // "Aun" can mean "incluso" or "todavía": only suggest the stressed form when
+        // the following bounded sense/timing construction supports that reading.
+        if (t.lower.equals("aun") && i==0 && i+1<tokens.size()
+                && linked(text,tokens,i,i+1)
+                && Arrays.asList("tiene","tienen","tienensentido").contains(tokens.get(i+1).lower)
+                && lexicon.valid("aún") && lexicon.valid("sentido")
+                && lexicon.valid("tiene")) {
+            return correction(t,Character.isUpperCase(t.word.codePointAt(0))?"Aún":"aún",
+                    "contextual-still-accent-explicit-choice",.78,false);
+        }
         if(i>0&&i+1<tokens.size()&&linked(text,tokens,i-1,i+1)){
             String previous=tokens.get(i-1).lower,next=tokens.get(i+1).lower;
             if(Arrays.asList("tener","tengo","tiene","tienen","necesito","necesita","necesitamos","requiere").contains(previous)
@@ -163,6 +208,10 @@ public final class LocalContextReviewer {
             return correction(t, "sí", "possible-reported-affirmative", .87, false);
         }
         return null;
+    }
+
+    private static boolean isGerund(String word) {
+        return word.length()>=6 && (word.endsWith("ando")||word.endsWith("iendo"));
     }
 
     private static boolean abstractNoun(String word){
