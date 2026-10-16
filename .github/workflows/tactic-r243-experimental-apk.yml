@@ -21,6 +21,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - name: Verify Android edit contracts before native/Gradle build
+        run: bash experiments/r243/tests/run_android_edit_contract_host.sh
       - uses: android-actions/setup-android@v3
         with:
           packages: 'platform-tools'
