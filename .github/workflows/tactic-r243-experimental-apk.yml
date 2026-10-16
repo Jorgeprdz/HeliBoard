@@ -28,6 +28,32 @@ jobs:
           packages: 'platform-tools'
           log-accepted-android-sdk-licenses: false
       - uses: gradle/actions/setup-gradle@v4
+      - name: Full Android JVM regression gate (required before APK)
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew :app:testDebugUnitTest --no-daemon
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          files = sorted(Path('app/build/test-results/testDebugUnitTest').glob('TEST-*.xml'))
+          assert files, "FAIL: no Android JVM test XML files produced"
+          tests = failures = errors = skipped = 0
+          suites = set()
+          for file in files:
+              root = ET.parse(file).getroot()
+              assert root.tag == 'testsuite', f"Unexpected XML root in {file}"
+              suites.add(root.attrib.get('name', ''))
+              tests += int(root.attrib['tests'])
+              failures += int(root.attrib.get('failures', 0))
+              errors += int(root.attrib.get('errors', 0))
+              skipped += int(root.attrib.get('skipped', 0))
+          print(f"ANDROID_JVM_GATE suites={len(files)} tests={tests} failures={failures} errors={errors} skipped={skipped}")
+          assert tests >= 486, f"Expected at least 486 tests from validated HEAD, got {tests}"
+          assert failures == 0 and errors == 0 and skipped == 0, "Android JVM gate must be fully green; skipped tests are not allowed"
+          assert any(x.endswith('InputLogicTest') for x in suites), "Missing InputLogicTest"
+          assert any(x.endswith('R242FocusTest') for x in suites), "Missing R242FocusTest"
+          PY
       - name: Cache existing local writing runtime
         uses: actions/cache@v4
         with:
@@ -101,9 +127,6 @@ jobs:
           path: tactic-artifact/*
           if-no-files-found: error
           retention-days: 14
-      - name: Android regressions (advisory; separate from linguistic gate)
-        continue-on-error: true
-        run: ./gradlew :app:testDebugUnitTest
       - name: Upload test diagnostics
         if: always()
         uses: actions/upload-artifact@v4
