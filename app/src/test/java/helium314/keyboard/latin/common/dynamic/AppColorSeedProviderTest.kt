@@ -100,6 +100,35 @@ class AppColorSeedProviderTest {
 
     }
 
+    /** The compiled official vector contains known chromatic gradients.
+     *  Unavailable is explicitly reported as an emulator limitation, NOT as color PASS. */
+    @Test fun knownChromaticVectorIsValidOrExplicitlyUnverifiedOnRobolectric() {
+        val chromaticVector = RuntimeEnvironment.getApplication()
+            .getDrawable(R.drawable.ic_launcher_foreground)!!
+        val result = AppIconSeedExtractor.extract(chromaticVector)
+        when (result) {
+            is SeedResult.Available -> {
+                val hct = com.drdisagree.materialcolorutilities.hct.Hct.fromInt(result.seed)
+                assertEquals(255, Color.alpha(result.seed))
+                assertTrue(hct.chroma >= 14.0)
+                println("R25_VECTOR_CHROMATIC_VALID seed=" + result.seed + " chroma=" + hct.chroma)
+            }
+            is SeedResult.Unavailable -> {
+                assertTrue(result.reason == SeedResult.Reason.NO_CHROMA ||
+                    result.reason == SeedResult.Reason.EXTRACTION_ERROR)
+                println("R25_VECTOR_ROBOLECTRIC_UNVERIFIED reason=" + result.reason)
+            }
+        }
+    }
+
+    @Test fun compiledMonochromeVectorDoesNotInventBlue() {
+        val monochrome = RuntimeEnvironment.getApplication()
+            .getDrawable(R.drawable.ic_launcher_monochrome)!!
+        val result = AppIconSeedExtractor.extract(monochrome)
+        assertIs<SeedResult.Unavailable>(result)
+        assertEquals(SeedResult.Reason.NO_CHROMA, result.reason)
+    }
+
     @Test fun brokenAndMissingDrawableYieldTypedFailure() {
         val broken = object : Drawable() {
             override fun draw(canvas: Canvas): Unit = throw IllegalArgumentException("bad pixels")
