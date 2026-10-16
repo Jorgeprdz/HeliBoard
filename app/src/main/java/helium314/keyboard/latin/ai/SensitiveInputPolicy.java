@@ -8,6 +8,15 @@ import java.util.regex.Pattern;
 /** Shared conservative gate. Absence of a probabilistic entity is never an allow signal. */
 public final class SensitiveInputPolicy {
     public static final int MAX_SELECTION = 4096;
+    // Android InputType / EditorInfo constants, inlined to preserve host-only javac tests.
+    // InputType.TYPE_MASK_CLASS / TYPE_CLASS_TEXT / TYPE_MASK_VARIATION.
+    private static final int CLASS_MASK = 0x0000000f;
+    private static final int TEXT_CLASS = 0x00000001;
+    private static final int VARIATION_MASK = 0x00000ff0;
+    // InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS / TYPE_TEXT_FLAG_AUTO_COMPLETE.
+    private static final int NO_SUGGESTIONS = 0x00080000;
+    private static final int AUTO_COMPLETE = 0x00010000;
+    // EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING.
     private static final int NO_LEARNING = 0x01000000;
     private static final Pattern SECRET_LABEL = Pattern.compile(
             "\\b(?:clabe|iban|cuenta|account|tarjeta|card|cvv|cvc|otp|pin|token|"
@@ -17,11 +26,30 @@ public final class SensitiveInputPolicy {
 
     private SensitiveInputPolicy() {}
 
+    /**
+     * Safety gate for optional AI, cloud processing and personalized learning.
+     * This does not change LatinIME's conventional autocorrection behavior.
+     * Unknown text variations fail closed; only ordinary writing fields are admitted.
+     */
     public static boolean protectedEditor(int type, int options, boolean incognito, boolean excluded) {
-        if (incognito || excluded || (options & NO_LEARNING) != 0) return true;
-        if ((type & 0x0f) != 1) return true; // Only ordinary text, never null/number/phone/date.
-        int variation = type & 0xff0;
-        return variation == 0x80 || variation == 0x90 || variation == 0xe0;
+        if (incognito || excluded || (options & NO_LEARNING) != 0) {
+            return true;
+        }
+        if ((type & CLASS_MASK) != TEXT_CLASS) return true;
+        if ((type & (NO_SUGGESTIONS
+                | AUTO_COMPLETE)) != 0) return true;
+        switch (type & VARIATION_MASK) {
+            case 0x00000000: // TYPE_TEXT_VARIATION_NORMAL
+            case 0x00000040: // TYPE_TEXT_VARIATION_SHORT_MESSAGE
+            case 0x00000050: // TYPE_TEXT_VARIATION_LONG_MESSAGE
+            case 0x00000030: // TYPE_TEXT_VARIATION_EMAIL_SUBJECT
+            case 0x000000a0: // TYPE_TEXT_VARIATION_WEB_EDIT_TEXT
+                return false;
+            // URI, e-mail addresses, passwords, names, postal addresses, filter,
+            // phonetic fields and future/unknown variations are protected by default.
+            default:
+                return true;
+        }
     }
 
     public static boolean permitsLearning(int type,int options,boolean incognito,boolean excluded,
