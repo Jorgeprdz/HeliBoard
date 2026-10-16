@@ -1,0 +1,70 @@
+name: R25 forensic URL test isolation (no APK)
+on:
+  push:
+    branches: [feat/tactic-r243-hybrid-writing]
+    paths:
+      - '.github/workflows/tactic-r25-forensic.yml'
+      - 'app/src/test/java/helium314/keyboard/latin/common/dynamic/**'
+      - 'app/src/test/java/helium314/keyboard/latin/InputLogicTest.kt'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reproduce:
+    name: URL isolation / ${{ matrix.revision }} / attempt ${{ matrix.attempt }}
+    strategy:
+      fail-fast: false
+      matrix:
+        revision: [baseline, r25]
+        attempt: [1, 2, 3]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.revision == 'baseline' && 'fd9c7e35e3d1441a27b241cd979c3fdfea1029a9' || github.sha }}
+      - name: Verify commit identity
+        run: |
+          git log -1 --format='%H %s'
+          test "$(git diff --name-only | wc -l)" -eq 0
+          printf 'R25_ATTEMPT=%s REVISION=%s\n' '${{ matrix.attempt }}' '${{ matrix.revision }}'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Isolated URL test (single method, fresh checkout and JVM)
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:testDebugUnitTest --no-daemon --tests 'helium314.keyboard.latin.InputLogicTest.stripSeparatorsBeforeAddingToHistoryWithURLDetection'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r25-url-${{ matrix.revision }}-${{ matrix.attempt }}
+          path: |
+            app/build/test-results/testDebugUnitTest
+            app/build/reports/tests/testDebugUnitTest
+          if-no-files-found: warn
+          retention-days: 14
+  by-app-focused:
+    name: By App provider/session tests only (no APK)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@v4
+      - run: |
+          chmod +x gradlew
+          ./gradlew :app:testDebugUnitTest --no-daemon --tests 'helium314.keyboard.latin.common.dynamic.AppColorSeedProviderTest' --tests 'helium314.keyboard.latin.common.dynamic.AppSessionColorCoordinatorTest'
