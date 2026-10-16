@@ -3,6 +3,12 @@ on:
   push:
     branches: [feat/heliboard-ai-r2-3-full-auto-cloud]
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Android validation or isolated R2.4.3 prototype checks (no APK)'
+        type: choice
+        options: [android, r243-prototype]
+        default: android
 permissions:
   contents: read
 concurrency:
@@ -10,6 +16,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   gate-and-build:
+    # R2.4.3 is isolated until independent linguistic evidence authorizes integration.
+    if: ${{ inputs.mode != 'r243-prototype' && github.ref != 'refs/heads/feat/tactic-r243-hybrid-writing' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -117,3 +125,23 @@ jobs:
           if test -d "$RUNNER_TEMP/heliboard-signing"; then
             rm -rf -- "$RUNNER_TEMP/heliboard-signing"
           fi
+  r243-prototype:
+    if: ${{ inputs.mode == 'r243-prototype' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Host component contracts and preserved typing regressions
+        run: python3 experiments/r243/run_checks.py
+      - name: Publish prototype evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tactic-R2.4.3-prototype-evidence
+          path: writing-evidence
+          if-no-files-found: error
+          retention-days: 14

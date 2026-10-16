@@ -1,0 +1,25 @@
+{
+  "sourceCommit": "382d27ac6ed23f3a8f304d81fd6e57a53a45760a",
+  "resources": {
+    "app/src/main/res/drawable/ic_launcher_background.xml": "ea3b23b562aef57ae28af992e26a8e6d7f19604b",
+    "app/src/main/res/drawable/ic_launcher_foreground.xml": "5acf4c1e57f3e6dae25769c48b5b2009d632f8ce",
+    "app/src/main/res/drawable/ic_launcher_monochrome.xml": "ff29a1e3aa9a8b2ef270d68f615da12ad3fcc368",
+    "app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml": "80faec845c37ba08ccaa1b98b35c1329c779fb7d",
+    "app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml": "80faec845c37ba08ccaa1b98b35c1329c779fb7d",
+    "app/src/main/res/mipmap-hdpi/ic_launcher.webp": "ecea81e3d1f33efcdfcd06ac68994b92c006efd9",
+    "app/src/main/res/mipmap-hdpi/ic_launcher_round.webp": "073b82db3a72d079c0cdc7643e86312511712956",
+    "app/src/main/res/mipmap-mdpi/ic_launcher.webp": "3930fe1528b69db893f700b5bc7dff1daccb38eb",
+    "app/src/main/res/mipmap-mdpi/ic_launcher_round.webp": "a4cf358c44c2d5c066a57a9a0b5ee25612d454f6",
+    "app/src/main/res/mipmap-xhdpi/ic_launcher.webp": "48894a0e350b4c1066d0c2edbbb0b904dd6dda8e",
+    "app/src/main/res/mipmap-xhdpi/ic_launcher_round.webp": "c65c69bb94163feda41cbe6fa9e02d9b69b921da",
+    "app/src/main/res/mipmap-xxhdpi/ic_launcher.webp": "d71027e042cd1170e8032b95e96cf708528cbbb5",
+    "app/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp": "d682fd3b12144d0017f52fa3ab8052eaa13092a5",
+    "app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp": "3033da9495d89364b13cea65cf9c2be08ea86d99",
+    "app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp": "c23665f79434387a4ebf04e26d5d015738146d8e"
+  },
+  "unchangedIdentity": {
+    "app/build.gradle.kts": "c0d28d5bc8c454fd3a4872bdaa44ddb6805d8399",
+    "app/src/main/AndroidManifest.xml": "0f3e5f8106bc069eb7f5428b5e84a52be8a76407",
+    "art/launcher_icon/approved_source_512.webp": "4bb86138ae1476d722c870cba8ecdcfeaba41eaa"
+  }
+}
