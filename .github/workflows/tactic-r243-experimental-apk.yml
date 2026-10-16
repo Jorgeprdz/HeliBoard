@@ -58,7 +58,7 @@ jobs:
           assert failures == 0 and errors == 0 and skipped == 0, "Android JVM gate must be fully green; skipped tests are not allowed"
           assert any(x.endswith('InputLogicTest') for x in suites), "Missing InputLogicTest"
           assert any(x.endswith('R242FocusTest') for x in suites)
-          assert any(x.endswith('R243HybridImeReviewTest') for x in suites), "Missing R242FocusTest"
+          assert any(x.endswith('R243HybridImeReviewTest') for x in suites), "Missing R243HybridImeReviewTest"
           PY
       - name: Cache existing local writing runtime
         uses: actions/cache@v4
