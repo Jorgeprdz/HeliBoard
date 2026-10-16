@@ -16,7 +16,8 @@ public final class PrototypeBridge {
   HybridCandidateGenerator.Lexicon lex=new HybridCandidateGenerator.Lexicon(){
    public Collection<String> vocabulary(){List<String> out=new ArrayList<>();for(String w:words.keySet())if(!w.contains(" "))out.add(w);return out;}
    public boolean valid(String w){return words.containsKey(w);}
-   public boolean knownInvalid(String w){return !valid(w);}
+   // External frequency vocabulary is incomplete; absence is UNKNOWN, not proof of error.
+   public boolean knownInvalid(String w){return false;}
    public double frequency(String w){return Math.min(1,Math.log1p(words.getOrDefault(w,0.0))/20);}
    public double contextual(String before,String value,String after){
     String[] left=before.trim().split("\\s+"),right=after.trim().split("\\s+");

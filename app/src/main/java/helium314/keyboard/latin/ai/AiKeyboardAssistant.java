@@ -197,7 +197,8 @@ public final class AiKeyboardAssistant {
         if(context.length()>512||base.start<context.length())return;
         if(continuousRunning){latestReview=new QueuedReview(base,context,anchor(base,context));return;}
         final helium314.keyboard.latin.DictionaryFacilitator dictionary=ime.getAiDictionary();
-        if(dictionary==null||!dictionary.hasAtLeastOneInitializedMainDictionary())return;
+        if(dictionary==null||!dictionary.hasAtLeastOneInitializedMainDictionary()
+            ||dictionary.hasAtLeastOneUninitializedMainDictionary())return;
         final helium314.keyboard.latin.ai.local.ContinuousReviewAnchor anchor=anchor(base,context);
         final helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon observed=personalLexicon();
         final Set<String> rejected=AiSettingsActivity.rejectedCorrections(ime);
@@ -501,6 +502,9 @@ public final class AiKeyboardAssistant {
     public void onWordBoundary() {
         if(!AiSettingsActivity.typingEnabled(ime)||typingProtected()
                 ||(strip!=null&&strip.isAiActive())||ime.getAiInputConnection().hasSlowInputConnection())return;
+        final helium314.keyboard.latin.DictionaryFacilitator ready=ime.getAiDictionary();
+        if(ready==null||!ready.hasAtLeastOneInitializedMainDictionary()
+                ||ready.hasAtLeastOneUninitializedMainDictionary())return;
         if(applyPendingReview())return;
         EditorSnapshot base=capture();
         if(base==null||base.start!=base.end||base.start<0
@@ -541,8 +545,12 @@ public final class AiKeyboardAssistant {
             }
         }
         if(System.nanoTime()>deadline)return;
+        final helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon observed=personalLexicon();
         for(helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction correction:corrections) {
             if(!correction.automaticAllowed)continue;
+            // Never auto-apply a spelling edit when native evidence is absent or incomplete.
+            String source=correction.original.toLowerCase(Locale.ROOT);
+            if(!observed.valid(source)&&!observed.knownInvalid(source))continue;
             applyBoundary(base,context,correction);
             return; // One confirmed transaction per boundary; never race native composition.
         }

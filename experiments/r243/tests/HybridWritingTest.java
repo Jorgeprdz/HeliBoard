@@ -8,9 +8,10 @@ public final class HybridWritingTest {
   final List<String> words=Arrays.asList("recibir","recbir","buenas","tardes","send","the","file","documento","we","he","was","were","ready","envio","envío","no","quiero","negocio","mañana","mañnaa","el","archivo","is","this","test");
   public Collection<String> vocabulary(){return words;}
   public boolean valid(String w){return words.contains(w)&&!Arrays.asList("recbir","mañnaa").contains(w);}
+  public boolean knownInvalid(String w){return Arrays.asList("recbir","mañnaa","buenastardes","sendthefile","docu","mento").contains(w);}
   public boolean preserved(String w){return w.equals("archium");}
   public double frequency(String w){return 1;}
-  public double contextual(String before,String value,String after){return before.endsWith("we ")&&value.equals("were")?1:0;}
+  public double contextual(String before,String value,String after){return before.endsWith("we ")&&value.equals("were")||before.isEmpty()&&value.equals("envío")&&after.equals(" el archivo")?1:0;}
  };
  static void check(boolean b,String why){checks++;if(!b)throw new AssertionError(why);}
  static List<HybridCandidateGenerator.Edit> generate(String text,boolean baseline){
@@ -35,6 +36,43 @@ public final class HybridWritingTest {
   has("we recbir","recbir","recibir",false);
   check(generate("we recbir",false).stream().noneMatch(e->e.start==0),
    "valid word within mixed span must not receive motor replacements");
+ }
+ static void lexicalSafetyContract(){
+  final Set<String> valid=new HashSet<>(Arrays.asList("foros","fotos","casa","cosa","este","esté","teclado","quiero","hola","no","archium","meet","amigos","el","archivo","envio","envío"));
+  HybridCandidateGenerator.Lexicon complete=new HybridCandidateGenerator.Lexicon(){
+   public Collection<String> vocabulary(){return valid;}
+   public boolean valid(String w){return valid.contains(w);}
+   public boolean knownInvalid(String w){return !valid(w);}
+   public boolean preserved(String w){return w.equals("archium");}
+  };
+  HybridCandidateGenerator safe=new HybridCandidateGenerator(complete);
+  for(String word:Arrays.asList("foros","casa","quiero")){
+   check(safe.generate(word,()->false).stream().noneMatch(e->e.start==0),"valid source motor-stable: "+word);
+  }
+  check(safe.generate("este teclado",()->false).isEmpty(),"ambiguous accent lacks contextual evidence");
+  for(String text:Arrays.asList("Ana teclao","no teclao","archium teclao","teclao 2026")){
+   List<HybridCandidateGenerator.Edit> result=safe.generate(text,()->false);
+   check(result.stream().anyMatch(e->text.substring(e.start,e.end).equals("teclao")&&e.replacement.equals("teclado")),
+     "protected neighbor still correctable: "+text);
+   check(result.stream().noneMatch(e->e.automatic),"all hybrid proposals remain manual: "+text);
+  }
+  HybridCandidateGenerator.Lexicon incomplete=new HybridCandidateGenerator.Lexicon(){
+   public Collection<String> vocabulary(){return valid;}
+   public boolean valid(String w){return valid.contains(w);}
+  };
+  check(new HybridCandidateGenerator(incomplete).generate("teclao",()->false).isEmpty(),"unknown lexical status abstains");
+  LocalContextReviewer.Lexicon stale=new LocalContextReviewer.Lexicon(){
+   public boolean valid(String w){return false;}
+   public boolean knownInvalid(String w){return w.equals("foros");}
+   public List<String> candidates(String w){return Collections.emptyList();}
+  };
+  java.util.concurrent.atomic.AtomicInteger lookedUp=new java.util.concurrent.atomic.AtomicInteger();
+  BoundedDictionaryLexicon nativeDictionary=new BoundedDictionaryLexicon(stale,w->{lookedUp.incrementAndGet();return w.equals("foros");},()->false);
+  check(nativeDictionary.valid("foros")&&nativeDictionary.valid("foros")&&lookedUp.get()==1,
+    "native validity overrides stale invalid and caches one lookup");
+  BoundedDictionaryLexicon unavailable=new BoundedDictionaryLexicon(stale,w->{throw new IllegalStateException("offline");},()->false);
+  try {unavailable.knownInvalid("teclao");throw new AssertionError("Missing native data misread as invalid");}
+  catch(IllegalStateException expected){checks++;}
  }
  public static void main(String[] args)throws Exception{
   if(args.length>0&&args[0].equals("valid-word-regression")){validWordContract();return;}
@@ -75,7 +113,7 @@ public final class HybridWritingTest {
    check(running.await(2,TimeUnit.SECONDS),"obsolete job starts");queue.invalidate();unblock.countDown();
    queue.close();check(!outputs.contains("obsolete"),"invalidated result never delivered");
   }
-  validWordContract();
+  validWordContract();lexicalSafetyContract();
   System.out.println("Hybrid component assertions PASS: "+checks);
  }
 }

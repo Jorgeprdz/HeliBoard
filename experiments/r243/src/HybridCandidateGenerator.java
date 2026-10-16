@@ -30,14 +30,18 @@ public final class HybridCandidateGenerator {
   return java.text.Normalizer.normalize(text.replace('ñ',(char)1),java.text.Normalizer.Form.NFD)
    .replaceAll("\\p{M}+","").replace((char)1,'ñ');
  }
- private static final class Token {int start,end;String word;Token(int s,int e,String w){start=s;end=e;word=w;}}
+ private static final class Token {int start,end;String word;boolean protectedText;Token(int s,int e,String w,boolean p){start=s;end=e;word=w;protectedText=p;}}
  private static final class State {int pos;String text;double cost;State(int p,String t,double c){pos=p;text=t;cost=c;}}
  public List<Edit> generate(String context,LocalContextReviewer.Cancellation cancel){
-  if(context==null||context.length()>256||cancel.cancelled()||context.indexOf(39)>=0||context.indexOf(8217)>=0||helium314.keyboard.latin.ai.SensitiveInputPolicy.sensitiveText(context)||context.matches("(?s).*[@/\\\\\\x60_=<>\\p{N}].*"))return Collections.emptyList();
+  if(context==null||context.length()>256||cancel.cancelled()||context.indexOf(39)>=0||context.indexOf(8217)>=0||helium314.keyboard.latin.ai.SensitiveInputPolicy.sensitiveText(context.replaceAll("\\p{N}+",""))||context.matches("(?s).*[@/\\\\\\x60_=<>].*"))return Collections.emptyList();
+  int digits=0;
+  for(int i=0;i<context.length();i++)if(Character.isDigit(context.charAt(i))&&++digits>4)return Collections.emptyList();
+  try {
+
   List<Token> tokens=new ArrayList<>();Matcher m=WORD.matcher(context);
   while(m.find()){
-   String w=m.group();if(!w.equals(w.toLowerCase(Locale.ROOT))||lex.preserved(w)||NEG.contains(w))return Collections.emptyList();
-   tokens.add(new Token(m.start(),m.end(),w));
+   String w=m.group();boolean protectedText=!w.equals(w.toLowerCase(Locale.ROOT))||lex.preserved(w)||NEG.contains(w);
+   tokens.add(new Token(m.start(),m.end(),w,protectedText));
   }
   if(tokens.size()>32)return Collections.emptyList();
   Map<String,Edit> unique=new HashMap<>(),contextual=new HashMap<>();int[] budget={4096};
@@ -47,9 +51,16 @@ public final class HybridCandidateGenerator {
    String source=context.substring(left.start,right.end);
    if(!source.matches("[\\p{Ll}\\p{M}]+(?:[ \\t]+[\\p{Ll}\\p{M}]+){0,2}"))continue;
    String flat=source.replaceAll("[ \\t]+","");if(flat.length()>48)continue;
-   boolean allValid=true,anyValid=false;for(int index=first;index<first+width;index++){
-    boolean valid=lex.valid(tokens.get(index).word);allValid&=valid;anyValid|=valid;
+   boolean allValid=true,anyValid=false,unknown=false,protectedSpan=false;
+   for(int index=first;index<first+width;index++){
+    Token token=tokens.get(index);
+    if(token.protectedText){protectedSpan=true;break;}
+    boolean valid=lex.valid(token.word);
+    // A word absent from a limited word list is UNKNOWN, not a proven typo.
+    if(!valid&&!lex.knownInvalid(token.word))unknown=true;
+    allValid&=valid;anyValid|=valid;
    }
+   if(protectedSpan||unknown)continue;
    // Do not let a nearby typo make a legitimate token an unverified motor-error target.
    // Invalid tokens are still considered independently at width=1.
    if(width>1&&anyValid&&!allValid)continue;
@@ -64,8 +75,8 @@ public final class HybridCandidateGenerator {
       double evidence=lex.contextual(context.substring(0,left.start),target,context.substring(right.end));
       String key=left.start+":"+right.end+":"+target;
       if(Double.isFinite(evidence)&&evidence>0)contextual.put(key,new Edit(left.start,right.end,target,-evidence));
-      else if(accentFamily(source).equals(accentFamily(target)))
-       unique.put(key,new Edit(left.start,right.end,target,TypingCandidateRanker.editCost(source,target,lex::keyDistance)));
+      // Valid words need positive contextual evidence even for accent-only variants.
+      // All proposals remain manual; similarity alone is not grammatical proof.
      }
     }
     continue;
@@ -120,5 +131,9 @@ public final class HybridCandidateGenerator {
    if(!result.contains(e))result.add(e);
   }
   return Collections.unmodifiableList(result);
+  } catch (RuntimeException unavailableLexicon) {
+   // Unavailable dictionaries must not imply invalid spelling.
+   return Collections.emptyList();
+  }
  }
 }
