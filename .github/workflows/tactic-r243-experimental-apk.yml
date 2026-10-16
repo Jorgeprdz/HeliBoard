@@ -77,7 +77,7 @@ jobs:
           assert m[1]=="com.jorgeprdz.ioskeyboard.debug", m[1]
           assert int(m[2])==int(os.environ["HELIBOARD_VERSION_CODE"])
           assert "application-label:'Tactic Keyboard'" in badging, "Branding Tactic Keyboard missing"
-          certs=set(x.lower() for x in re.findall(r"^Signer #\d+ certificate SHA-256 digest:\s*([a-fA-F0-9]{64})",signing,re.M))
+          certs=set(x.lower() for x in re.findall(r"^(?:V[0-9]+ Signer|Signer #\d+):? certificate SHA-256 digest:\s*([a-fA-F0-9]{64})\s*$",signing,re.M))
           assert certs=={os.environ["EXPECTED_CERT"].lower()}, "Wrong signing identity"
           apk=Path("tactic-artifact")/os.environ["APK_NAME"]
           digest=hashlib.sha256(apk.read_bytes()).hexdigest()
