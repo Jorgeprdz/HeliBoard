@@ -1528,6 +1528,10 @@ class InputLogicTest {
                 messages.removeAt(0)
             }
         }
+        if (messages.isNotEmpty() || delayedMessages.isNotEmpty()) {
+            System.err.println("R25_PENDING_IMMEDIATE " + messages.joinToString(" | ") { r25Describe(it) })
+            System.err.println("R25_PENDING_DELAYED " + delayedMessages.joinToString(" | ") { r25Describe(it) })
+        }
         assertEquals(0, messages.size)
         assertEquals(0, delayedMessages.size)
     }
@@ -1535,6 +1539,21 @@ class InputLogicTest {
 }
 
 private var currentScript = ScriptUtils.SCRIPT_LATIN
+// R2.5 forensic harness only. Never alters message queue semantics or production IME.
+private val r25Origins = Collections.synchronizedMap(WeakHashMap<Message, String>())
+private fun r25Capture(message: Message, mode: String) {
+    if (System.getProperty("tactic.r25.trace") != "1") return
+    val caller = Thread.currentThread().stackTrace.drop(2).take(12).joinToString(" <- ") {
+        it.className + "." + it.methodName + ":" + it.lineNumber
+    }
+    r25Origins[message] = "publishedEpochMs=" + System.currentTimeMillis() +
+        " publishedNano=" + System.nanoTime() + " thread=" + Thread.currentThread().name +
+        " via=" + mode + " caller=" + caller
+}
+private fun r25Describe(message: Message): String =
+    "what=" + message.what + " arg1=" + message.arg1 + " arg2=" + message.arg2 +
+        " target=" + message.target?.javaClass?.name +
+        " origin=" + (r25Origins[message] ?: "unobserved") 
 private val messages = mutableListOf<Message>() // for latinIME / ShadowInputMethodService
 private val delayedMessages = mutableListOf<Message>() // for latinIME / ShadowInputMethodService
 
@@ -1548,10 +1567,12 @@ private val delayedMessages = mutableListOf<Message>() // for latinIME / ShadowI
 class ShadowHandler {
     @Implementation
     fun sendMessage(message: Message) {
+        r25Capture(message, "sendMessage")
         messages.add(message)
     }
     @Implementation
     fun sendMessageDelayed(message: Message, delay: Long) {
+        r25Capture(message, "sendMessageDelayed delayMs=" + delay)
         delayedMessages.add(message)
     }
 }

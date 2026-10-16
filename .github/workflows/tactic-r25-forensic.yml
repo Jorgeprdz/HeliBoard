@@ -68,3 +68,34 @@ jobs:
       - run: |
           chmod +x gradlew
           ./gradlew :app:testDebugUnitTest --no-daemon --tests 'helium314.keyboard.latin.common.dynamic.AppColorSeedProviderTest' --tests 'helium314.keyboard.latin.common.dynamic.AppSessionColorCoordinatorTest'
+
+  full-suite-provenance:
+    name: Full JVM test suite with opt-in message provenance (no APK)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Run complete suite, preserve all assertions
+        env:
+          JAVA_TOOL_OPTIONS: -Dtactic.r25.trace=1
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:testDebugUnitTest --no-daemon
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r25-jvm-complete-with-provenance
+          path: |
+            app/build/test-results/testDebugUnitTest
+            app/build/reports/tests/testDebugUnitTest
+          if-no-files-found: warn
+          retention-days: 14
