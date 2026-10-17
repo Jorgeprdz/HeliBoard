@@ -63,3 +63,7 @@
 - [Run R25 39000407904](https://github.com/Jorgeprdz/HeliBoard/actions/runs/39000407904): nueva regresión sobre HEAD corregido, sin veredicto al registrar este apartado.
 
 Estas ejecuciones **no satisfacen** la transición automática a R2.5.2c-2; no hay evidencia de un `GO_CONDITIONED` ni de que todas las limitaciones sean estrictamente infraestructura sin pruebas esenciales pendientes.
+
+### Regresión adicional verificada sobre el commit corregido
+
+El job JVM del [run 39000407904](https://github.com/Jorgeprdz/HeliBoard/actions/runs/39000407904) concluyó en **FAIL: 541 tests, 1 FAIL**, esta vez `XLinkTest > knownDictionaries`, distinto de `InputLogicTest` en el run 39000140968. La repetición **no** establece `541/541 PASS`. La identidad diferente de los fallos es compatible con inestabilidad independiente, pero sin diagnóstico causal no se etiqueta automáticamente `FLAKY` ni `REGRESSION_FIXED`. **No hay GO de estabilidad JVM.**
