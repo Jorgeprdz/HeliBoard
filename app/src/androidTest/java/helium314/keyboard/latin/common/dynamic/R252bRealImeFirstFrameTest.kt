@@ -127,8 +127,6 @@ class R252bRealImeFirstFrameTest {
         val prefs=context.prefs()
         val oldDay=prefs.getString(Settings.PREF_THEME_COLORS,null)
         val oldNight=prefs.getString(Settings.PREF_THEME_COLORS_NIGHT,null)
-        val currentIme=(context.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as InputMethodManager)
-            .listInputMethods // list only, never changes a user's profile; emulator only
         val originalIme=android.provider.Settings.Secure.getString(
             context.contentResolver,android.provider.Settings.Secure.DEFAULT_INPUT_METHOD)
         val component="${context.packageName}/helium314.keyboard.latin.LatinIME"
