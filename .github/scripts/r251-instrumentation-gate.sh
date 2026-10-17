@@ -5,7 +5,24 @@ mkdir -p r25-evidence
 adb shell getprop ro.product.manufacturer > r25-evidence/manufacturer.txt || true
 adb shell getprop ro.product.model > r25-evidence/model.txt || true
 adb shell getprop ro.build.version.release > r25-evidence/android-version.txt || true
-adb shell settings get secure default_input_method > r25-evidence/ime-before.txt || true
+# Fresh Android 15 emulator may report "null" until Gboard/default IME boots.
+# Snapshot the pre-ready state separately; never compare an uninitialized value.
+adb shell settings get secure default_input_method > r25-evidence/ime-boot-initial.txt || true
+ready=0
+for attempt in $(seq 1 40); do
+  ime="$(adb shell settings get secure default_input_method 2>/dev/null | tr -d '\r' || true)"
+  if [[ -n "$ime" && "$ime" != "null" ]]; then
+    printf '%s\n' "$ime" > r25-evidence/ime-before.txt
+    echo "R252_IME_READY_AFTER_ATTEMPT=$attempt"
+    ready=1
+    break
+  fi
+  sleep 2
+done
+if [[ "$ready" != "1" ]]; then
+  echo 'R252_NO_GO: emulator never established a valid default IME before test'
+  exit 1
+fi
 adb logcat -c || true
 
 capture() {
@@ -101,4 +118,10 @@ for p in reports:
 print('R252_ANDROID_GATE',counts)
 assert counts==dict(tests=3,failures=0,errors=0,skipped=0),counts
 PY
+# Enforce the IME isolation invariant across all 9 instrumented cases.
+adb shell settings get secure default_input_method > r25-evidence/ime-after-r252.txt || true
+if ! diff -u r25-evidence/ime-before.txt r25-evidence/ime-after-r252.txt > r25-evidence/ime-r252.diff; then
+  echo 'R252_NO_GO: default IME changed during R2.5.2 tests'
+  exit 1
+fi
 echo 'R252_ANDROID_GATE_PASS 3/3'

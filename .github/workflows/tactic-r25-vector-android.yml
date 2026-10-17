@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/tactic-r25-vector-android.yml'
       - 'app/src/androidTest/**'
+      - '.github/scripts/r251-instrumentation-gate.sh'
       - 'app/src/debugNoMinify/AndroidManifest.xml'
   workflow_dispatch:
 permissions:
