@@ -22,11 +22,36 @@ public class R242FocusTest {
   for(String text:Arrays.asList("Archium DW O’Neil Ana-María","\"texot\"","No quiero 3 2","https://host/noisy","echo noisy > file","hola works the build"))
    assertTrue(text,CorrectionFocus.targets(text,lexicon(),()->false).isEmpty());
  }
- @Test public void automaticHistoryInsertionDoesNotEraseNativeInvalidProof(){
+ @Test public void nativeConfirmedValidityOverridesStaleNegativeObservation(){
   ObservedLexicon observations=new ObservedLexicon();observations.record("texot",false,Collections.emptyList(),true);
+  // A positive result from the current configured dictionaries must not be masked
+  // by a historical native observation, e.g. after switching language/dictionaries.
   BoundedDictionaryLexicon live=new BoundedDictionaryLexicon(observations.snapshot(),word->true,()->false);
-  assertFalse(live.valid("texot"));assertTrue(live.knownInvalid("texot"));assertTrue(live.valid("texto"));
-  assertEquals(1,CorrectionFocus.targets("el texot",live,()->false).size());
+  assertTrue(live.valid("texot"));assertFalse(live.knownInvalid("texot"));assertTrue(live.valid("texto"));
+  assertTrue(CorrectionFocus.targets("el texot",live,()->false).isEmpty());
+ }
+ @Test public void currentNativeInvalidProofKeepsTypoCorrectable(){
+  ObservedLexicon observations=new ObservedLexicon();observations.record("texot",false,Collections.emptyList(),true);
+  BoundedDictionaryLexicon nativeInvalid=new BoundedDictionaryLexicon(observations.snapshot(),word->!word.equals("texot"),()->false);
+  assertFalse(nativeInvalid.valid("texot"));assertTrue(nativeInvalid.knownInvalid("texot"));
+  assertTrue(nativeInvalid.valid("texto"));
+  assertEquals(1,CorrectionFocus.targets("el texot",nativeInvalid,()->false).size());
+ }
+ @Test public void explicitPersonalVocabularyPreventsFalseInvalidAndSkipsNativeLookup(){
+  java.util.concurrent.atomic.AtomicInteger lookups=new java.util.concurrent.atomic.AtomicInteger();
+  LocalContextReviewer.Lexicon personal=new LocalContextReviewer.Lexicon(){
+   public boolean valid(String word){return false;}
+   public boolean preserved(String word){return "texot".equals(word);}
+   public List<String> candidates(String word){return Collections.emptyList();}
+  };
+  BoundedDictionaryLexicon lex=new BoundedDictionaryLexicon(personal,word->{lookups.incrementAndGet();return false;},()->false);
+  assertTrue(lex.valid("texot"));assertFalse(lex.knownInvalid("texot"));
+  assertEquals(0,lookups.get());
+ }
+ @Test public void unavailableDictionaryDoesNotTurnUnknownIntoInvalidEvidence(){
+  BoundedDictionaryLexicon lex=new BoundedDictionaryLexicon(lexicon(),word->{throw new IllegalStateException("dictionary unavailable");},()->false);
+  try {lex.knownInvalid("texot");fail("unavailable dictionary must not be a negative verdict");}
+  catch(IllegalStateException expected){}
  }
  @Test public void independentTyposProduceSeparateScopesAndCancellationDropsAll(){
   assertEquals(2,CorrectionFocus.targets("el texot is buidl",lexicon(),()->false).size());

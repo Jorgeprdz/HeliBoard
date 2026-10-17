@@ -66,6 +66,7 @@ fun AppearanceScreen(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
             Settings.PREF_THEME_DAY_NIGHT else null,
         Settings.PREF_THEME_COLORS,
+        Settings.PREF_R252_BY_APP_COLORS,
         if (dayNightMode) Settings.PREF_THEME_COLORS_NIGHT else null,
         Settings.PREF_NAVBAR_COLOR,
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
@@ -172,6 +173,11 @@ fun createAppearanceSettings(context: Context) = listOf(
                 isNight = false,
                 default = Defaults.PREF_THEME_COLORS
             )
+    },
+    // R2.5.2c opt-in: changes color *source*, never opacity, blur, key layout or writing.
+    Setting(context, Settings.PREF_R252_BY_APP_COLORS,
+        R.string.r252_by_app_colors, R.string.r252_by_app_colors_summary) {
+        SwitchPreference(it, Defaults.PREF_R252_BY_APP_COLORS)
     },
     Setting(context, Settings.PREF_THEME_COLORS_NIGHT, R.string.theme_colors_night) { setting ->
         val ctx = LocalContext.current

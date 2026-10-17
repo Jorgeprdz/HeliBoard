@@ -1,0 +1,155 @@
+name: R25 Android vector instrumentation (test APKs only)
+on:
+  push:
+    branches: [feat/tactic-r243-hybrid-writing]
+    paths:
+      - '.github/workflows/tactic-r25-vector-android.yml'
+      - 'app/src/androidTest/**'
+      - '.github/scripts/r251-instrumentation-gate.sh'
+      - 'app/src/debugNoMinify/AndroidManifest.xml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r25-vector-android-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  android-vector:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Enable KVM for the isolated emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Verify source boundary and approved branding
+        run: |
+          git log -1 --format='%H %s'
+          python3 experiments/r243/check_branding.py
+          mkdir -p r25-evidence
+          git rev-parse HEAD > r25-evidence/source-sha.txt
+      - name: Real Android rasterization; no visible IME activation
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            bash .github/scripts/r251-instrumentation-gate.sh
+      - name: Strict results and measured seed telemetry
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, xml.etree.ElementTree as ET
+          reports=list(pathlib.Path('r25-evidence/vector/androidTest-results').rglob('*.xml'))
+          assert reports, 'Missing real instrumentation XML'
+          totals=dict(tests=0,failures=0,errors=0,skipped=0)
+          for report in reports:
+              root=ET.parse(report).getroot()
+              for key in totals: totals[key]+=int(root.attrib.get(key,0))
+          assert totals['tests']==5 and all(totals[k]==0 for k in ['failures','errors','skipped']),totals
+          metrics=[]
+          for line in pathlib.Path('r25-evidence/seed-metrics.log').read_text().splitlines():
+              if '{' in line: metrics.append(json.loads(line[line.index('{'):]))
+          assert {m['case'] for m in metrics}=={'cyan','neutral','adaptive','fallback','inaccessible'}, metrics
+          cyan=next(m for m in metrics if m['case']=='cyan')
+          r252_reports=list(pathlib.Path('r25-evidence/r252/androidTest-results').rglob('*.xml'))
+          assert r252_reports, 'Missing R2.5.2 Android instrumentation XML'
+          r252_totals=dict(tests=0,failures=0,errors=0,skipped=0)
+          for report in r252_reports:
+              root=ET.parse(report).getroot()
+              for key in r252_totals: r252_totals[key]+=int(root.attrib.get(key,0))
+          assert r252_totals==dict(tests=3,failures=0,errors=0,skipped=0),r252_totals
+          frame_reports=list(pathlib.Path('r25-evidence/r252b/androidTest-results').rglob('*.xml'))
+          assert frame_reports, 'R2.5.2b real IME frame evidence missing'
+          frame_totals=dict(tests=0,failures=0,errors=0,skipped=0)
+          for report in frame_reports:
+              root=ET.parse(report).getroot()
+              for key in frame_totals: frame_totals[key]+=int(root.attrib.get(key,0))
+          assert frame_totals==dict(tests=5,failures=0,errors=0,skipped=0),frame_totals
+          frame_logs=pathlib.Path('r25-evidence/r252b/logcat-all.txt').read_text()
+          assert 'R252C_SURFACE_GATE' in frame_logs, 'Surface first-draw audit evidence missing'
+          assert frame_logs.count('R252C_OFF_BASELINE')>=2, 'Exact OFF baseline frost checks missing'
+          assert frame_logs.count('R252B_FIRST_FRAME')>=3, 'Not enough genuine OnPreDraw observations'
+          assert 'R252B_SEQUENCE' in frame_logs, 'Missing whole-transition view counters'
+          assert 'R252B_COMPOSITION' in frame_logs, 'Missing real InputConnection evidence'
+          r252_logs=pathlib.Path('r25-evidence/r252/logcat-all.txt').read_text()
+          assert 'R252_WORKER_METRICS' in r252_logs, 'No real Android worker metrics log'
+          assert 'setInputView=0 hideWindow=0 showWindow=0' in r252_logs, 'Unexpected worker-side view/hide/show calls'
+          assert len(cyan['samples'])==10 and len({s['argb'] for s in cyan['samples']})==1
+          assert all(s['chroma']>=14 and s['hue_distance']<=25 and not s['main_thread'] for s in cyan['samples'])
+          result={'execution':'ANDROID_EMULATOR_API_35','physical_samsung':'NOT_EXECUTED','phase_3':'NO_GO_PENDING_PHYSICAL_GATE_AND_SESSION_REVIEW','tests':totals,'r252_tests':r252_totals,'r252b_real_ime':frame_totals,'worker_view_delta':{'setInputView':0,'hideWindow':0,'showWindow':0},'metrics':metrics}
+          pathlib.Path('r25-evidence/result.json').write_text(json.dumps(result,indent=2)+'\n')
+          print(json.dumps(result,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r25-vector-android-evidence-no-apk
+          path: |
+            r25-evidence/
+            app/build/outputs/androidTest-results/
+            app/build/reports/androidTests/
+          if-no-files-found: warn
+          retention-days: 14
+
+  jvm-regression:
+    name: JVM regression without APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Host edit-contract regression
+        run: bash experiments/r243/tests/run_android_edit_contract_host.sh
+      - name: Strict Android JVM regression
+        run: |
+          ./gradlew :app:testDebugUnitTest --no-daemon
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          reports=sorted(Path('app/build/test-results/testDebugUnitTest').glob('TEST-*.xml'))
+          assert reports, 'Missing Android JVM test reports'
+          result={k:0 for k in ('tests','failures','errors','skipped')}
+          suites=set()
+          for path in reports:
+              root=ET.parse(path).getroot()
+              suites.add(root.attrib.get('name',''))
+              for key in result: result[key]+=int(root.attrib.get(key,0))
+          print('R251_JVM_REGRESSION',result)
+          assert result['tests'] >= 504, 'Baseline coverage missing'
+          assert all(result[k] == 0 for k in ('failures','errors','skipped'))
+          assert any(s.endswith('InputLogicTest') for s in suites)
+          assert any(s.endswith('AppColorSeedProviderTest') for s in suites)
+          PY
+      - name: Keep JVM XML and HTML even on failure
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r251-jvm-test-evidence-no-apk
+          path: |
+            app/build/test-results/testDebugUnitTest
+            app/build/reports/tests/testDebugUnitTest
+          if-no-files-found: warn
+          retention-days: 14

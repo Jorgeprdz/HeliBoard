@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- R2.5.1 test-target variant only: the boot receiver kills a non-active IME process
+     during AndroidJUnitRunner startup; production/main manifest is unchanged. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <receiver android:name="helium314.keyboard.latin.SystemBroadcastReceiver"
+            tools:node="remove" />
+        <activity android:name="helium314.keyboard.latin.R252bHostActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize" />
+    </application>
+</manifest>

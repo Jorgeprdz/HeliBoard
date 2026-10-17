@@ -14,6 +14,8 @@ on:
 
 jobs:
   build:
+    # Isolated prototype must clear its independent linguistic gate before any Android tasks.
+    if: ${{ github.head_ref != 'feat/tactic-r243-hybrid-writing' && github.ref != 'refs/heads/feat/tactic-r243-hybrid-writing' }}
     runs-on: ubuntu-latest
 
     steps:

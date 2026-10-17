@@ -1,0 +1,40 @@
+{
+  "commit": "c79e3edfc17a0de823e9ec2b46e91c01508f115e",
+  "corpus_sha256": "5f44e8fd374e1c78af57547979a7c03cfbc51a83c8b0c0dc275b54a1ed0ae2ac",
+  "lexicon_sha256": "f0ad0fb78cfb9fbab41350a692e7727d88185e39178eb214ea5f8ee2e3dc00a3",
+  "seed": 2026101601,
+  "selectionBudget": "first 8 candidates, then remove tail until prompt <=1800 characters; fixed before inference, no reference access",
+  "components": [
+    {
+      "version": "r241",
+      "commit": "ff27fe9ad30d28b4e5e9e17457db6d27e3487429",
+      "path": "app/src/main/java/helium314/keyboard/latin/ai/local/LocalContextReviewer.java",
+      "sha256": "7ea4bde4dc11f4697dbc7813f97f32abdba1db5992aa68ac7e62196c2a110e91"
+    },
+    {
+      "version": "r241",
+      "commit": "ff27fe9ad30d28b4e5e9e17457db6d27e3487429",
+      "path": "app/src/main/java/helium314/keyboard/latin/ai/local/TypingCandidateRanker.java",
+      "sha256": "6912906b60099fd56a0d9d20abe38f35487a10ec53a5c954105f3a0b7a2eb435"
+    },
+    {
+      "version": "r241",
+      "commit": "ff27fe9ad30d28b4e5e9e17457db6d27e3487429",
+      "path": "app/src/main/java/helium314/keyboard/latin/ai/local/WordBoundarySegmenter.java",
+      "sha256": "cd5ab962dea6f3d7cce813e0f1f0e3ba65bcfd7bafd4377c2bfbd47f19bc70d5"
+    },
+    {
+      "version": "r242",
+      "commit": "a5d7bbf0d364fd9650a4e304975402662010ae11",
+      "path": "app/src/main/java/helium314/keyboard/latin/ai/local/CorrectionFocus.java",
+      "sha256": "154608833426fcc028f7476876f450155843c6a01f6fb427a11d37ddfe15b936"
+    },
+    {
+      "version": "r242",
+      "commit": "a5d7bbf0d364fd9650a4e304975402662010ae11",
+      "path": "app/src/main/java/helium314/keyboard/latin/ai/local/SemanticEditGuard.java",
+      "sha256": "eed1f9feb31c17e9158571fd17c54819feece4fd1c6b0203f4ac41107ae24b18"
+    }
+  ],
+  "productionGate": "BLOCKED"
+}

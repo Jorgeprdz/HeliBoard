@@ -295,6 +295,9 @@ public final class InputLogic {
      */
     // Called from {@link SuggestionStripView} through the {@link SuggestionStripView#Listener}
     // interface
+    /** R2.5.2b: state-only query; does not materialize or read the composed editor text. */
+    public boolean isComposingForPalette() { return mWordComposer.isComposingWord(); }
+
     public String getAiComposingWord() { return mWordComposer.getTypedWord(); }
 
     public InputTransaction onPickSuggestionManually(SettingsValues settingsValues, SuggestedWordInfo suggestionInfo,

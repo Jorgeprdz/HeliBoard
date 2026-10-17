@@ -1,2 +1,4 @@
 include ':app'
 include ':tools:make-emoji-keys'
+include ':experiments:dynamic-by-app:r252c-fixtures:app-a'
+include ':experiments:dynamic-by-app:r252c-fixtures:app-b'

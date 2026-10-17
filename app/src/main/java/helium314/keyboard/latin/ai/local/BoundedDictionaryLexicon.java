@@ -15,15 +15,14 @@ public final class BoundedDictionaryLexicon implements LocalContextReviewer.Lexi
   if(cancel.cancelled())throw new java.util.concurrent.CancellationException();
   String key=word.toLowerCase(Locale.ROOT);
   if(base.preserved(key))return true;
-  // A native complete-invalid observation predates automatic user-history insertion on commit.
-  // That insertion is not explicit evidence that the typo is legitimate vocabulary.
-  if(base.knownInvalid(key))return false;
+  // Positive native or personal validity wins over stale complete-invalid observations.
+  // The worker predicate checks ALL currently configured dictionaries when available.
   Boolean result=checked.get(key);
   if(result==null){
    if(checked.size()>=512)throw new java.util.concurrent.CancellationException();
    result=dictionary.test(key);checked.put(key,result);
   }
-  return result;
+  return result || base.valid(key);
  }
  public boolean knownInvalid(String word){return !valid(word);}
  public boolean preserved(String word){return base.preserved(word);}

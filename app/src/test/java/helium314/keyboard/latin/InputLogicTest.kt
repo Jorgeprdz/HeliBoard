@@ -232,6 +232,28 @@ class InputLogicTest {
         observed.keyboard(positions)
     }
 
+
+    @Test fun R24DictionaryReadinessRejectsMissingAndPartialDictionaries() {
+        r22Enable("voy haber si puedo")
+        ShadowFacilitator2.initializedMain = false
+        ShadowFacilitator2.uninitializedMain = false
+        r22Key(' '.code)
+        assertEquals("voy haber si puedo ", text)
+
+        r22Enable("voy haber si puedo")
+        ShadowFacilitator2.initializedMain = true
+        ShadowFacilitator2.uninitializedMain = true
+        r22Key(' '.code)
+        assertEquals("voy haber si puedo ", text)
+
+        r22Enable("voy haber si puedo")
+        ShadowFacilitator2.initializedMain = true
+        ShadowFacilitator2.uninitializedMain = false
+        r22Key(' '.code)
+        assertEquals("voy a ver si puedo ", text)
+        checkConnectionConsistency()
+    }
+
     @Test fun R241SegmentationUsesAtomicUndoAndPersistentPairVeto() {
         r22Enable("🙂 nincuidando")
         r241Observe("ni")
@@ -316,6 +338,32 @@ class InputLogicTest {
         latinIME.pickSuggestionManually(candidate)
         assertEquals("Slll estoy después", text)
         assertEquals(4, cursor)
+        checkConnectionConsistency()
+    }
+
+    @Test fun R25AmbiguousContextNeverAutoCommitsAndBackspaceStillEditsNormally() {
+        for (source in listOf("Hola esto y escribiendo rápido",
+                "Juan salto por la ventana", "Seguimos naciendo pruebas",
+                "Aun tienensentido")) {
+            r22Enable(source)
+            r22Key(' '.code)
+            assertEquals("$source ", text)
+            functionalKeyPress(KeyCode.DELETE)
+            assertEquals(source, text)
+            checkConnectionConsistency()
+        }
+    }
+
+    @Test fun R243ObservedNativeSuggestionsFeedHybridWithoutChangingEditor() {
+        r22Enable("tecmaod")
+        r22NativeCandidates("tecmaod", false, listOf("teclado"))
+        val assistantField = LatinIME::class.java.getDeclaredField("mAiKeyboardAssistant").apply { isAccessible = true }
+        val assistant = assistantField.get(latinIME) as helium314.keyboard.latin.ai.AiKeyboardAssistant
+        val lexiconField = assistant.javaClass.getDeclaredField("lexicon").apply { isAccessible = true }
+        val observed = lexiconField.get(assistant) as helium314.keyboard.latin.ai.local.ObservedLexicon
+        kotlin.test.assertTrue(observed.nativeValidVocabulary().contains("teclado"))
+        kotlin.test.assertTrue(observed.snapshot().candidates("tecmaod").contains("teclado"))
+        assertEquals("tecmaod", text) // No new automatic edits from hybrid.
         checkConnectionConsistency()
     }
 
@@ -979,7 +1027,7 @@ class InputLogicTest {
     @Test fun `no intermediate commit in URL field with protocol`() {
         setInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI)
         chainInput("http://bla.com/img.jpg")
-        assertEquals("http", lastAddedWord) // todo: somehow avoid?
+        assertEquals("", lastAddedWord) // URI fields must not retain protocol in learned history.
         assertEquals("http://bla.com/img.jpg", text)
         assertEquals("bla.com/img.jpg", composingText)
     }
@@ -988,7 +1036,7 @@ class InputLogicTest {
         latinIME.prefs().edit { putBoolean(Settings.PREF_URL_DETECTION, true) }
         setInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI)
         chainInput("http://bla.com/img.jpg")
-        assertEquals("http", lastAddedWord) // todo: somehow avoid?
+        assertEquals("", lastAddedWord) // URI fields must not retain protocol in learned history.
         assertEquals("http://bla.com/img.jpg", text)
         assertEquals("bla.com/img.jpg", composingText)
     }
@@ -1279,6 +1327,8 @@ class InputLogicTest {
         currentScript = ScriptUtils.SCRIPT_LATIN
         ShadowInputMethodService.reset()
         lastAddedWord = ""
+        ShadowFacilitator2.initializedMain = true
+        ShadowFacilitator2.uninitializedMain = false
 
         // reset settings
         latinIME.getSharedPreferences("keyboard_ai_private", 0).edit().clear().commit()
@@ -1478,6 +1528,10 @@ class InputLogicTest {
                 messages.removeAt(0)
             }
         }
+        if (messages.isNotEmpty() || delayedMessages.isNotEmpty()) {
+            System.err.println("R25_PENDING_IMMEDIATE " + messages.joinToString(" | ") { r25Describe(it) })
+            System.err.println("R25_PENDING_DELAYED " + delayedMessages.joinToString(" | ") { r25Describe(it) })
+        }
         assertEquals(0, messages.size)
         assertEquals(0, delayedMessages.size)
     }
@@ -1485,6 +1539,21 @@ class InputLogicTest {
 }
 
 private var currentScript = ScriptUtils.SCRIPT_LATIN
+// R2.5 forensic harness only. Never alters message queue semantics or production IME.
+private val r25Origins = Collections.synchronizedMap(WeakHashMap<Message, String>())
+private fun r25Capture(message: Message, mode: String) {
+    if (System.getProperty("tactic.r25.trace") != "1") return
+    val caller = Thread.currentThread().stackTrace.drop(2).take(12).joinToString(" <- ") {
+        it.className + "." + it.methodName + ":" + it.lineNumber
+    }
+    r25Origins[message] = "publishedEpochMs=" + System.currentTimeMillis() +
+        " publishedNano=" + System.nanoTime() + " thread=" + Thread.currentThread().name +
+        " via=" + mode + " caller=" + caller
+}
+private fun r25Describe(message: Message): String =
+    "what=" + message.what + " arg1=" + message.arg1 + " arg2=" + message.arg2 +
+        " target=" + message.target?.javaClass?.name +
+        " origin=" + (r25Origins[message] ?: "unobserved") 
 private val messages = mutableListOf<Message>() // for latinIME / ShadowInputMethodService
 private val delayedMessages = mutableListOf<Message>() // for latinIME / ShadowInputMethodService
 
@@ -1498,10 +1567,12 @@ private val delayedMessages = mutableListOf<Message>() // for latinIME / ShadowI
 class ShadowHandler {
     @Implementation
     fun sendMessage(message: Message) {
+        r25Capture(message, "sendMessage")
         messages.add(message)
     }
     @Implementation
     fun sendMessageDelayed(message: Message, delay: Long) {
+        r25Capture(message, "sendMessageDelayed delayMs=" + delay)
         delayedMessages.add(message)
     }
 }
@@ -1523,6 +1594,18 @@ class ShadowKeyboardSwitcher {
 
 @Implements(DictionaryFacilitatorImpl::class)
 class ShadowFacilitator2 {
+    // Robolectric provides no real native dictionaries; model their readiness explicitly,
+    // instead of silently treating an empty fixture as production dictionary availability.
+    @Implementation
+    fun hasAtLeastOneInitializedMainDictionary(): Boolean = initializedMain
+
+    @Implementation
+    fun hasAtLeastOneUninitializedMainDictionary(): Boolean = uninitializedMain
+
+    @Implementation
+    fun isValidSpellingWord(word: String): Boolean =
+        helium314.keyboard.latin.ai.local.R241WritingTest.Vocabulary().valid(word)
+
     @Implementation
     fun addToUserHistory(suggestion: String, wasAutoCapitalized: Boolean,
                          ngramContext: NgramContext, timeStampInSeconds: Long,
@@ -1531,5 +1614,7 @@ class ShadowFacilitator2 {
     }
     companion object {
         var lastAddedWord = ""
+        var initializedMain = true
+        var uninitializedMain = false
     }
 }

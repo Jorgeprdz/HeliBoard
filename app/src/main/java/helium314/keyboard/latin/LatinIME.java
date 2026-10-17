@@ -58,6 +58,7 @@ import helium314.keyboard.keyboard.KeyboardSwitcher;
 import helium314.keyboard.keyboard.MainKeyboardView;
 import helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo;
 import helium314.keyboard.latin.common.ColorType;
+import helium314.keyboard.latin.common.dynamic.R252ColorLifecycle;
 import helium314.keyboard.latin.common.Constants;
 import helium314.keyboard.latin.common.CoordinateUtils;
 import helium314.keyboard.latin.common.InputPointers;
@@ -157,6 +158,26 @@ public class LatinIME extends InputMethodService implements
     // Used for re-initialize keyboard layout after onConfigurationChange.
     @Nullable
     private Context mDisplayContext;
+
+    // R2.5.2 isolated lifecycle only; inactive outside injected tests.
+    private R252ColorLifecycle mR252ColorLifecycle;
+
+    /** Test-only observer installed from local Android instrumentation, never from a user option. */
+    public interface R252bHarnessObserver {
+        void onInputBoundary(View inputView, EditorInfo info, boolean restarting);
+        void onInputViewInstalled(View inputView);
+        void onWindowHide();
+        void onWindowShow();
+    }
+    private static volatile R252bHarnessObserver sR252bHarnessObserver;
+    private static volatile LatinIME sR252bActiveInstance;
+    public static LatinIME r252bRunningInstanceForTests() { return sR252bActiveInstance; }
+    public static void r252bObserveForTests(R252bHarnessObserver observer) { sR252bHarnessObserver = observer; }
+    public void r252bInstallSessionForTests(R252ColorLifecycle lifecycle) {
+        if (mR252ColorLifecycle != null) mR252ColorLifecycle.close();
+        mR252ColorLifecycle = lifecycle;
+    }
+
 
     // Object for reacting to adding/removing a dictionary pack.
     private final BroadcastReceiver mDictionaryPackInstallReceiver =
@@ -559,7 +580,9 @@ public class LatinIME extends InputMethodService implements
         mDisplayContext = KtxKt.getDisplayContext(this);
         KeyboardSwitcher.init(this);
         super.onCreate();
+        sR252bActiveInstance = this;
 
+        mR252ColorLifecycle = new R252ColorLifecycle(this);
         loadSettings();
         mClipboardHistoryManager.onCreate();
         mHandler.onCreate();
@@ -710,6 +733,9 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onDestroy() {
+        if (sR252bActiveInstance == this) sR252bActiveInstance = null;
+        sR252bHarnessObserver = null;
+        if (mR252ColorLifecycle != null) mR252ColorLifecycle.close();
         if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.close();
         mClipboardHistoryManager.onDestroy();
         mDictionaryFacilitator.closeDictionaries();
@@ -777,12 +803,22 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void setInputView(final View view) {
+        // Count the actual service entrypoint, not just the palette-specific switcher call.
+        final R252bHarnessObserver installedObserver = sR252bHarnessObserver;
+        if (installedObserver != null) installedObserver.onInputViewInstalled(view);
         super.setInputView(view);
         mInputView = view;
         mInsetsUpdater = ViewOutlineProviderUtilsKt.setInsetsOutlineProvider(view);
         KtxKt.updateSoftInputWindowLayoutParameters(this, mInputView);
         IosGlassController.prepareWindow(this, mInputView);
         updateSuggestionStripView(view);
+    }
+
+    @Override
+    public void showWindow(boolean showInput) {
+        final R252bHarnessObserver observer = sR252bHarnessObserver;
+        if (observer != null) observer.onWindowShow();
+        super.showWindow(showInput);
     }
 
     public void updateSuggestionStripView(View view) {
@@ -862,6 +898,27 @@ public class LatinIME extends InputMethodService implements
 
     private void onStartInputInternal(final EditorInfo editorInfo, final boolean restarting) {
         super.onStartInput(editorInfo, restarting);
+        // R2.5.2c: release opt-in OR isolated debug ADB gate; evaluated only at editor start.
+        if (mR252ColorLifecycle != null) mR252ColorLifecycle.refreshActivation(this);
+        // Session identity only. No palette is applied or view rebuilt in phase B.
+        if (mR252ColorLifecycle != null) {
+            final Configuration conf = getResources().getConfiguration();
+            final boolean isDark = (conf.uiMode & Configuration.UI_MODE_NIGHT_MASK)
+                    == Configuration.UI_MODE_NIGHT_YES;
+            // InputBinding represents the client, not the keyboard display.
+            // Do not use getDisplay()/mDisplayContext: the visible IME is on phone.
+            final android.view.inputmethod.InputBinding binding = getCurrentInputBinding();
+            final android.os.IBinder connectionToken = binding == null
+                    ? null : binding.getConnectionToken();
+            final Integer editorConnectionId = connectionToken == null
+                    ? null : connectionToken.hashCode();
+            mR252ColorLifecycle.onEditorStart(editorInfo == null ? null : editorInfo.packageName,
+                    editorInfo == null ? 0 : editorInfo.fieldId,
+                    editorInfo == null ? 0 : editorInfo.inputType,
+                    editorInfo == null ? 0 : editorInfo.imeOptions,
+                    null /* editor display is unavailable, never use the IME display */,
+                    restarting, isDark, editorConnectionId);
+        }
 
         final RichInputMethodSubtype subtypeForApp = editorInfo == null
             ? null :
@@ -893,14 +950,20 @@ public class LatinIME extends InputMethodService implements
         boolean inputTypeChanged = !currentSettingsValues.isSameInputType(editorInfo);
         boolean isDifferentTextField = !restarting || inputTypeChanged;
 
-        // we want to reload the settings before calling updateKeyboardTheme, because updateKeyboardTheme reads SettingsValues.mToolbarMode
-        if (isDifferentTextField || !currentSettingsValues.hasSameOrientation(getResources().getConfiguration())) {
+        // R2.5.2: compute once at the input boundary; workers never repaint the view.
+        // Existing composition/selection detection is boolean-only (no editor text read).
+        final boolean r252PaletteBoundary = mR252ColorLifecycle != null
+                && mR252ColorLifecycle.prepareAtInputBoundary(this, restarting,
+                        isComposingForPalette(), mInputLogic.mConnection.hasSelection());
+        // Only reload settings for existing reasons or an effective palette change.
+        if (isDifferentTextField || !currentSettingsValues.hasSameOrientation(getResources().getConfiguration())
+                || r252PaletteBoundary) {
             loadSettings();
             if (hasSuggestionStripView())
                 mSuggestionStripView.updateVoiceKey();
         }
 
-        switcher.updateKeyboardTheme(mDisplayContext);
+        switcher.updateKeyboardTheme(mDisplayContext, r252PaletteBoundary);
         MainKeyboardView mainKeyboardView = switcher.getMainKeyboardView();
         currentSettingsValues = mSettings.getCurrent(); // settingsValues may have been reloaded
 
@@ -1025,6 +1088,9 @@ public class LatinIME extends InputMethodService implements
                 currentSettingsValues.mGestureFloatingPreviewTextEnabled);
 
         if (TRACE) Debug.startMethodTracing("/data/trace/latinime");
+        final R252bHarnessObserver boundaryObserver = sR252bHarnessObserver;
+        if (boundaryObserver != null)
+            boundaryObserver.onInputBoundary(mInputView, editorInfo, restarting);
     }
 
     @Override
@@ -1051,6 +1117,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     void onFinishInputInternal() {
+        if (mR252ColorLifecycle != null) mR252ColorLifecycle.onEditorFinish();
         super.onFinishInput();
         Log.i(TAG, "onFinishInput");
 
@@ -1147,6 +1214,8 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void hideWindow() {
+        final R252bHarnessObserver observer = sR252bHarnessObserver;
+        if (observer != null) observer.onWindowHide();
         Log.i(TAG, "hideWindow");
         if (hasSuggestionStripView() && mSettings.getCurrent().mToolbarMode == ToolbarMode.EXPANDABLE)
             mSuggestionStripView.setToolbarVisibility(false);
@@ -1432,6 +1501,9 @@ public class LatinIME extends InputMethodService implements
     }
 
     public DictionaryFacilitator getAiDictionary(){return mDictionaryFacilitator;}
+    /** Read-only composing flag for R2.5.2b palette safety; legacy AI API remains unchanged. */
+    public boolean isComposingForPalette() { return mInputLogic.isComposingForPalette(); }
+
     public boolean hasAiComposition(){return !mInputLogic.getAiComposingWord().isEmpty();}
     public void showAiContextSuggestions(SuggestedWords words){
         if(mSuggestionStripView!=null&&!mSuggestionStripView.isAiActive())

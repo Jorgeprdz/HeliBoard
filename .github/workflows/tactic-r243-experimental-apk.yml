@@ -1,0 +1,177 @@
+name: Tactic Keyboard experimental APK
+on:
+  push:
+    branches: [feat/tactic-r243-hybrid-writing]
+    paths: ['.github/workflows/tactic-r243-experimental-apk.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-experimental:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    env:
+      APK_NAME: Tactic-Keyboard-Experimental-R243-snapshot-debug.apk
+      EXPECTED_CERT: cfea5c3e180245ec7db199a1d8d799a4a91e0454fef7d02c5313b6d923b66ba2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Allocate update versionCode
+        run: |
+          code=$((4600 + GITHUB_RUN_NUMBER))
+          if (( code < 4605 )); then code=4605; fi
+          echo "HELIBOARD_VERSION_CODE=$code" >> "$GITHUB_ENV"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify approved five-key Tactic branding (immutable hashes)
+        run: python3 experiments/r243/check_branding.py
+      - name: Verify Android edit contracts before native/Gradle build
+        run: bash experiments/r243/tests/run_android_edit_contract_host.sh
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Full Android JVM regression gate (required before APK)
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew :app:testDebugUnitTest --no-daemon
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          files = sorted(Path('app/build/test-results/testDebugUnitTest').glob('TEST-*.xml'))
+          assert files, "FAIL: no Android JVM test XML files produced"
+          tests = failures = errors = skipped = 0
+          suites = set()
+          for file in files:
+              root = ET.parse(file).getroot()
+              assert root.tag == 'testsuite', f"Unexpected XML root in {file}"
+              suites.add(root.attrib.get('name', ''))
+              tests += int(root.attrib['tests'])
+              failures += int(root.attrib.get('failures', 0))
+              errors += int(root.attrib.get('errors', 0))
+              skipped += int(root.attrib.get('skipped', 0))
+          print(f"ANDROID_JVM_GATE suites={len(files)} tests={tests} failures={failures} errors={errors} skipped={skipped}")
+          assert tests >= 494, f"Expected at least 494 tests from Phase 2D, got {tests}"
+          assert failures == 0 and errors == 0 and skipped == 0, "Android JVM gate must be fully green; skipped tests are not allowed"
+          assert any(x.endswith('InputLogicTest') for x in suites), "Missing InputLogicTest"
+          assert any(x.endswith('R242FocusTest') for x in suites)
+          assert any(x.endswith('R243HybridImeReviewTest') for x in suites), "Missing R243HybridImeReviewTest"
+          PY
+      - name: Cache existing local writing runtime
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ runner.temp }}/writing-source
+            ${{ runner.temp }}/writing-host
+            ${{ runner.temp }}/writing-arm64
+          key: tactic-r243-android-b5046-${{ hashFiles('native-writing/writing.cpp','native-writing/CMakeLists.txt') }}
+      - name: Build existing ARM64 runtime
+        run: |
+          chmod +x gradlew
+          bash scripts/ci/build-writing-runtime.sh
+      - name: Restore original persistent owner signing identity
+        env:
+          KEY_B64: ${{ secrets.HELIBOARD_R22_SIGNING_KEY_B64 }}
+          KEY_PASSWORD: ${{ secrets.HELIBOARD_R22_SIGNING_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEY_B64" && test -n "$KEY_PASSWORD"
+          install -d -m 700 "$RUNNER_TEMP/tactic-signing"
+          printf '%s' "$KEY_B64" | base64 -d > "$RUNNER_TEMP/tactic-signing/heliboard-r2.p12"
+          printf '%s' "$KEY_PASSWORD" > "$RUNNER_TEMP/tactic-signing/signing-password"
+          chmod 600 "$RUNNER_TEMP/tactic-signing/"*
+      - name: Assemble current experimental app (after strict quality gate)
+        env:
+          HELIBOARD_SIGNING_DIR: ${{ runner.temp }}/tactic-signing
+        run: ./gradlew :app:assembleDebug
+      - name: Verify APK, brand, ARM64 payload and signer
+        run: |
+          set -euo pipefail
+          mapfile -t apks < <(find app/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk')
+          test "${#apks[@]}" -eq 1
+          mkdir tactic-artifact
+          cp "${apks[0]}" "tactic-artifact/$APK_NAME"
+          sdkmanager --install 'build-tools;37.0.0' >/dev/null
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs "tactic-artifact/$APK_NAME" > "$RUNNER_TEMP/cert.txt"
+          "$ANDROID_HOME/build-tools/37.0.0/aapt" dump badging "tactic-artifact/$APK_NAME" > "$RUNNER_TEMP/badging.txt"
+          "$ANDROID_HOME/build-tools/37.0.0/aapt" dump xmltree "tactic-artifact/$APK_NAME" AndroidManifest.xml > "$RUNNER_TEMP/manifestxml.txt"
+          "$ANDROID_HOME/build-tools/37.0.0/aapt" dump resources "tactic-artifact/$APK_NAME" > "$RUNNER_TEMP/resources.txt"
+          unzip -p "tactic-artifact/$APK_NAME" lib/arm64-v8a/libheliboard_writing.so > "$RUNNER_TEMP/writing.so"
+          test -s "$RUNNER_TEMP/writing.so"
+          readelf -h "$RUNNER_TEMP/writing.so" | grep -q AArch64
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, hashlib, os, re, zipfile
+          d=Path(os.environ["RUNNER_TEMP"])
+          badging=(d/"badging.txt").read_text()
+          signing=(d/"cert.txt").read_text()
+          m=re.search(r"^package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'",badging,re.M)
+          assert m, "APK package metadata missing"
+          assert m[1]=="com.jorgeprdz.ioskeyboard.debug", m[1]
+          assert int(m[2])==int(os.environ["HELIBOARD_VERSION_CODE"])
+          assert "application-label:'Tactic Keyboard'" in badging, "Branding Tactic Keyboard missing"
+          manifestxml=(d/"manifestxml.txt").read_text()
+          resources=(d/"resources.txt").read_text()
+          assert "android:icon(" in manifestxml and "android:roundIcon(" in manifestxml, "Launcher manifest icons not both present"
+          for name in ("mipmap/ic_launcher", "mipmap/ic_launcher_round",
+                       "drawable/ic_launcher_monochrome", "drawable/ic_launcher_foreground",
+                       "drawable/ic_launcher_background"):
+              assert name in resources, f"Missing approved icon from APK resource table: {name}"
+          certs=set(x.lower() for x in re.findall(r"^(?:V[0-9]+ Signer|Signer #\d+):? certificate SHA-256 digest:\s*([a-fA-F0-9]{64})\s*$",signing,re.M))
+          assert certs=={os.environ["EXPECTED_CERT"].lower()}, "Wrong signing identity"
+          apk=Path("tactic-artifact")/os.environ["APK_NAME"]
+          with zipfile.ZipFile(apk) as z:
+              members=set(z.namelist())
+              assert z.testzip() is None, "Corrupt APK ZIP entry"
+              for density in ("mdpi","hdpi","xhdpi","xxhdpi","xxxhdpi"):
+                  for name in ("ic_launcher.webp","ic_launcher_round.webp"):
+                      assert any("mipmap-"+density in path and path.endswith("/"+name) for path in members), f"Missing {density}/{name} from APK"
+              for path in ("res/mipmap-anydpi-v26/ic_launcher.xml",
+                           "res/mipmap-anydpi-v26/ic_launcher_round.xml",
+                           "res/drawable/ic_launcher_monochrome.xml"):
+                  assert path in members, f"Missing compiled adaptive/themed icon: {path}"
+              dex=b"".join(z.read(path) for path in sorted(members) if re.fullmatch(r"classes(?:[0-9]+)?\.dex",path))
+              expectedClasses=("HybridCandidateGenerator","HybridImeReview","AiKeyboardAssistant",
+                               "AiEditTransaction","ObservedLexicon","SensitiveInputPolicy")
+              present={name:(name.encode() in dex) for name in expectedClasses}
+              assert all(present.values()), "Missing runtime hybrid/safety class: "+repr(present)
+          digest=hashlib.sha256(apk.read_bytes()).hexdigest()
+          (apk.parent/"SHA256SUMS.txt").write_text(f"{digest}  {apk.name}\n")
+          report={"app":"Tactic Keyboard","apk":apk.name,"package":m[1],"versionCode":int(m[2]),
+                  "versionName":m[3],"sha256":digest,"certificateSha256":next(iter(certs)),
+                  "commit":os.environ["GITHUB_SHA"],
+                  "R243_hybrid_motor":"NATIVE_OBSERVED_MANUAL_SUGGESTIONS_ONLY",
+                  "linguistic_quality":"ANDROID_JVM_494_PLUS_PASS / PRODUCTION_NOT_VALIDATED",
+                  "dexClassEvidence":present,
+                  "branding":"APPROVED_SOURCE_HASH_LOCKED / DEVICE_APPEARANCE_PENDING",
+                  "physical_device":"NOT VERIFIED"}
+          (apk.parent/"build-manifest.json").write_text(json.dumps(report,indent=2)+"\n")
+          print(json.dumps(report,indent=2))
+          PY
+          (cd tactic-artifact && sha256sum -c SHA256SUMS.txt)
+      - name: Upload signed APK and manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tactic-Keyboard-signed-experimental-debug
+          path: tactic-artifact/*
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tactic-Keyboard-build-tests
+          path: |
+            app/build/reports
+            app/build/test-results
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Remove temporary private key
+        if: always()
+        run: |
+          if test -d "$RUNNER_TEMP/tactic-signing"; then
+            rm -rf -- "$RUNNER_TEMP/tactic-signing"
+          fi

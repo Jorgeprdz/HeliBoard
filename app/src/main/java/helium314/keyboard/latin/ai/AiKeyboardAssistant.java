@@ -197,9 +197,13 @@ public final class AiKeyboardAssistant {
         if(context.length()>512||base.start<context.length())return;
         if(continuousRunning){latestReview=new QueuedReview(base,context,anchor(base,context));return;}
         final helium314.keyboard.latin.DictionaryFacilitator dictionary=ime.getAiDictionary();
-        if(dictionary==null||!dictionary.hasAtLeastOneInitializedMainDictionary())return;
+        if(dictionary==null||!dictionary.hasAtLeastOneInitializedMainDictionary()
+            ||dictionary.hasAtLeastOneUninitializedMainDictionary())return;
         final helium314.keyboard.latin.ai.local.ContinuousReviewAnchor anchor=anchor(base,context);
         final helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon observed=personalLexicon();
+        // Snapshot observed native spellings on the IME thread before worker submission.
+        // Only configured dictionaries may confirm these candidates on the worker.
+        final Collection<String> nativeWords=lexicon.nativeValidVocabulary();
         final Set<String> rejected=AiSettingsActivity.rejectedCorrections(ime);
         final boolean model=android.os.SystemClock.elapsedRealtime()>=modelRetryAfter
             &&helium314.keyboard.latin.ai.local.WritingModelFiles.enabled(ime)
@@ -227,6 +231,17 @@ public final class AiKeyboardAssistant {
             found.set(boundaryReviewer.review(context,vocabulary,rejected,stop));
             for(helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction repair:found.get())
                 if(repair.automaticAllowed)return ""; // Local repairs never wait for generation.
+            // Only suggestions; native correction, explicit grammar and user-approved edits
+            // retain sole responsibility for committing/reversing text.
+            if(!stop.cancelled()) {
+                java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> hybrid=
+                    helium314.keyboard.latin.ai.local.HybridImeReview.propose(context,nativeWords,vocabulary,rejected,stop);
+                if(!hybrid.isEmpty()){
+                    java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> combined=
+                        new ArrayList<>(found.get());
+                    combined.addAll(hybrid);found.set(combined);
+                }
+            }
             if(model&&!cancel.cancelled()){
                 helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon focusLexicon=
                     new helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon(observed,dictionary::isValidSpellingWord,cancel::cancelled);
@@ -432,13 +447,14 @@ public final class AiKeyboardAssistant {
     }
     private void offerContextCorrection(EditorSnapshot base,String context,
             helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction correction){
-        if(nativeSuggestions==null||(strip!=null&&strip.isAiActive()))return;
+        if(strip!=null&&strip.isAiActive())return;
         ArrayList<helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo> candidates=new ArrayList<>();
         candidates.add(new ContextSuggestion(this,base,context,correction));
-        if(nativeSuggestions.isPrediction())for(int i=0;i<nativeSuggestions.size()&&candidates.size()<18;i++)
+        if(nativeSuggestions!=null&&nativeSuggestions.isPrediction())for(int i=0;i<nativeSuggestions.size()&&candidates.size()<18;i++)
             if(nativeSuggestions.getInfo(i).isKindOf(helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo.KIND_PREDICTION))candidates.add(nativeSuggestions.getInfo(i));
         ime.showAiContextSuggestions(new helium314.keyboard.latin.SuggestedWords(candidates,null,null,
-            true,false,false,helium314.keyboard.latin.SuggestedWords.INPUT_STYLE_PREDICTION,nativeSuggestions.mSequenceNumber));
+            true,false,false,helium314.keyboard.latin.SuggestedWords.INPUT_STYLE_PREDICTION,
+            nativeSuggestions==null?0:nativeSuggestions.mSequenceNumber));
     }
     public void acceptContextSuggestion(ContextSuggestion suggestion){
         if(suggestion.owner!=this||("local-model-explicit-choice".equals(suggestion.correction.reason)
@@ -501,6 +517,9 @@ public final class AiKeyboardAssistant {
     public void onWordBoundary() {
         if(!AiSettingsActivity.typingEnabled(ime)||typingProtected()
                 ||(strip!=null&&strip.isAiActive())||ime.getAiInputConnection().hasSlowInputConnection())return;
+        final helium314.keyboard.latin.DictionaryFacilitator ready=ime.getAiDictionary();
+        if(ready==null||!ready.hasAtLeastOneInitializedMainDictionary()
+                ||ready.hasAtLeastOneUninitializedMainDictionary())return;
         if(applyPendingReview())return;
         EditorSnapshot base=capture();
         if(base==null||base.start!=base.end||base.start<0
@@ -541,8 +560,20 @@ public final class AiKeyboardAssistant {
             }
         }
         if(System.nanoTime()>deadline)return;
+        final helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon observed=personalLexicon();
         for(helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction correction:corrections) {
             if(!correction.automaticAllowed)continue;
+            // Only motor/dictionary corrections require observed lexical proof. A bounded
+            // explicit grammar rule can safely transform an otherwise valid source word
+            // (e.g. "voy haber si" -> "voy a ver si") after the dictionary readiness gate.
+            final boolean motorEdit="motor-error-native-context-ranking".equals(correction.reason)
+                    ||"sentence-initial-dictionary-candidate".equals(correction.reason)
+                    ||"dictionary-boundary-segmentation".equals(correction.reason)
+                    ||"personal-explicit-evidence".equals(correction.reason);
+            if(motorEdit) {
+                String source=correction.original.toLowerCase(Locale.ROOT);
+                if(!observed.valid(source)&&!observed.knownInvalid(source))continue;
+            }
             applyBoundary(base,context,correction);
             return; // One confirmed transaction per boundary; never race native composition.
         }

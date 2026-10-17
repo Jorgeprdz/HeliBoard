@@ -1,0 +1,19 @@
+{
+  "sources": [
+    {
+      "url": "https://raw.githubusercontent.com/hermitdave/FrequencyWords/525f9b560de45753a5ea01069454e72e9aa541c6/content/2018/es/es_50k.txt",
+      "sha256": "dcff3ad4316192f4dc4ff7d26e637c6ff314ef1ca0f3f720c5649018a71056c0",
+      "credit": "Hermit Dave / FrequencyWords; OpenSubtitles2018",
+      "license": "CC-BY-SA-4.0"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/hermitdave/FrequencyWords/525f9b560de45753a5ea01069454e72e9aa541c6/content/2018/en/en_50k.txt",
+      "sha256": "5351ff405b1126ef555791dd4d9798a48e3e9a501a9fc481a9da957752cfb458",
+      "credit": "Hermit Dave / FrequencyWords; OpenSubtitles2018",
+      "license": "CC-BY-SA-4.0"
+    }
+  ],
+  "words": 18447,
+  "sha256": "f0ad0fb78cfb9fbab41350a692e7727d88185e39178eb214ea5f8ee2e3dc00a3",
+  "limit": "first 10000 eligible words per language; no reference-derived additions or bigrams"
+}

@@ -17,6 +17,10 @@ curl --fail --location --retry 2 --output app/src/main/assets/writing-licenses/Q
   https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/raw/9217f5db79a29953eb74d5343926648285ec7e67/LICENSE
 cmake -S native-writing -B "$RUNNER_TEMP/writing-host" -DCMAKE_BUILD_TYPE=Release -DLLAMA_SOURCE_DIR="$source_dir" -DLLAMA_BUILD_COMMON=OFF
 cmake --build "$RUNNER_TEMP/writing-host" --target writing-eval -j2
+# Synthetic linguistic evaluation needs only the existing host decoder, never Android compilation.
+if test "${WRITING_HOST_ONLY:-0}" = 1; then
+  exit 0
+fi
 sdkmanager --install 'cmake;3.22.1' 'ndk;28.0.13004108' >/dev/null
 "$ANDROID_HOME/cmake/3.22.1/bin/cmake" -S native-writing -B "$RUNNER_TEMP/writing-arm64" \
   -DCMAKE_TOOLCHAIN_FILE="$ANDROID_HOME/ndk/28.0.13004108/build/cmake/android.toolchain.cmake" \

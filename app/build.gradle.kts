@@ -14,7 +14,7 @@ android {
         minSdk = 21
         targetSdk = 37
         versionCode = providers.environmentVariable("HELIBOARD_VERSION_CODE").map(String::toInt).getOrElse(4141)
-        versionName = "4.1-iosglass.8-ai-r242-intelligent-writing-preview"
+        versionName = providers.environmentVariable("HELIBOARD_VERSION_NAME").getOrElse("4.1-iosglass.8-ai-r242-intelligent-writing-preview")
         ndk {
             abiFilters.clear()
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
@@ -41,6 +41,8 @@ android {
             isShrinkResources = false
             isDebuggable = false
             isJniDebuggable = false
+            // Never sign a release with CI's temporary debug identity.
+            if (ownerSigning != null) signingConfig = ownerSigning
         }
         create("nouserlib") { // same as release, but does not allow the user to provide a library
             isMinifyEnabled = true
@@ -56,6 +58,15 @@ android {
             applicationIdSuffix = ".debug"
             if (ownerSigning != null) signingConfig = ownerSigning
         }
+        // Experiment-only DEBUG-derived APK with isolated package AND content provider authorities.
+        // Does not affect release, normal debug or the protected debugNoMinify variant.
+        create("r252cDebug") {
+            initWith(getByName("debug"))
+            isDebuggable = true
+            applicationIdSuffix = ".debug.r252c"
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("debug")
+        }
         create("runTests") { // build variant for running tests on CI that skips tests known to fail
             isMinifyEnabled = false
             isJniDebuggable = false
@@ -70,7 +81,7 @@ android {
         }
 
         androidComponents.onVariants { variant: ApplicationVariant ->
-            if (variant.buildType == "debug") {
+            if (variant.buildType == "debug" || variant.buildType == "r252cDebug") {
                 // got a little too big for GitHub after some dependency upgrades, so we remove the largest dictionary
                 variant.androidResources.ignoreAssetsPatterns = listOf("main_ro.dict")
                 variant.proguardFiles = emptyList()

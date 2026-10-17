@@ -17,6 +17,9 @@ import android.view.Window;
 import android.view.WindowManager;
 
 import helium314.keyboard.keyboard.KeyboardTheme;
+import helium314.keyboard.latin.common.ColorType;
+import helium314.keyboard.latin.common.Colors;
+import helium314.keyboard.latin.common.dynamic.MonetKeyboardColors;
 import helium314.keyboard.latin.settings.IosGlassPreferences;
 import helium314.keyboard.latin.settings.Settings;
 import helium314.keyboard.latin.utils.KtxKt;
@@ -44,9 +47,22 @@ public final class IosGlassController {
         frost.setShape(GradientDrawable.RECTANGLE);
         // Restore the earlier, visibly translucent frost. The real blur comes from the window
         // behind this surface; the tint only keeps keys readable.
-        frost.setColor(dark
-                ? Color.argb(196, 31, 31, 33)
-                : Color.argb(202, 242, 242, 247));
+        final Colors colors = Settings.getValues().mColors;
+        // R2.5.2b: real OnPreDraw demonstrated the fixed frost kept an obsolete
+        // visible tint while the effective By App palette changed A -> B -> A.
+        // Recolor just this surface's RGB; retain the exact original alpha and
+        // geometry. All static, custom, legacy dynamic and By App OFF paths are identical.
+        final boolean appPalette = colors instanceof MonetKeyboardColors
+                && ((MonetKeyboardColors) colors).isByAppPaletteBound();
+        if (appPalette) {
+            final int background = colors.get(ColorType.MAIN_BACKGROUND);
+            frost.setColor(Color.argb(dark ? 196 : 202,
+                    Color.red(background), Color.green(background), Color.blue(background)));
+        } else {
+            frost.setColor(dark
+                    ? Color.argb(196, 31, 31, 33)
+                    : Color.argb(202, 242, 242, 247));
+        }
 
         final float radius = dp(inputView, PANEL_CORNER_RADIUS_DP);
         frost.setCornerRadii(new float[] {

@@ -1,0 +1,153 @@
+name: R252c2 NO VALIDADO debug APK (ADB switch only)
+on:
+  push:
+    branches: [feat/tactic-r243-hybrid-writing]
+    paths:
+      - '.github/workflows/tactic-r252c2-debug-apk.yml'
+      - 'app/src/main/java/helium314/keyboard/latin/common/dynamic/R252cDebugSwitch.kt'
+      - 'app/src/main/java/helium314/keyboard/latin/common/dynamic/R252ColorLifecycle.kt'
+      - 'app/src/main/java/helium314/keyboard/latin/LatinIME.java'
+      - 'app/src/test/java/helium314/keyboard/latin/common/dynamic/R252cDebugSwitchTest.kt'
+      - 'app/build.gradle.kts'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tactic-r252c2-debug-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  debug-apk-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    env:
+      APK_NAME: Tactic-Keyboard-R252C2-NO-VALIDADO-debug.apk
+      PACKAGE_ID: com.jorgeprdz.ioskeyboard.debug.r252c
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Record HEAD and protect approved visuals
+        run: |
+          mkdir -p r252c2-evidence
+          git rev-parse HEAD > r252c2-evidence/commit.txt
+          python3 experiments/r243/check_branding.py 2>&1 | tee r252c2-evidence/branding.log
+      - name: Verify isolated-debug switch tests and release compile-time OFF gate; no release APK
+        id: variants
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          ./gradlew :app:testR252cDebugUnitTest \
+            --tests 'helium314.keyboard.latin.common.dynamic.R252cDebugSwitchTest' \
+            --no-daemon 2>&1 | tee r252c2-evidence/switch-tests.log
+          status=${PIPESTATUS[0]}
+          if [[ "$status" -ne 0 ]]; then exit "$status"; fi
+          # Release has no testReleaseUnitTest task in this project; inspect its
+          # generated BuildConfig.DEBUG constant WITHOUT producing a release APK.
+          ./gradlew :app:generateReleaseBuildConfig --no-daemon
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          candidates=list(Path("app/build/generated").rglob("BuildConfig.java"))
+          release=[p for p in candidates if "/release/" in str(p)]
+          assert release, "No generated release BuildConfig to inspect"
+          assert any(re.search(r"DEBUG\s*=\s*(?:false|Boolean\.parseBoolean\(\"false\"\))", p.read_text()) for p in release), release
+          kotlin=Path("app/src/main/java/helium314/keyboard/latin/common/dynamic/R252cDebugSwitch.kt").read_text()
+          assert "if (!BuildConfig.DEBUG) return false" in kotlin
+          print("R252C2_RELEASE_COMPILETIME_GUARD=PASS; RELEASE_APK=NOT_BUILT")
+          PY
+      - name: Host edit contracts (no engine changes)
+        id: contracts
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          bash experiments/r243/tests/run_android_edit_contract_host.sh \
+            2>&1 | tee r252c2-evidence/contracts.log
+      - name: Preserve historical JVM regression provenance (NO VALIDADO)
+        run: |
+          cat > r252c2-evidence/jvm-provenance.txt <<'EOF'
+          New reduced build: no redundant full JVM retest of unchanged production sources.
+          Previous R252C2 code commit 49e33e3: full JVM regression PASS in workflow 39001651540.
+          Earlier 39000407904: 540/541; XLinkTest.knownDictionaries HTTPS read timeout.
+          Earlier 39000140968: 540/541; InputLogicTest pending delayed handler message.
+          This artifact remains NO_VALIDADO irrespective of test status.
+          EOF
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ${{ runner.temp }}/writing-source
+            ${{ runner.temp }}/writing-host
+            ${{ runner.temp }}/writing-arm64
+          key: tactic-r252c2-b5046-${{ hashFiles('native-writing/writing.cpp','native-writing/CMakeLists.txt') }}
+      - name: Restore existing ARM64 writing runtime (unmodified)
+        run: bash scripts/ci/build-writing-runtime.sh
+      - name: Assemble isolated debug-derived APK ONLY (no debugNoMinify or release)
+        run: ./gradlew :app:assembleR252cDebug --no-daemon
+      - name: Validate structural installability and permanent NO VALIDADO label
+        env:
+          VARIANT_RESULT: ${{ steps.variants.outcome }}
+          CONTRACT_RESULT: ${{ steps.contracts.outcome }}
+          JVM_RESULT: NOT_REEXECUTED
+        run: |
+          set -euo pipefail
+          mkdir -p r252c2-artifact
+          mapfile -t apks < <(find app/build/outputs/apk/r252cDebug -maxdepth 1 -type f -name '*.apk')
+          test "${#apks[@]}" -eq 1
+          test -s "${apks[0]}"
+          cp "${apks[0]}" "r252c2-artifact/$APK_NAME"
+          latest="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          test -n "$latest" && test -x "$latest/aapt" && test -x "$latest/apksigner"
+          "$latest/aapt" dump badging "r252c2-artifact/$APK_NAME" > r252c2-artifact/aapt-badging.txt
+          "$latest/apksigner" verify --print-certs "r252c2-artifact/$APK_NAME" > r252c2-artifact/signature.txt
+          "$latest/aapt" dump xmltree "r252c2-artifact/$APK_NAME" AndroidManifest.xml > r252c2-artifact/manifest.txt
+          python3 - <<'PY'
+          import os,re,hashlib,json,pathlib
+          p=pathlib.Path("r252c2-artifact")
+          badging=(p/"aapt-badging.txt").read_text()
+          signature=(p/"signature.txt").read_text()
+          manifest=(p/"manifest.txt").read_text()
+          pkg=re.search(r"^package: name='([^']+)'",badging,re.M)
+          assert pkg and pkg[1]==os.environ["PACKAGE_ID"],pkg
+          assert "LatinIME" in manifest,"Input method service missing"
+          assert "Signer" in signature or "certificate SHA-256 digest" in signature,"APK signature not verified"
+          apk=p/os.environ["APK_NAME"]
+          assert apk.is_file() and apk.stat().st_size>0
+          digest=hashlib.sha256(apk.read_bytes()).hexdigest()
+          (p/"SHA256SUMS.txt").write_text(f"{digest}  {apk.name}\n")
+          status={"classification":"NO_VALIDADO","commit":os.environ["GITHUB_SHA"],
+                  "apk":apk.name,"package":pkg[1],"sha256":digest,
+                  "debugVariant":"assembleR252cDebug",
+                  "testVariants":os.getenv("VARIANT_RESULT"),
+                  "hostContracts":os.getenv("CONTRACT_RESULT"),
+                  "fullJvm":os.getenv("JVM_RESULT"),
+                  "physicalSamsungDex":"NOT_EXECUTED",
+                  "releaseApk":"NOT_BUILT",
+                  "regressionNote":"Failed/passed test steps do not change NO_VALIDADO label"}
+          (p/"build-manifest.json").write_text(json.dumps(status,indent=2)+"\n")
+          print(json.dumps(status,indent=2))
+          PY
+          (cd r252c2-artifact && sha256sum -c SHA256SUMS.txt)
+      - name: Upload experimental debug APK — NO VALIDADO
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tactic-R252C2-NO-VALIDADO-debug-apk
+          path: r252c2-artifact/*
+          if-no-files-found: error
+          retention-days: 14
+      - name: Preserve JVM, switch and packaging logs even on failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tactic-R252C2-NO-VALIDADO-test-evidence
+          path: |
+            r252c2-evidence/
+            app/build/test-results/
+            app/build/reports/tests/
+          if-no-files-found: warn
+          retention-days: 14

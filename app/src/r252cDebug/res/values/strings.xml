@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="english_ime_name" translatable="false">Tactic Keyboard</string>
+    <string name="spell_checker_service_name" translatable="false">Tactic Keyboard Spell Checker</string>
+    <string name="ime_settings" translatable="false">Tactic Keyboard Settings</string>
+</resources>
