@@ -52,3 +52,14 @@
 **Gate verdict: BLOCKED_PENDING_EVIDENCE.** Neither `GO_CONDITIONED` nor `NO_GO` is supported yet. No product defect has yet been established by a completed R2.5.2c-1 run, but that is not proof of absence. **R2.5.2c-2 may not be described as completed, nor may a product APK be published, until the phase-transition rule is satisfied.**
 
 **CI candidate:** [R2.5.2c-1 run 39000221436](https://github.com/Jorgeprdz/HeliBoard/actions/runs/39000221436). This is an execution link, **not** an assertion of completion. Other observed workflow runs include 39000189961 (prior revision; missing script) and 39000140968 (existing R25 regression).
+
+## Diagnóstico actualizado del primer ciclo de CI (sin promover a PASS)
+
+- [Run 39000189961](https://github.com/Jorgeprdz/HeliBoard/actions/runs/39000189961): **FAIL de infraestructura** por falta del script `.github/scripts/r252c-real-apps-gate.sh` en el commit que lo ejecutó; se incorporó después.
+- [Run 39000221436](https://github.com/Jorgeprdz/HeliBoard/actions/runs/39000221436): **FAIL de infraestructura en configuración**: `Test Build Type 'debugNoMinify' does not exist` para fixture `app-a`. Las dos apps se instalaron; no hubo pruebas reales, OnPreDraw ni validación de UID (no confundir instalación con PASS).
+- Se corrigió únicamente el init script de pruebas con `if (project.path != ":app") return` para no aplicar `debugNoMinify` a los proyectos auxiliares; la variante protegida del teclado no se modificó. Commit [a4ef4b6](https://github.com/Jorgeprdz/HeliBoard/commit/a4ef4b6364b4a8dcd72e2eaebfe6aadcdff2d6c5).
+- [Run 39000407892](https://github.com/Jorgeprdz/HeliBoard/actions/runs/39000407892): nueva ejecución con corrección; **aún no validado su resultado** al registrar este apartado.
+- [Run R25 39000140968](https://github.com/Jorgeprdz/HeliBoard/actions/runs/39000140968): regressión JVM **540/541, un FAIL** en `InputLogicTest` (cola diferida restante `what=0`, aserción de cero); 80 contratos de host pasaron en su propio paso, pero no hubo JVM completa en verde. Android instrumentation falló por el mismo `debugNoMinify` de fixture. **No se clasifica ese test como flaky PASS ni como regresión funcional probada sin repetición independiente.**
+- [Run R25 39000407904](https://github.com/Jorgeprdz/HeliBoard/actions/runs/39000407904): nueva regresión sobre HEAD corregido, sin veredicto al registrar este apartado.
+
+Estas ejecuciones **no satisfacen** la transición automática a R2.5.2c-2; no hay evidencia de un `GO_CONDITIONED` ni de que todas las limitaciones sean estrictamente infraestructura sin pruebas esenciales pendientes.
