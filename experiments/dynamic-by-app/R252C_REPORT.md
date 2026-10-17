@@ -41,3 +41,24 @@
 ## Veredicto provisional
 
 **PENDIENTE / SIN GO emulador.** Los escenarios todavía no ejecutados o no observables no se etiquetan PASS. Cambios limitados a identidad de cliente y tests; ninguna autorización para activar By App o iniciar R2.5.3.
+
+
+## Evidencia verificada posterior — 16 oct. 2026, barrido de superficies
+
+**[Run 38997035375](https://github.com/Jorgeprdz/HeliBoard/actions/runs/38997035375):** el **job Android** fue **SUCCESS** con 1/1 smoke, 5/5 vectores, 3/3 sesiones y **4/4 harness real (incluido el nuevo barrido R252c)**. El workflow global fue FAILURE solo por la prueba externa `XLinkTest.knownDictionaries` (1/541 en el job JVM de ese run); no se modificó ni relajó. El [reintento independiente 38996632819](https://github.com/Jorgeprdz/HeliBoard/actions/runs/38996632819) de regresión completa: **541/541 PASS, 80/80 contratos PASS**, sin omisiones.
+
+**[Artefacto directo XML + logcat (12087467249)](https://github.com/Jorgeprdz/HeliBoard/actions/runs/38997035375/artifacts/12087467249):**
+- `r25-evidence/r252b/logcat-all.txt`: `R252C_SURFACE_GATE: transitions=3 totalNodes=141 popup=NOT_ATTACHED_TO_INPUTVIEW hidden=NOT_DRAWN`.
+- A primer frame: paleta `#FFF6FAF9`, frost `#CAF6FAF9`, drawable **`#CAF6FAF9`**.
+- B primer frame: paleta `#FFFFF7F9`, frost `#CAFFF7F9`, drawable **`#CAFFF7F9`**.
+- A retorno: frost **`#CAF6FAF9`**; sin arrastrar el color B.
+- `R252B_SEQUENCE: firstFrames=3 inputView=3 hides=0 shows=0`: **3 cambios efectivos de paleta, 3 reemplazos de vista, cero hide/show**. El reinicio de misma paleta no recreó InputView según su test independiente.
+- `R252B_COMPOSITION: textRetained=true composingSpanRetained=true selection=true rotation=true firstFrame=true`.
+- El logcat completo del harness (todos sus casos, no solo las tres transiciones del barrido) clasificó 644 líneas etiquetadas, incluyendo una línea de resumen. Entre los nodos: **0 `UNCLASSIFIED_COLOR` visibles**, `PALETTE_MATCH` 28, `PALETTE_ROLE_MATCH` 14, `FIXED_STATUS_INDICATOR` 4; el resto fue transparente, sin fondo/tinte u oculto. El indicador fijo `#FFA00000` es estado de recopilación, NO semilla By App.
+
+**Resultado de paso 2: PASS únicamente para las superficies presentes/visibles del árbol InputView.** Popups fuera del árbol y vistas ocultas **NO se han dibujado ni muestreado**; no constituyen GO total para el paso 2.
+
+## Paso 3 — Estado de ejecución
+El commit `18a7544` añadió prueba Android del frost claro/oscuro **By App OFF** con los valores originales `#CAF2F2F7` y `#C41F1F21`, radio de esquinas, transparencia, clip y mapa completo de ColorType invariantes. El run de validación `38997689861` debe concluir antes de marcar PASS o fallos.
+
+**Los pasos 4 (dos apps con UID distinto + screencap real), 5 (ventanas DeX) y la cobertura de ventanas/popup ocultos continúan sin GO. No confundir `OnPreDraw` con píxeles GPU finalmente presentados.**
