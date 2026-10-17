@@ -73,12 +73,23 @@ jobs:
               root=ET.parse(report).getroot()
               for key in r252_totals: r252_totals[key]+=int(root.attrib.get(key,0))
           assert r252_totals==dict(tests=3,failures=0,errors=0,skipped=0),r252_totals
+          frame_reports=list(pathlib.Path('r25-evidence/r252b/androidTest-results').rglob('*.xml'))
+          assert frame_reports, 'R2.5.2b real IME frame evidence missing'
+          frame_totals=dict(tests=0,failures=0,errors=0,skipped=0)
+          for report in frame_reports:
+              root=ET.parse(report).getroot()
+              for key in frame_totals: frame_totals[key]+=int(root.attrib.get(key,0))
+          assert frame_totals==dict(tests=3,failures=0,errors=0,skipped=0),frame_totals
+          frame_logs=pathlib.Path('r25-evidence/r252b/logcat-all.txt').read_text()
+          assert frame_logs.count('R252B_FIRST_FRAME')>=3, 'Not enough genuine OnPreDraw observations'
+          assert 'R252B_SEQUENCE' in frame_logs, 'Missing whole-transition view counters'
+          assert 'R252B_COMPOSITION' in frame_logs, 'Missing real InputConnection evidence'
           r252_logs=pathlib.Path('r25-evidence/r252/logcat-all.txt').read_text()
           assert 'R252_WORKER_METRICS' in r252_logs, 'No real Android worker metrics log'
           assert 'setInputView=0 hideWindow=0 showWindow=0' in r252_logs, 'Unexpected worker-side view/hide/show calls'
           assert len(cyan['samples'])==10 and len({s['argb'] for s in cyan['samples']})==1
           assert all(s['chroma']>=14 and s['hue_distance']<=25 and not s['main_thread'] for s in cyan['samples'])
-          result={'execution':'ANDROID_EMULATOR_API_35','physical_samsung':'NOT_EXECUTED','phase_3':'NO_GO_PENDING_PHYSICAL_GATE_AND_SESSION_REVIEW','tests':totals,'r252_tests':r252_totals,'worker_view_delta':{'setInputView':0,'hideWindow':0,'showWindow':0},'metrics':metrics}
+          result={'execution':'ANDROID_EMULATOR_API_35','physical_samsung':'NOT_EXECUTED','phase_3':'NO_GO_PENDING_PHYSICAL_GATE_AND_SESSION_REVIEW','tests':totals,'r252_tests':r252_totals,'r252b_real_ime':frame_totals,'worker_view_delta':{'setInputView':0,'hideWindow':0,'showWindow':0},'metrics':metrics}
           pathlib.Path('r25-evidence/result.json').write_text(json.dumps(result,indent=2)+'\n')
           print(json.dumps(result,indent=2))
           PY

@@ -130,3 +130,34 @@ if ! diff -u r25-evidence/ime-before.txt r25-evidence/ime-after-r252.txt > r25-e
   exit 1
 fi
 echo 'R252_ANDROID_GATE_PASS 3/3'
+
+# R2.5.2b actual LatinIME service and EditText host: fail-closed, no product APK.
+# Test fixture restores original IME in finally; this script verifies both ends.
+adb logcat -c || true
+if ! run_gate r252b helium314.keyboard.latin.common.dynamic.R252bRealImeFirstFrameTest; then
+  echo 'R252B_NO_GO: first-frame/composition Android harness failed; evidence retained'
+  exit 1
+fi
+python3 - <<'PY'
+from pathlib import Path
+import xml.etree.ElementTree as ET
+reports=list(Path('r25-evidence/r252b/androidTest-results').rglob('*.xml'))
+assert reports, 'No actual LatinIME R252b Android XML'
+total=dict(tests=0,failures=0,errors=0,skipped=0)
+for path in reports:
+    root=ET.parse(path).getroot()
+    for k in total: total[k]+=int(root.attrib.get(k,0))
+print('R252B_REAL_IME_GATE',total)
+assert total==dict(tests=3,failures=0,errors=0,skipped=0),total
+PY
+if [ "$?" -ne 0 ]; then
+  echo 'R252B_NO_GO: strict frame/composition test XML mismatch'
+  exit 1
+fi
+adb shell settings get secure default_input_method > r25-evidence/ime-after-r252b.txt
+if ! diff -u r25-evidence/ime-before.txt r25-evidence/ime-after-r252b.txt > r25-evidence/ime-r252b.diff; then
+  echo 'R252B_NO_GO: original IME not restored after the real host tests'
+  exit 1
+fi
+echo 'R252B_REAL_IME_PASS 3/3'
+
