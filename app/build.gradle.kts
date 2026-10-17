@@ -13,6 +13,7 @@ android {
         applicationId = "com.jorgeprdz.ioskeyboard"
         minSdk = 21
         targetSdk = 37
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         versionCode = providers.environmentVariable("HELIBOARD_VERSION_CODE").map(String::toInt).getOrElse(4141)
         versionName = "4.1-iosglass.8-ai-r242-intelligent-writing-preview"
         ndk {
@@ -106,6 +107,9 @@ android {
         }
     }
 
+    // Instrumentation uses the existing non-minified variant; no product configuration changes.
+    testBuildType = "debugNoMinify"
+
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
@@ -155,6 +159,10 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.9.8")
     implementation("sh.calvin.reorderable:reorderable:3.1.0") // for easier re-ordering
     implementation("com.github.skydoves:colorpicker-compose:1.1.3") // for user-defined colors, newer requires minSdk 23
+
+    // Instrumented tests only; no production dependency additions.
+    androidTestImplementation("androidx.test:runner:1.7.0")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
 
     // test
     testImplementation(kotlin("test"))
