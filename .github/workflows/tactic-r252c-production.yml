@@ -4,6 +4,15 @@ on:
     branches: [feat/tactic-r243-hybrid-writing]
     paths:
       - '.github/workflows/tactic-r252c-production.yml'
+      - 'app/src/main/java/helium314/keyboard/latin/common/dynamic/R252ColorLifecycle.kt'
+      - 'app/src/main/java/helium314/keyboard/latin/common/dynamic/R252ReleaseActivationPolicy.kt'
+      - 'app/src/main/java/helium314/keyboard/latin/LatinIME.java'
+      - 'app/src/main/java/helium314/keyboard/latin/settings/Settings.java'
+      - 'app/src/main/java/helium314/keyboard/latin/settings/Defaults.kt'
+      - 'app/src/main/java/helium314/keyboard/settings/screens/AppearanceScreen.kt'
+      - 'app/src/main/res/values/strings.xml'
+      - 'app/src/main/res/values-es/strings.xml'
+      - 'app/build.gradle.kts'
   workflow_dispatch:
 permissions:
   contents: write
