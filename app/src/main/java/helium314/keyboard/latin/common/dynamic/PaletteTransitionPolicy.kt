@@ -44,7 +44,10 @@ internal object PaletteTransitionPolicy {
     ): PaletteDecision {
         if (next.epoch != activeEpoch || next.epoch < (previous?.epoch ?: Long.MIN_VALUE))
             return PaletteDecision.RejectStale
-        if (candidate == null) return PaletteDecision.Fallback("NO_EFFECTIVE_PALETTE")
+        // No fallback transition may tear down a bound palette during composition
+        // or text selection. Retry only at a later input boundary.
+        if (candidate == null) return if (composing && current != null)
+            PaletteDecision.KeepPalette else PaletteDecision.Fallback("NO_EFFECTIVE_PALETTE")
         if (candidate == current) return PaletteDecision.KeepPalette
         if (composing) return PaletteDecision.Defer(candidate)
         // Same input type on restarting does not imply the same owner package.

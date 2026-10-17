@@ -43,6 +43,13 @@ class PaletteTransitionPolicyTest {
         assertEquals(PaletteDecision.Defer(b),d(s("a",1,input=129),s("b",2,input=129),a,b,composing=true))
         assertEquals(PaletteDecision.ApplyAtBoundary(b),d(s("a",1,field=8),s("b",2,field=9),a,b))
     }
+    @Test fun missingCandidateDuringCompositionOrSelectionKeepsFullOldPalette() {
+        val a=p(0xffabcdef.toInt())
+        assertEquals(PaletteDecision.KeepPalette,
+            d(s("app.a",1),s("app.b",2),a,null,restart=true,composing=true))
+        assertEquals(PaletteDecision.Fallback("NO_EFFECTIVE_PALETTE"),
+            d(s("app.a",1),s("app.b",2),a,null,restart=true,composing=false))
+    }
     @Test fun disabledModeStableAndLateWorkerCannotMutate() {
         val system=p(0xff6750a4.toInt(),active=false)
         assertEquals(PaletteDecision.KeepPalette,d(s("a",1),s("b",2),system,system))
