@@ -162,6 +162,23 @@ public class LatinIME extends InputMethodService implements
     // R2.5.2 isolated lifecycle only; inactive outside injected tests.
     private R252ColorLifecycle mR252ColorLifecycle;
 
+    /** Test-only observer installed from local Android instrumentation, never from a user option. */
+    public interface R252bHarnessObserver {
+        void onInputBoundary(View inputView, EditorInfo info, boolean restarting);
+        void onInputViewInstalled(View inputView);
+        void onWindowHide();
+        void onWindowShow();
+    }
+    private static volatile R252bHarnessObserver sR252bHarnessObserver;
+    private static volatile LatinIME sR252bActiveInstance;
+    public static LatinIME r252bRunningInstanceForTests() { return sR252bActiveInstance; }
+    public static void r252bObserveForTests(R252bHarnessObserver observer) { sR252bHarnessObserver = observer; }
+    public void r252bInstallSessionForTests(R252ColorLifecycle lifecycle) {
+        if (mR252ColorLifecycle != null) mR252ColorLifecycle.close();
+        mR252ColorLifecycle = lifecycle;
+    }
+
+
     // Object for reacting to adding/removing a dictionary pack.
     private final BroadcastReceiver mDictionaryPackInstallReceiver =
             new DictionaryPackInstallBroadcastReceiver(this);
@@ -563,6 +580,7 @@ public class LatinIME extends InputMethodService implements
         mDisplayContext = KtxKt.getDisplayContext(this);
         KeyboardSwitcher.init(this);
         super.onCreate();
+        sR252bActiveInstance = this;
 
         mR252ColorLifecycle = new R252ColorLifecycle(this);
         loadSettings();
@@ -715,6 +733,8 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onDestroy() {
+        if (sR252bActiveInstance == this) sR252bActiveInstance = null;
+        sR252bHarnessObserver = null;
         if (mR252ColorLifecycle != null) mR252ColorLifecycle.close();
         if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.close();
         mClipboardHistoryManager.onDestroy();
@@ -783,12 +803,29 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void setInputView(final View view) {
+        // Count the actual service entrypoint, not just the palette-specific switcher call.
+        final R252bHarnessObserver installedObserver = sR252bHarnessObserver;
+        if (installedObserver != null) installedObserver.onInputViewInstalled(view);
         super.setInputView(view);
         mInputView = view;
         mInsetsUpdater = ViewOutlineProviderUtilsKt.setInsetsOutlineProvider(view);
         KtxKt.updateSoftInputWindowLayoutParameters(this, mInputView);
         IosGlassController.prepareWindow(this, mInputView);
         updateSuggestionStripView(view);
+    }
+
+    @Override
+    public void hideWindow() {
+        final R252bHarnessObserver observer = sR252bHarnessObserver;
+        if (observer != null) observer.onWindowHide();
+        super.hideWindow();
+    }
+
+    @Override
+    public void showWindow(boolean showInput) {
+        final R252bHarnessObserver observer = sR252bHarnessObserver;
+        if (observer != null) observer.onWindowShow();
+        super.showWindow(showInput);
     }
 
     public void updateSuggestionStripView(View view) {
@@ -1048,6 +1085,9 @@ public class LatinIME extends InputMethodService implements
                 currentSettingsValues.mGestureFloatingPreviewTextEnabled);
 
         if (TRACE) Debug.startMethodTracing("/data/trace/latinime");
+        final R252bHarnessObserver boundaryObserver = sR252bHarnessObserver;
+        if (boundaryObserver != null)
+            boundaryObserver.onInputBoundary(mInputView, editorInfo, restarting);
     }
 
     @Override
