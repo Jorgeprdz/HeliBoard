@@ -58,6 +58,7 @@ import helium314.keyboard.keyboard.KeyboardSwitcher;
 import helium314.keyboard.keyboard.MainKeyboardView;
 import helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo;
 import helium314.keyboard.latin.common.ColorType;
+import helium314.keyboard.latin.common.dynamic.R252ColorLifecycle;
 import helium314.keyboard.latin.common.Constants;
 import helium314.keyboard.latin.common.CoordinateUtils;
 import helium314.keyboard.latin.common.InputPointers;
@@ -157,6 +158,9 @@ public class LatinIME extends InputMethodService implements
     // Used for re-initialize keyboard layout after onConfigurationChange.
     @Nullable
     private Context mDisplayContext;
+
+    // R2.5.2 isolated lifecycle only; inactive outside injected tests.
+    private R252ColorLifecycle mR252ColorLifecycle;
 
     // Object for reacting to adding/removing a dictionary pack.
     private final BroadcastReceiver mDictionaryPackInstallReceiver =
@@ -560,6 +564,7 @@ public class LatinIME extends InputMethodService implements
         KeyboardSwitcher.init(this);
         super.onCreate();
 
+        mR252ColorLifecycle = new R252ColorLifecycle(this);
         loadSettings();
         mClipboardHistoryManager.onCreate();
         mHandler.onCreate();
@@ -710,6 +715,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onDestroy() {
+        if (mR252ColorLifecycle != null) mR252ColorLifecycle.close();
         if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.close();
         mClipboardHistoryManager.onDestroy();
         mDictionaryFacilitator.closeDictionaries();
@@ -862,6 +868,17 @@ public class LatinIME extends InputMethodService implements
 
     private void onStartInputInternal(final EditorInfo editorInfo, final boolean restarting) {
         super.onStartInput(editorInfo, restarting);
+        // Session identity only. No palette is applied or view rebuilt in phase B.
+        if (mR252ColorLifecycle != null) {
+            final Configuration conf = getResources().getConfiguration();
+            final boolean isDark = (conf.uiMode & Configuration.UI_MODE_NIGHT_MASK)
+                    == Configuration.UI_MODE_NIGHT_YES;
+            mR252ColorLifecycle.onEditorStart(editorInfo == null ? null : editorInfo.packageName,
+                    editorInfo == null ? 0 : editorInfo.fieldId,
+                    editorInfo == null ? 0 : editorInfo.inputType,
+                    editorInfo == null ? 0 : editorInfo.imeOptions,
+                    -1 /* unknown display id; no cross-display inference */, restarting, isDark);
+        }
 
         final RichInputMethodSubtype subtypeForApp = editorInfo == null
             ? null :
@@ -1051,6 +1068,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     void onFinishInputInternal() {
+        if (mR252ColorLifecycle != null) mR252ColorLifecycle.onEditorFinish();
         super.onFinishInput();
         Log.i(TAG, "onFinishInput");
 
