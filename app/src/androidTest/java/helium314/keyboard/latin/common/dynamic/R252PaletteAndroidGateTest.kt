@@ -100,6 +100,9 @@ class R252PaletteAndroidGateTest {
         val after=listOf(switcher.r252PaletteViewReplacements,
             switcher.r252PaletteHideCalls,switcher.r252PaletteShowCalls)
         assertEquals(before,after)
-        assertEquals(listOf(0,0,0),after.zip(before).map { it.first-it.second })
+        val delta=after.zip(before).map { it.first-it.second }
+        assertEquals(listOf(0,0,0),delta)
+        android.util.Log.i("R252_WORKER_METRICS",
+            "setInputView=${delta[0]} hideWindow=${delta[1]} showWindow=${delta[2]}")
     }
 }

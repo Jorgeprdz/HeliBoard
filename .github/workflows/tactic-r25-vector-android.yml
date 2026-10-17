@@ -66,9 +66,19 @@ jobs:
               if '{' in line: metrics.append(json.loads(line[line.index('{'):]))
           assert {m['case'] for m in metrics}=={'cyan','neutral','adaptive','fallback','inaccessible'}, metrics
           cyan=next(m for m in metrics if m['case']=='cyan')
+          r252_reports=list(pathlib.Path('r25-evidence/r252/androidTest-results').rglob('*.xml'))
+          assert r252_reports, 'Missing R2.5.2 Android instrumentation XML'
+          r252_totals=dict(tests=0,failures=0,errors=0,skipped=0)
+          for report in r252_reports:
+              root=ET.parse(report).getroot()
+              for key in r252_totals: r252_totals[key]+=int(root.attrib.get(key,0))
+          assert r252_totals==dict(tests=3,failures=0,errors=0,skipped=0),r252_totals
+          r252_logs=pathlib.Path('r25-evidence/r252/logcat-all.txt').read_text()
+          assert 'R252_WORKER_METRICS' in r252_logs, 'No real Android worker metrics log'
+          assert 'setInputView=0 hideWindow=0 showWindow=0' in r252_logs, 'Unexpected worker-side view/hide/show calls'
           assert len(cyan['samples'])==10 and len({s['argb'] for s in cyan['samples']})==1
           assert all(s['chroma']>=14 and s['hue_distance']<=25 and not s['main_thread'] for s in cyan['samples'])
-          result={'execution':'ANDROID_EMULATOR_API_35','physical_samsung':'NOT_EXECUTED','phase_3':'NO_GO_PENDING_PHYSICAL_GATE_AND_SESSION_REVIEW','tests':totals,'metrics':metrics}
+          result={'execution':'ANDROID_EMULATOR_API_35','physical_samsung':'NOT_EXECUTED','phase_3':'NO_GO_PENDING_PHYSICAL_GATE_AND_SESSION_REVIEW','tests':totals,'r252_tests':r252_totals,'worker_view_delta':{'setInputView':0,'hideWindow':0,'showWindow':0},'metrics':metrics}
           pathlib.Path('r25-evidence/result.json').write_text(json.dumps(result,indent=2)+'\n')
           print(json.dumps(result,indent=2))
           PY

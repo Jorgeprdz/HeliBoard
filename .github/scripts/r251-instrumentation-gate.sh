@@ -118,6 +118,11 @@ for p in reports:
 print('R252_ANDROID_GATE',counts)
 assert counts==dict(tests=3,failures=0,errors=0,skipped=0),counts
 PY
+r252_xml_status=$?
+if [ "$r252_xml_status" -ne 0 ]; then
+  echo "R252_NO_GO: instrumented XML gate failed (exit=$r252_xml_status)"
+  exit "$r252_xml_status"
+fi
 # Enforce the IME isolation invariant across all 9 instrumented cases.
 adb shell settings get secure default_input_method > r25-evidence/ime-after-r252.txt || true
 if ! diff -u r25-evidence/ime-before.txt r25-evidence/ime-after-r252.txt > r25-evidence/ime-r252.diff; then
