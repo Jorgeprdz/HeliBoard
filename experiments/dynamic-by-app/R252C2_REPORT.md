@@ -57,3 +57,17 @@ Esperado: `I/R252C_DEBUG_SWITCH: state=OFF variant=debug source=Settings.Global`
 - [39002269865](https://github.com/Jorgeprdz/HeliBoard/actions/runs/39002269865): build de variante `r252cDebug` con autoridades independientes; **sin resultado final al actualizar este informe**. Por ahorro de cuota se verifica switch de la propia variante y release, se conserva la evidencia JVM íntegra de la compilación anterior de código idéntico, sin repetir la suite completa.
 
 **Clasificación permanente del APK: NO VALIDADO**, incluso si el build y el switch pasan; siguen faltando gate real UID, compositor, composición cross-app y Samsung DeX. El workflow deja explícitos los resultados de los tests enfocados y la procedencia de la suite JVM. Los tests enfocados usan `continue-on-error` sólo para permitir la entrega experimental aunque fallen y jamás se recalifican como PASS; la suite completa del commit previo no se repite sin necesidad. `PR #8 = Draft`, `By App normal = OFF`, `merge = NO`, `release = NO`, `R2.5.3 = NOT_STARTED`.
+
+## Resultado verificable del APK experimental — actualización final de artefacto
+
+- **GitHub Actions SUCCESS:** [run 39002332135](https://github.com/Jorgeprdz/HeliBoard/actions/runs/39002332135).
+- **Artefacto real publicado:** [Tactic-R252C2-NO-VALIDADO-debug-apk](https://github.com/Jorgeprdz/HeliBoard/actions/runs/39002332135/artifacts/12089098807) (artifact ID `12089098807`).
+- **APK:** `Tactic-Keyboard-R252C2-NO-VALIDADO-debug.apk`, 17,994,906 bytes.
+- **ApplicationId validado por aapt:** `com.jorgeprdz.ioskeyboard.debug.r252c`.
+- **Compilación:** `assembleR252cDebug`, commit `2e647798d13eeff354c037eb1098d6e3679fdfab`. No APK release ni debugNoMinify.
+- **SHA256 del APK, comprobado contra el manifiesto del artifact y recalculado tras descarga:** `4c61032c3171118763a23b8a0f1aa13b1bdc82ea2d01b00a70dc9cdc0049984c`. Verificación ZIP y `apksigner` exitosa.
+- **Proveedores:** la tabla compilada `resources.arsc` contiene las autoridades exclusivas `helium314.keyboard.r252cdebug.clipprovider` y `helium314.keyboard.r252cdebug.provider`; no se reutilizaron los nombres de autoridades del debug habitual.
+- **Contratos host:** PASS en run APK. **Suite JVM completa de commit anterior de código de interruptor idéntico:** **545/545 PASS**, 0 errores ni omitidos; se verificaron 65 archivos XML del artifact de run `39001651540`, incluido `R252cDebugSwitchTest` de cuatro casos. Esa prueba global **no** se repitió en el último run por ahorro de compilación; no atribuir 545/545 al commit `2e647798`.
+- **Pruebas enfocadas del run del APK:** `testVariants=failure`, porque AGP no expone `testR252cDebugUnitTest`; **no** porque la lógica del interruptor haya reprobado. Esto impide declarar ese gate del run del APK como PASS. Se lanzó una verificación independiente y sin compilar APK usando `testDebugUnitTest --tests ...` y revisión de `BuildConfig.DEBUG=false` de release: [run 39002908242](https://github.com/Jorgeprdz/HeliBoard/actions/runs/39002908242). Su resultado debe consultarse antes de declarar esa evidencia definitiva.
+
+**Veredicto de entrega:** `APK_CREATED_AND_SHA_VERIFIED=YES`; `APK_VALIDATION=NO_VALIDADO`; `PHYSICAL_GALAXY_S25_DEX=NOT_EXECUTED`; `R253=NOT_STARTED`. El paso de comprobación de release se describe como **revisión estática de BuildConfig**, no como release APK compilado ni prueba de eliminación del bytecode en release.
