@@ -15,6 +15,22 @@ class R252ColorLifecycle internal constructor(
     private var previous: SessionIdentity? = null
     private var snapshot: SessionColorSnapshot? = null
 
+    // Debug-only audit marker; not persisted or visible to the user.
+    private var lastDebugGate: Boolean? = null
+
+    /** Checked at a genuine editor boundary, never from an icon extraction worker. */
+    @Synchronized
+    fun refreshDebugGate(context: Context) {
+        if (!helium314.keyboard.latin.BuildConfig.DEBUG) return
+        val requested = R252cDebugSwitch.requested(context)
+        if (enabled != requested) enableForTests(requested)
+        if (lastDebugGate != requested) {
+            android.util.Log.i("R252C_DEBUG_SWITCH",
+                "state=" + (if (requested) "ON" else "OFF") + " variant=debug source=Settings.Global")
+            lastDebugGate = requested
+        }
+    }
+
     @Synchronized
     internal fun enableForTests(value: Boolean) {
         if (enabled == value) return

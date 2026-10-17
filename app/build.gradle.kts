@@ -53,7 +53,8 @@ android {
             // and for better performance in case users want to install a debug APK
             isMinifyEnabled = true
             isJniDebuggable = false
-            applicationIdSuffix = ".debug"
+            applicationIdSuffix = if (providers.environmentVariable("TACTIC_R252C_ISOLATED_APK").orNull == "1")
+                ".debug.r252c" else ".debug"
             if (ownerSigning != null) signingConfig = ownerSigning
         }
         create("runTests") { // build variant for running tests on CI that skips tests known to fail

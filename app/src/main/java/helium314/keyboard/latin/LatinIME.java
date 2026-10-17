@@ -898,6 +898,8 @@ public class LatinIME extends InputMethodService implements
 
     private void onStartInputInternal(final EditorInfo editorInfo, final boolean restarting) {
         super.onStartInput(editorInfo, restarting);
+        // Debug-only ADB gate; release compiles this to a no-op.
+        if (mR252ColorLifecycle != null) mR252ColorLifecycle.refreshDebugGate(this);
         // Session identity only. No palette is applied or view rebuilt in phase B.
         if (mR252ColorLifecycle != null) {
             final Configuration conf = getResources().getConfiguration();
