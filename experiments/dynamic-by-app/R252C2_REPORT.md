@@ -71,3 +71,23 @@ Esperado: `I/R252C_DEBUG_SWITCH: state=OFF variant=debug source=Settings.Global`
 - **Pruebas enfocadas del run del APK:** `testVariants=failure`, porque AGP no expone `testR252cDebugUnitTest`; **no** porque la lógica del interruptor haya reprobado. Esto impide declarar ese gate del run del APK como PASS. Se lanzó una verificación independiente y sin compilar APK usando `testDebugUnitTest --tests ...` y revisión de `BuildConfig.DEBUG=false` de release: [run 39002908242](https://github.com/Jorgeprdz/HeliBoard/actions/runs/39002908242). Su resultado debe consultarse antes de declarar esa evidencia definitiva.
 
 **Veredicto de entrega:** `APK_CREATED_AND_SHA_VERIFIED=YES`; `APK_VALIDATION=NO_VALIDADO`; `PHYSICAL_GALAXY_S25_DEX=NOT_EXECUTED`; `R253=NOT_STARTED`. El paso de comprobación de release se describe como **revisión estática de BuildConfig**, no como release APK compilado ni prueba de eliminación del bytecode en release.
+
+## Gate final del interruptor — VERIFICADO (sin nuevo APK)
+
+- [Run 39002908242 — SUCCESS](https://github.com/Jorgeprdz/HeliBoard/actions/runs/39002908242); [artefacto XML y BuildConfig 12089044447](https://github.com/Jorgeprdz/HeliBoard/actions/runs/39002908242/artifacts/12089044447).
+- XML real de `R252cDebugSwitchTest`: **4/4 PASS, 0 fallos, 0 errores, 0 omitidos**:
+  1. `releaseMustNeverBeActivatableEvenWithFlagOne`
+  2. `debugWithoutFlagDefaultsOff`
+  3. `actualBuildConfigEnforcesReleaseIsolationAndMissingGlobalFlag`
+  4. `debugWithLiteralOneIsOnAndDisablingRestoresOff`
+- Generación `generateReleaseBuildConfig` ejecutada sin ensamblar release. Confirmó **`RELEASE_BUILDCONFIG_DEBUG_FALSE=PASS`** y `R252cDebugSwitch.requested` retorna directamente OFF antes de consultar Settings.Global cuando el build es release.
+- **Limite explícito:** `RELEASE_DEX_CLASS_ABSENCE=NOT_PROVEN`, ya que no se crea ni inspecciona APK/DEX release por prohibición de alcance. Se verifica que la ruta no puede habilitarse en release, no la ausencia literal de la clase.
+- **APK entregado NO VALIDADO:** corresponde al commit `2e647798d` del run 39002332135, por eso el run 39002908242 **solo verifica el código de gate sin recompilar ese APK**. No modificar etiqueta NO VALIDADO ni alegar validación física.
+- **Resumen de regresión JVM reciente:** la suite completa del run 39001651540 (mismo interruptor, sin cambios al motor de escritura) produjo **545/545 PASS**, comprobado por los 65 XML; el build APK final no reejecutó dicha suite. Los fallos de runs anteriores se explican en la sección de regresiones y no fueron ignorados.
+
+```text
+DEBUG_SWITCH=IMPLEMENTED_AND_4_OF_4_PASS
+DEBUG_RELEASE_ISOLATION=COMPILETIME_GUARD_PASS; RELEASE_DEX_ABSENCE_NOT_PROVEN
+DEBUG_APK=GITHUB_ARTIFACT_12089098807; SHA256_VERIFIED; NO_VALIDADO
+REGRESSIONS=545/545_PREVIOUS_FULL_JVM_PASS; 4/4_SWITCH_PASS; PREVIOUS_FAILURES_DOCUMENTED; REAL_UID_GATE_FAIL
+```
