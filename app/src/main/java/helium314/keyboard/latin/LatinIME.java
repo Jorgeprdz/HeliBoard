@@ -815,13 +815,6 @@ public class LatinIME extends InputMethodService implements
     }
 
     @Override
-    public void hideWindow() {
-        final R252bHarnessObserver observer = sR252bHarnessObserver;
-        if (observer != null) observer.onWindowHide();
-        super.hideWindow();
-    }
-
-    @Override
     public void showWindow(boolean showInput) {
         final R252bHarnessObserver observer = sR252bHarnessObserver;
         if (observer != null) observer.onWindowShow();
@@ -1211,6 +1204,8 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void hideWindow() {
+        final R252bHarnessObserver observer = sR252bHarnessObserver;
+        if (observer != null) observer.onWindowHide();
         Log.i(TAG, "hideWindow");
         if (hasSuggestionStripView() && mSettings.getCurrent().mToolbarMode == ToolbarMode.EXPANDABLE)
             mSuggestionStripView.setToolbarVisibility(false);
