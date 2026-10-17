@@ -295,15 +295,27 @@ class R252bRealImeFirstFrameTest {
             val themed=context.createConfigurationContext(config)
             val root=View(themed);val panel=View(themed)
             main { IosGlassController.apply(root,panel) }
-            fun sample(v:View):Int {
-                val d=requireNotNull(v.background)
+            fun sampleDrawable(d:Drawable):Int {
                 val old=android.graphics.Rect(d.bounds)
                 val bm=Bitmap.createBitmap(256,256,Bitmap.Config.ARGB_8888)
                 return try {
                     d.setBounds(0,0,256,256);d.draw(Canvas(bm));bm.getPixel(128,128)
                 } finally { d.bounds=old;bm.recycle() }
             }
-            assertEquals("By App OFF frost deviated from pre-fix base",original,main{sample(panel)})
+            fun sample(v:View):Int = sampleDrawable(requireNotNull(v.background))
+            // Semi-transparent ARGB drawables rasterized into an ARGB_8888 bitmap
+            // can quantize RGB by one unit on unpremultiplication. Assert BOTH the
+            // exact original tint and bit-exact rendered pixels versus a reference
+            // GradientDrawable with the same alpha, shape and corner radii.
+            val frost=panel.background as android.graphics.drawable.GradientDrawable
+            assertEquals("By App OFF original frost tint changed",original,frost.color?.defaultColor)
+            val reference=android.graphics.drawable.GradientDrawable().apply {
+                shape=android.graphics.drawable.GradientDrawable.RECTANGLE
+                setColor(original)
+                cornerRadii=frost.cornerRadii
+            }
+            assertEquals("By App OFF raster differs from exact original frost reference",
+                main{sampleDrawable(reference)},main{sample(panel)})
             assertEquals("Transparent keyboard root changed",Color.TRANSPARENT,main{sample(root)})
             assertTrue("Frost clip-to-outline changed",main{panel.clipToOutline})
             val corner=(panel.background as android.graphics.drawable.GradientDrawable).cornerRadii
