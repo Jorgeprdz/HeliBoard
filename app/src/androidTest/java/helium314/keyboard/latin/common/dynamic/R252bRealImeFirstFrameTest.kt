@@ -52,7 +52,7 @@ class R252bRealImeFirstFrameTest {
             if(packageName=="r252.alpha") Color.CYAN else Color.MAGENTA)
     }
     private data class Frame(
-        val pkg:String, val expected:Int, val loaded:Int, val pixel:Int?,
+        val pkg:String, val expected:Int, val expectedSurface:Int, val loaded:Int, val pixel:Int?,
         val epoch:Long, val viewIdentity:Int, val first:Boolean
     )
     private class Observer:LatinIME.R252bHarnessObserver {
@@ -71,6 +71,9 @@ class R252bRealImeFirstFrameTest {
             val expected=MonetColorMapper.map(DynamicSchemeProvider.get(p.argb,
                 DynamicSchemeType.valueOf(p.family), p.dark),p.themeStyle,p.borders)
                 .getValue(ColorType.MAIN_BACKGROUND)
+            val alpha=if(p.dark) 196 else 202
+            val expectedSurface=Color.argb(alpha,Color.red(expected),
+                Color.green(expected),Color.blue(expected))
             val target=inputView.findViewById<View>(R.id.main_keyboard_frame)
             val observer=target.viewTreeObserver
             val listener=object:ViewTreeObserver.OnPreDrawListener {
@@ -89,12 +92,12 @@ class R252bRealImeFirstFrameTest {
                             bm.recycle()
                         }
                     }
-                    val row=Frame(info.packageName ?: "(none)",expected,loaded,sample,
+                    val row=Frame(info.packageName ?: "(none)",expected,expectedSurface,loaded,sample,
                         binding.snapshot.epoch,System.identityHashCode(inputView),true)
                     frames.add(row)
                     android.util.Log.i("R252B_FIRST_FRAME",
                         "pkg=${row.pkg} epoch=${row.epoch} expected=${row.expected} " +
-                        "loaded=${row.loaded} drawable=${row.pixel} view=${row.viewIdentity}")
+                        "loaded=${row.loaded} surface=${row.expectedSurface} drawable=${row.pixel} view=${row.viewIdentity}")
                     frameLatch.countDown()
                     return true
                 }
@@ -208,7 +211,8 @@ class R252bRealImeFirstFrameTest {
         for (frame in listOf(a,b,a2)) {
             assertEquals("${frame.pkg}: stale SettingsValues colors at first predraw",frame.expected,frame.loaded)
             assertNotNull("${frame.pkg}: keyboard frame has no drawable",frame.pixel)
-            assertEquals("${frame.pkg}: rendered background mismatches expected",frame.expected,frame.pixel)
+            assertEquals("${frame.pkg}: rendered frosted background mismatches actual palette tint/alpha",
+                frame.expectedSurface,frame.pixel)
         }
         assertEquals(a.expected,a2.expected)
         android.util.Log.i("R252B_SEQUENCE",

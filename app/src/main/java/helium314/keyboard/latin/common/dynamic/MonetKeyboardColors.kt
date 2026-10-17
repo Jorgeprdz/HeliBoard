@@ -43,6 +43,9 @@ class MonetKeyboardColors(
             DynamicColorSeedProvider.snapshot(context, isDark).fingerprint != seedSnapshot.fingerprint
     }
 
+    /** Restrict iOS frosted surface tinting to a bound By App palette only. */
+    fun isByAppPaletteBound(): Boolean = sessionBinding != null
+
     override fun get(color: ColorType): Int = delegate.get(color)
     override fun setColor(drawable: Drawable, color: ColorType) = delegate.setColor(drawable, color)
     override fun setColor(view: android.widget.ImageView, color: ColorType) = delegate.setColor(view, color)
