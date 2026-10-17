@@ -4,6 +4,8 @@ on:
     branches: [feat/tactic-r243-hybrid-writing]
     paths:
       - '.github/workflows/tactic-r252c-production.yml'
+      - 'experiments/r243/approved-icon-manifest.json'
+      - 'experiments/r243/check_branding.py'
       - 'app/src/main/java/helium314/keyboard/latin/common/dynamic/R252ColorLifecycle.kt'
       - 'app/src/main/java/helium314/keyboard/latin/common/dynamic/R252ReleaseActivationPolicy.kt'
       - 'app/src/main/java/helium314/keyboard/latin/LatinIME.java'

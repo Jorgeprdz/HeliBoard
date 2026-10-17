@@ -18,7 +18,7 @@
     "app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp": "c23665f79434387a4ebf04e26d5d015738146d8e"
   },
   "unchangedIdentity": {
-    "app/build.gradle.kts": "c0d28d5bc8c454fd3a4872bdaa44ddb6805d8399",
+    "app/build.gradle.kts": "631da976ff11a234f0e677c9dcc2db4946fdcc49",
     "app/src/main/AndroidManifest.xml": "0f3e5f8106bc069eb7f5428b5e84a52be8a76407",
     "art/launcher_icon/approved_source_512.webp": "4bb86138ae1476d722c870cba8ecdcfeaba41eaa"
   }

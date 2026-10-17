@@ -17,7 +17,7 @@ def main():
    if item.get("name")=="english_ime_name":
     if item.text!="Tactic Keyboard":raise AssertionError("Variant overrides visible brand: "+str(path))
     seen+=1
- if seen!=3:raise AssertionError("Unexpected app label resource layout")
+ if seen!=4:raise AssertionError("Unexpected app label resource layout; expected main, debug, debugNoMinify and isolated r252cDebug")
  for path in ["app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml","app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml"]:
   icon=ET.parse(ROOT/path).getroot()
   if [item.tag for item in icon]!=["background","foreground","monochrome"]:raise AssertionError("Adaptive/themed icon incomplete")
