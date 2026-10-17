@@ -1,0 +1,88 @@
+name: Tactic R2.5.2c-1 real UID emulator gate
+on:
+  push:
+    branches: [feat/tactic-r243-hybrid-writing]
+    paths:
+      - '.github/workflows/tactic-r252c-real-apps.yml'
+      - '.github/scripts/r252c-real-apps-gate.sh'
+      - 'experiments/dynamic-by-app/r252c-fixtures/**'
+      - 'app/src/androidTest/java/helium314/keyboard/latin/common/dynamic/R252cRealAppsTest.kt'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tactic-r252c1-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  real-uid:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Preserve audit provenance
+        run: |
+          mkdir -p r252c-evidence
+          git rev-parse HEAD | tee r252c-evidence/head.txt
+          python3 experiments/r243/check_branding.py
+      - name: Build only two isolated fixture APKs
+        run: |
+          set -euo pipefail
+          ./gradlew :experiments:dynamic-by-app:r252c-fixtures:app-a:assembleDebug :experiments:dynamic-by-app:r252c-fixtures:app-b:assembleDebug --no-daemon
+          for name in a b; do
+            apk=$(find "experiments/dynamic-by-app/r252c-fixtures/app-$name/build/outputs/apk/debug" -maxdepth 1 -name '*.apk' -type f)
+            test -n "$apk" && test -s "$apk"
+            cp "$apk" "r252c-evidence/app-$name.apk"
+          done
+      - name: Enable emulator KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Real app focus and first InputView pre-draw on Android 15
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            bash .github/scripts/r252c-real-apps-gate.sh
+      - name: Strict XML/logcat classification
+        run: |
+          python3 - <<'PY'
+          import pathlib, xml.etree.ElementTree as ET
+          base=pathlib.Path('r252c-evidence')
+          xmls=list((base/'androidTest-results').rglob('*.xml'))
+          assert xmls,'BLOCKED: no real-device instrumented XML'
+          summary={k:0 for k in ['tests','errors','failures','skipped']}
+          for f in xmls:
+              root=ET.parse(f).getroot()
+              for k in summary: summary[k]+=int(root.attrib.get(k,0))
+          print('R252C1_XML',summary)
+          assert summary==dict(tests=1,errors=0,failures=0,skipped=0),summary
+          logs=(base/'logcat-all.txt').read_text()
+          assert logs.count('R252C_REAL_APPS: pkg=')>=9,'BLOCKED: insufficient real OnPreDraw observations'
+          assert 'R252C_UID: pkgA=' in logs and 'uidB=' in logs,'BLOCKED: real UID proof missing'
+          assert 'R252C_TOTAL: frames=9' in logs,'BLOCKED: 3 round trips not proven'
+          assert 'firstPresented=PASS' not in logs,'Invalid self-claim: first compositor frame not measured'
+          print('R252C1_REAL_UID_PRE_DRAW_3_ROUNDS=PASS; COMPOSITOR_FIRST_PRESENTED=NOT_PROVEN')
+          PY
+      - name: Preserve evidence and fixture APKs (not product builds)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r252c1-real-uid-emulator-evidence
+          path: r252c-evidence/
+          if-no-files-found: warn
+          retention-days: 14
