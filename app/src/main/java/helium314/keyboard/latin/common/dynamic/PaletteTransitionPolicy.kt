@@ -9,6 +9,8 @@ internal data class SessionIdentity(
     val imeOptions: Int,
     val displayId: Int?,
     val epoch: Long,
+    // Client connection token, NOT the display that renders the IME.
+    val editorConnectionId: Int? = null,
 )
 
 /** Render equivalence excludes editor epochs and package names. */

@@ -18,6 +18,18 @@ class PaletteTransitionPolicyTest {
         assertEquals(PaletteDecision.KeepPalette, d(s("a",2),s("b",3),a,a,true))
         assertEquals(PaletteDecision.KeepPalette, d(s("a",1),s("b",2),a,a,false,true))
     }
+    @Test fun distinctEditorConnectionsStayDistinctEvenOnSamePackageAndImeDisplay() {
+        val appA=s("same.app",1,display=0).copy(editorConnectionId=1001)
+        val appB=s("same.app",2,display=0).copy(editorConnectionId=2002)
+        assertNotEquals(appA,appB)
+        assertEquals(0,appA.displayId)
+        assertEquals(0,appB.displayId)
+        val color=p(0xff122334.toInt())
+        assertEquals(PaletteDecision.KeepPalette,d(appA,appB,color,color,true))
+        val different=p(0xffaabbcc.toInt())
+        assertEquals(PaletteDecision.ApplyAtBoundary(different),d(appA,appB,color,different,true))
+        assertEquals(PaletteDecision.RejectStale,d(appB,appA,color,different,true,active=2))
+    }
     @Test fun aToBToAAndCrossPackageRestartKeepCorrectColor() {
         val a = p(0xff123456.toInt()); val b = p(0xffabcdef.toInt())
         assertEquals(PaletteDecision.ApplyAtBoundary(b),d(s("a",1),s("b",2,input=1),a,b,true))

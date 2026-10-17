@@ -903,11 +903,19 @@ public class LatinIME extends InputMethodService implements
             final Configuration conf = getResources().getConfiguration();
             final boolean isDark = (conf.uiMode & Configuration.UI_MODE_NIGHT_MASK)
                     == Configuration.UI_MODE_NIGHT_YES;
+            // InputBinding represents the client, not the keyboard display.
+            // Do not use getDisplay()/mDisplayContext: the visible IME is on phone.
+            final android.view.inputmethod.InputBinding binding = getCurrentInputBinding();
+            final android.os.IBinder connectionToken = binding == null
+                    ? null : binding.getConnectionToken();
+            final Integer editorConnectionId = connectionToken == null
+                    ? null : connectionToken.hashCode();
             mR252ColorLifecycle.onEditorStart(editorInfo == null ? null : editorInfo.packageName,
                     editorInfo == null ? 0 : editorInfo.fieldId,
                     editorInfo == null ? 0 : editorInfo.inputType,
                     editorInfo == null ? 0 : editorInfo.imeOptions,
-                    -1 /* unknown display id; no cross-display inference */, restarting, isDark);
+                    null /* editor display is unavailable, never use the IME display */,
+                    restarting, isDark, editorConnectionId);
         }
 
         final RichInputMethodSubtype subtypeForApp = editorInfo == null

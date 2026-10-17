@@ -30,12 +30,18 @@ class R252ColorLifecycle internal constructor(
     @Synchronized
     fun onEditorStart(
         packageName: String?, fieldId: Int, inputType: Int, imeOptions: Int,
-        displayId: Int, restarting: Boolean, isDark: Boolean,
+        displayId: Int?, restarting: Boolean, isDark: Boolean,
+        editorConnectionId: Int? = null,
     ) {
         if (!enabled) return
-        val next = coordinator.onEditorStarted(packageName, isDark, restarting = restarting)
+        // A second editor connection from the same package is a new session, even
+        // when framework delivers restarting=true and inputType remains identical.
+        val sameClientConnection = active?.editorConnectionId == editorConnectionId
+        val next = coordinator.onEditorStarted(packageName, isDark,
+            restarting = restarting && sameClientConnection)
         previous = active
-        active = SessionIdentity(packageName, fieldId, inputType, imeOptions, displayId, next.epoch)
+        active = SessionIdentity(packageName, fieldId, inputType, imeOptions,
+            displayId, next.epoch, editorConnectionId)
         snapshot = next
     }
 
