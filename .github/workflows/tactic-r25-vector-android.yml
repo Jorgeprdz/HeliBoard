@@ -53,7 +53,7 @@ jobs:
         run: |
           python3 - <<'PY'
           import json, pathlib, xml.etree.ElementTree as ET
-          reports=list(pathlib.Path('app/build/outputs/androidTest-results/connected').rglob('*.xml'))
+          reports=list(pathlib.Path('r25-evidence/vector/androidTest-results').rglob('*.xml'))
           assert reports, 'Missing real instrumentation XML'
           totals=dict(tests=0,failures=0,errors=0,skipped=0)
           for report in reports:

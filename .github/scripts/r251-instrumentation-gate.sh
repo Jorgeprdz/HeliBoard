@@ -81,21 +81,24 @@ if ! diff -u r25-evidence/ime-before.txt r25-evidence/ime-after.txt > r25-eviden
 fi
 echo "R251_INSTRUMENTATION_COMPLETED; strict vector assertions still required"
 
-# Separate R2.5.2 Android lifecycle probe. Does not modify vector XML counts (5/5).
-runner="$(adb shell pm list instrumentation | sed -n 's/^instrumentation:\([^ ]*\).*$/\1/p' | grep 'com.jorgeprdz.ioskeyboard.debug.test/' | head -1)"
-if [ -z "$runner" ]; then
-  echo 'R252_NO_GO: test runner component was not registered'
-  exit 1
-fi
+# AGP connectedAndroidTest uninstalls instrumentation after each run:
+# a raw "am instrument" would discover zero registered test runners.
+# Reuse the same isolated Gradle runner; capture separate XML before its next call.
 adb logcat -c || true
-adb shell am instrument -w -r -e class helium314.keyboard.latin.common.dynamic.R252PaletteAndroidGateTest "$runner" \
-  > r25-evidence/r252-android-instrumentation.txt 2>&1
-status=$?
-adb logcat -d -b all -v threadtime > r25-evidence/r252-android-logcat.txt 2>&1 || true
-if [ "$status" -ne 0 ] || ! grep -q 'OK (3 tests)' r25-evidence/r252-android-instrumentation.txt; then
-  cat r25-evidence/r252-android-instrumentation.txt
-  echo 'R252_NO_GO: Android lifecycle cases failed'
+if ! run_gate r252 helium314.keyboard.latin.common.dynamic.R252PaletteAndroidGateTest; then
+  echo 'R252_NO_GO: Android lifecycle test class failed; logs and XML retained'
   exit 1
 fi
+python3 - <<'PY'
+from pathlib import Path
+import xml.etree.ElementTree as ET
+reports=list(Path('r25-evidence/r252/androidTest-results').rglob('*.xml'))
+assert reports, 'No R2.5.2 instrumented XML'
+counts={k:0 for k in ('tests','failures','errors','skipped')}
+for p in reports:
+    root=ET.parse(p).getroot()
+    for k in counts: counts[k]+=int(root.attrib.get(k,0))
+print('R252_ANDROID_GATE',counts)
+assert counts==dict(tests=3,failures=0,errors=0,skipped=0),counts
+PY
 echo 'R252_ANDROID_GATE_PASS 3/3'
-
