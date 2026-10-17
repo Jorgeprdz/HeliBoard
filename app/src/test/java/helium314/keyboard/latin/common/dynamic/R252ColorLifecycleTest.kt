@@ -76,11 +76,11 @@ class R252ColorLifecycleTest {
         val windowA=bridge.snapshotForTests()!!
         bridge.onEditorStart("same.app",1,1,0,null,true,false,202)
         val windowB=bridge.snapshotForTests()!!
-        assertTrue("New connection must advance epoch despite restarting",windowB.epoch>windowA.epoch)
+        assertTrue(windowB.epoch>windowA.epoch, "New connection must advance epoch despite restarting")
         assertNotEquals(bridge.sessionForTests()!!.editorConnectionId,101)
         assertEquals(202,bridge.sessionForTests()!!.editorConnectionId)
         bridge.onEditorStart("same.app",1,1,0,null,true,false,202)
-        assertSame("Repeat of same connection should reuse snapshot",windowB,bridge.snapshotForTests())
+        assertSame(windowB,bridge.snapshotForTests(),"Repeat of same connection should reuse snapshot")
     }
     @Test fun darkModeAndUnknownHostAndDisableRemainSafe() {
         val (bridge,worker)=fixture();bridge.enableForTests(true)
