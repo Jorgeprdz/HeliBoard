@@ -105,8 +105,10 @@ class R252bRealImeFirstFrameTest {
     }
 
     private fun shell(command:String) {
+        // Shell command is asynchronous; drain its output before changing focus/IME.
         val fd:ParcelFileDescriptor=inst.uiAutomation.executeShellCommand(command)
-        fd.close()
+        try { java.io.FileInputStream(fd.fileDescriptor).use { it.readBytes() } }
+        finally { fd.close() }
     }
     private fun <T> main(block:()->T):T {
         var v:T?=null
