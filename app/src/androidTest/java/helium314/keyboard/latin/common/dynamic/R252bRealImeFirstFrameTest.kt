@@ -187,6 +187,12 @@ class R252bRealImeFirstFrameTest {
         }
         o.frameLatch=CountDownLatch(1)
         main {
+            // Exercise the actual finish/start service sequence, including same-inputType
+            // restarting=true cross-package transitions. Never mutate InputLogic directly.
+            if(o.frames.isNotEmpty()) {
+                ime.onFinishInputView(true)
+                ime.onFinishInput()
+            }
             ime.onStartInput(info,restarting)
             ime.onStartInputView(info,restarting)
         }
