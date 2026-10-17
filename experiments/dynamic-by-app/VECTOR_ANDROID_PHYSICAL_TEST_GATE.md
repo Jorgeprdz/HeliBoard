@@ -22,3 +22,21 @@ Purpose: minimum instrumented Android fixture for a later, separately authorized
 - PASS: chromatic vector produces a verified matching chromatic seed on physical Android, while monochrome, transparent and broken assets fail safely and deterministically.
 - NO-GO: if only Robolectric assertions exist, report 'Android vector compatibility NOT VERIFIED' without presenting the host suite as physical validation.
 - The external `XLinkTest.knownDictionaries` and InputLogic URL harness forensic investigation remain separately tracked; never disable either to obtain green CI.
+
+## R2.5.1 fallback — Galaxy S25 Termux + wireless ADB, no PC (PROCEDURE ONLY)
+
+**Status:** documented, **not executed** and **no product or test-target APK published** in R2.5.1. Physical execution requires separately authorized access to the two locally built **test-target** APKs (the `debugNoMinify` target and its `androidTest` companion); GitHub currently publishes logs/XML only, deliberately not APKs. Never substitute or reinstall the user's production keyboard package.
+
+On the same Galaxy S25: enable Developer options → Wireless debugging, select **Pair device with pairing code**; use split screen/DeX to keep the pairing screen visible. In Termux run:
+
+```sh
+pkg install android-tools -y
+adb pair IP_FROM_WIRELESS_DEBUGGING:PAIRING_PORT
+# enter the six-digit code shown by Android
+adb connect IP_FROM_WIRELESS_DEBUGGING:DEBUG_PORT
+adb devices -l
+adb shell settings get secure default_input_method > ime-before.txt
+adb logcat -c
+```
+
+Only after separate test-build authorization, install both target/test APKs from a trusted isolated test artifact and inspect `adb shell pm list instrumentation` for the actual runner component. Execute exactly one `R251RunnerSmokeTest` first, then `VectorAndroidGateTest` only on smoke PASS, using `adb shell am instrument -w -r -e class <fully.qualified.TestClass> <test_package>/<runner_class>`. Save `adb logcat -d -b all -v threadtime > r251-s25-logcat.txt`, `adb logcat -d -b crash -v threadtime > r251-s25-crash.txt`, instrumentation console transcript, `getprop ro.build.version.release`, device/One UI version and `ime-after.txt`; require identical IME before/after, count 5/5, measured cyan ARGB/HCT, ten deterministic samples, safe neutral/missing fallbacks and worker-thread/timing metrics. Separately run DeX if authorized. Remove both test packages afterward. No root, PC, UI screenshots, invasive permissions, nor IME activation.

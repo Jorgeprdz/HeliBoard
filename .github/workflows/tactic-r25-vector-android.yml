@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/tactic-r25-vector-android.yml'
       - 'app/src/androidTest/**'
+      - 'app/src/debugNoMinify/AndroidManifest.xml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -78,5 +79,53 @@ jobs:
             r25-evidence/
             app/build/outputs/androidTest-results/
             app/build/reports/androidTests/
+          if-no-files-found: warn
+          retention-days: 14
+
+  jvm-regression:
+    name: JVM regression without APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Host edit-contract regression
+        run: bash experiments/r243/tests/run_android_edit_contract_host.sh
+      - name: Strict Android JVM regression
+        run: |
+          ./gradlew :app:testDebugUnitTest --no-daemon
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          reports=sorted(Path('app/build/test-results/testDebugUnitTest').glob('TEST-*.xml'))
+          assert reports, 'Missing Android JVM test reports'
+          result={k:0 for k in ('tests','failures','errors','skipped')}
+          suites=set()
+          for path in reports:
+              root=ET.parse(path).getroot()
+              suites.add(root.attrib.get('name',''))
+              for key in result: result[key]+=int(root.attrib.get(key,0))
+          print('R251_JVM_REGRESSION',result)
+          assert result['tests'] >= 504, 'Baseline coverage missing'
+          assert all(result[k] == 0 for k in ('failures','errors','skipped'))
+          assert any(s.endswith('InputLogicTest') for s in suites)
+          assert any(s.endswith('AppColorSeedProviderTest') for s in suites)
+          PY
+      - name: Keep JVM XML and HTML even on failure
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r251-jvm-test-evidence-no-apk
+          path: |
+            app/build/test-results/testDebugUnitTest
+            app/build/reports/tests/testDebugUnitTest
           if-no-files-found: warn
           retention-days: 14
