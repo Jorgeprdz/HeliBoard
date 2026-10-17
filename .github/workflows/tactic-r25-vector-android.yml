@@ -79,8 +79,9 @@ jobs:
           for report in frame_reports:
               root=ET.parse(report).getroot()
               for key in frame_totals: frame_totals[key]+=int(root.attrib.get(key,0))
-          assert frame_totals==dict(tests=3,failures=0,errors=0,skipped=0),frame_totals
+          assert frame_totals==dict(tests=4,failures=0,errors=0,skipped=0),frame_totals
           frame_logs=pathlib.Path('r25-evidence/r252b/logcat-all.txt').read_text()
+          assert 'R252C_SURFACE_GATE' in frame_logs, 'Surface first-draw audit evidence missing'
           assert frame_logs.count('R252B_FIRST_FRAME')>=3, 'Not enough genuine OnPreDraw observations'
           assert 'R252B_SEQUENCE' in frame_logs, 'Missing whole-transition view counters'
           assert 'R252B_COMPOSITION' in frame_logs, 'Missing real InputConnection evidence'

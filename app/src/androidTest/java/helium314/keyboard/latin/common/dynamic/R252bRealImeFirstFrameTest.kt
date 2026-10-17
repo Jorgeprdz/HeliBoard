@@ -11,6 +11,8 @@ import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.text.InputType
 import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
 import android.view.ViewTreeObserver
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
@@ -55,7 +57,53 @@ class R252bRealImeFirstFrameTest {
         val pkg:String, val expected:Int, val expectedSurface:Int, val loaded:Int, val pixel:Int?,
         val epoch:Long, val viewIdentity:Int, val first:Boolean
     )
+    private data class SurfaceRow(
+        val app:String, val name:String, val visible:Boolean, val observed:Int?,
+        val expected:Int?, val tint:Int?, val status:String
+    )
     private class Observer:LatinIME.R252bHarnessObserver {
+        val surfaceRows=CopyOnWriteArrayList<SurfaceRow>()
+        private fun rgb(a:Int,b:Int)=(a and 0x00ffffff)==(b and 0x00ffffff)
+        private fun sample(v:View):Int? {
+            val bg=v.background ?: return null
+            val old=android.graphics.Rect(bg.bounds)
+            val bm=Bitmap.createBitmap(8,8,Bitmap.Config.ARGB_8888)
+            return try {
+                bg.setBounds(0,0,8,8);bg.draw(Canvas(bm));bm.getPixel(4,4)
+            } finally {bg.bounds=old;bm.recycle()}
+        }
+        private fun scan(root:View,app:String,p:PaletteIdentity,frost:Int) {
+            val map=MonetColorMapper.map(DynamicSchemeProvider.get(
+                p.argb,DynamicSchemeType.valueOf(p.family),p.dark),p.themeStyle,p.borders)
+            fun visit(v:View) {
+                val name=if(v.id==View.NO_ID) v.javaClass.simpleName
+                    else runCatching {v.resources.getResourceEntryName(v.id)}
+                        .getOrElse {v.javaClass.simpleName}
+                val col=sample(v)
+                val tint=(v as? ImageView)?.imageTintList?.defaultColor
+                val expected=when(v.id) {
+                    R.id.main_keyboard_frame->frost
+                    R.id.suggestion_strip_view->map.getValue(ColorType.STRIP_BACKGROUND)
+                    else->null
+                }
+                val status=when {
+                    !v.isShown -> "NOT_DRAWN"
+                    v.id==R.id.backgroundGatheringIndicator -> "FIXED_STATUS_INDICATOR"
+                    col==null && tint==null -> "NO_BG_OR_TINT"
+                    expected!=null && col!=null && rgb(expected,col) -> "PALETTE_MATCH"
+                    col!=null && col==Color.TRANSPARENT -> "TRANSPARENT"
+                    col!=null && map.values.any{rgb(it,col)} -> "PALETTE_ROLE_MATCH"
+                    tint!=null && map.values.any{rgb(it,tint)} -> "PALETTE_TINT_MATCH"
+                    else -> "UNCLASSIFIED_COLOR"
+                }
+                surfaceRows.add(SurfaceRow(app,name,v.isShown,col,expected,tint,status))
+                android.util.Log.i("R252C_SURFACE",
+                    "app=$app view=$name shown=${v.isShown} observed=$col expected=$expected tint=$tint status=$status")
+                if(v is ViewGroup) for(i in 0 until v.childCount)visit(v.getChildAt(i))
+            }
+            visit(root)
+        }
+
         @Volatile var installed=0
         @Volatile var hides=0
         @Volatile var shows=0
@@ -95,6 +143,7 @@ class R252bRealImeFirstFrameTest {
                     val row=Frame(info.packageName ?: "(none)",expected,expectedSurface,loaded,sample,
                         binding.snapshot.epoch,System.identityHashCode(inputView),true)
                     frames.add(row)
+                    scan(inputView,row.pkg,p,row.expectedSurface)
                     android.util.Log.i("R252B_FIRST_FRAME",
                         "pkg=${row.pkg} epoch=${row.epoch} expected=${row.expected} " +
                         "loaded=${row.loaded} surface=${row.expectedSurface} drawable=${row.pixel} view=${row.viewIdentity}")
@@ -225,6 +274,27 @@ class R252bRealImeFirstFrameTest {
         val again=transition(ime,host,o,"r252.alpha")
         assertEquals(a.expected,again.expected)
         assertEquals("PaletteIdentity equal must not recreate InputView",oldCount,o.installed)
+    }
+    @Test fun r252cWholeInputViewSurfaceSweepOnFirstPreDraw() = runFixture {ime,host,o->
+        val frames=listOf(transition(ime,host,o,"r252.alpha"),
+            transition(ime,host,o,"r252.beta"),transition(ime,host,o,"r252.alpha"))
+        assertEquals("Every transition must have a first frame",3,frames.size)
+        for(f in frames) {
+            val rows=o.surfaceRows.filter{it.app==f.pkg}
+            for(name in listOf("main_keyboard_frame","suggestion_strip_view",
+                "emoji_palettes_view","clipboard_history_view",
+                "btn_stop_one_handed_mode","btn_switch_one_handed_mode")) {
+                assertTrue("Missing surface $name on ${f.pkg}",rows.any{it.name==name})
+            }
+            assertTrue("No matching frost in first frame ${f.pkg}",rows.any{
+                it.name=="main_keyboard_frame" && it.status=="PALETTE_MATCH"
+            })
+            val unmatched=rows.filter{it.status=="UNCLASSIFIED_COLOR"}
+            assertTrue("Unexplained fixed colors $unmatched",unmatched.isEmpty())
+        }
+        android.util.Log.i("R252C_SURFACE_GATE",
+            "transitions=3 totalNodes=${o.surfaceRows.size} " +
+            "popup=NOT_ATTACHED_TO_INPUTVIEW hidden=NOT_DRAWN")
     }
     @Test fun realComposingSpanAndSelectedTextRemainIntact() = runFixture {ime,host,o->
         transition(ime,host,o,"r252.alpha")
