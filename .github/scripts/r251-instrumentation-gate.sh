@@ -80,3 +80,22 @@ if ! diff -u r25-evidence/ime-before.txt r25-evidence/ime-after.txt > r25-eviden
   exit 1
 fi
 echo "R251_INSTRUMENTATION_COMPLETED; strict vector assertions still required"
+
+# Separate R2.5.2 Android lifecycle probe. Does not modify vector XML counts (5/5).
+runner="$(adb shell pm list instrumentation | sed -n 's/^instrumentation:\([^ ]*\).*$/\1/p' | grep 'com.jorgeprdz.ioskeyboard.debug.test/' | head -1)"
+if [ -z "$runner" ]; then
+  echo 'R252_NO_GO: test runner component was not registered'
+  exit 1
+fi
+adb logcat -c || true
+adb shell am instrument -w -r -e class helium314.keyboard.latin.common.dynamic.R252PaletteAndroidGateTest "$runner" \
+  > r25-evidence/r252-android-instrumentation.txt 2>&1
+status=$?
+adb logcat -d -b all -v threadtime > r25-evidence/r252-android-logcat.txt 2>&1 || true
+if [ "$status" -ne 0 ] || ! grep -q 'OK (3 tests)' r25-evidence/r252-android-instrumentation.txt; then
+  cat r25-evidence/r252-android-instrumentation.txt
+  echo 'R252_NO_GO: Android lifecycle cases failed'
+  exit 1
+fi
+echo 'R252_ANDROID_GATE_PASS 3/3'
+
