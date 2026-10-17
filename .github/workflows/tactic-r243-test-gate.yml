@@ -6,6 +6,7 @@ on:
       - '.github/workflows/tactic-r243-test-gate.yml'
       - 'app/src/main/java/helium314/keyboard/latin/ai/**'
       - 'app/src/test/java/helium314/keyboard/latin/**'
+      - 'app/src/test/java/helium314/keyboard/keyboard/**'
   workflow_dispatch:
 permissions:
   contents: read
