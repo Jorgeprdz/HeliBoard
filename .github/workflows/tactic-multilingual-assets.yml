@@ -1,0 +1,30 @@
+name: Tactic multilingual asset gate (no release)
+on:
+  push:
+    branches: [feat/tactic-r243-hybrid-writing]
+    paths:
+      - '.github/workflows/tactic-multilingual-assets.yml'
+      - 'scripts/ci/check_language_assets.py'
+      - 'app/src/main/assets/dicts/**'
+      - 'app/src/main/assets/layouts/**'
+      - 'app/src/main/assets/locale_key_texts/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-languages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify complete upstream language asset catalog
+        run: python3 scripts/ci/check_language_assets.py
+      - name: Confirm production remains unchanged
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          app = Path('app/build.gradle.kts').read_text()
+          assert 'applicationId = "com.jorgeprdz.ioskeyboard"' in app
+          assert 'PREF_R252_BY_APP_COLORS = false' in Path('app/src/main/java/helium314/keyboard/latin/settings/Defaults.kt').read_text()
+          print('LANGUAGE_ONLY_CHANGE=PASS; production defaults intact')
+          PY
