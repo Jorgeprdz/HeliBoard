@@ -43,3 +43,14 @@
 - **Físico Samsung Galaxy S25, One UI y DeX: NO EJECUTADO**; corresponde a una autorización posterior de R2.5.3.
 
 **Regla de salida:** conservar PR Draft, no activar By App para uso normal, no publicar APK ni fusionar.
+
+
+## R2.5.2b — verificación complementaria de la regresión By App OFF
+
+**Commit test-only:** [`39b07d0`](https://github.com/Jorgeprdz/HeliBoard/commit/39b07d072f18aa7dde8f712926e27682b26da13e). No se modificó código de producción: solamente el criterio de medición del frost translúcido en el test instrumentado.
+
+**Resultado completo:** [run 38998431754](https://github.com/Jorgeprdz/HeliBoard/actions/runs/38998431754) **SUCCESS**: **541/541 JVM**, **80/80 contratos**, Android API 35 **14/14** (smoke 1/1; vectores 5/5; sesiones 3/3; harness real 5/5), sin errores ni omitidos. [Artefacto directo XML/logcat](https://github.com/Jorgeprdz/HeliBoard/actions/runs/38998431754/artifacts/12088356902).
+
+**Hallazgo medido:** un `GradientDrawable` con alfa 202/196 puede devolver al rasterizar en `Bitmap.Config.ARGB_8888` un RGB con ±1 nivel por premultiplicación/despremultiplicación. La prueba anterior comparaba indebidamente el píxel rasterizado con el entero de tinte sin rasterizar: esperaba `#CAF2F2F7` y recibía `#CAF1F1F6`. Ahora son dos aserciones **exactas**, sin tolerancias relajadas: `GradientDrawable.color.defaultColor == ARGB original` y `píxel real == píxel de referencia renderizada con el mismo tinte, geometría y alfa`. Ambas pasan en **OFF claro y oscuro**. El logcat conserva los valores originales `#CAF2F2F7` y `#C41F1F21`; sus muestras rasterizadas fueron `#CAF1F1F6` y `#C41E1E21`.
+
+El run volvió a medir A→B→A en el primer `OnPreDraw` sin mezcla (`#CAF6FAF9 → #CAFFF7F9 → #CAF6FAF9`), tres `setInputView` justificados, `hideWindow/showWindow=0/0`, composición, selección y rotación preservadas. El IME anterior de Gboard se restauró. **GO visual acotado al harness instrumentado**, sin validar dos UIDs/host independientes ni píxeles de GPU presentados. Samsung/DeX físico queda pendiente. PR #8 Draft; By App OFF para usuarios; sin merge, release, APK de producto ni R2.5.3.
