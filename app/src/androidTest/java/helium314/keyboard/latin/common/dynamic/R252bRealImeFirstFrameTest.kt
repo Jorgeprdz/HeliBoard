@@ -229,12 +229,34 @@ class R252bRealImeFirstFrameTest {
         transition(ime,host,o,"r252.alpha")
         val after=main { host.editorForTest.text.toString() }
         assertEquals("Real InputConnection editor text changed across transitions",before,after)
+        assertTrue("Active composing span was destroyed during A->B->A",
+            main { BaseInputConnection.getComposingSpanStart(host.editorForTest.text)>=0 })
         main {
             val e=host.editorForTest
             e.setSelection(0,3)
         }
         val selected=transition(ime,host,o,"r252.beta")
         assertEquals(before,main{host.editorForTest.text.toString()})
-        android.util.Log.i("R252B_COMPOSITION","textRetained=true selection=true firstFrame=${selected.first}")
+        assertTrue("Selection was not preserved",main {
+            host.editorForTest.selectionStart==0 && host.editorForTest.selectionEnd==3
+        })
+        val orientation=main { host.requestedOrientation }
+        try {
+            main { host.requestedOrientation=android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
+            repeat(35) {
+                if(main { host.resources.configuration.orientation } ==
+                    android.content.res.Configuration.ORIENTATION_LANDSCAPE) return@repeat
+                SystemClock.sleep(100)
+            }
+            assertEquals("Landscape rotation not applied",
+                android.content.res.Configuration.ORIENTATION_LANDSCAPE,
+                main { host.resources.configuration.orientation })
+            val rotated=transition(ime,host,o,"r252.alpha")
+            assertEquals("Composed editor text changed on rotation",before,
+                main { host.editorForTest.text.toString() })
+            assertEquals(rotated.expected,rotated.loaded)
+        } finally { main { host.requestedOrientation=orientation } }
+        android.util.Log.i("R252B_COMPOSITION",
+            "textRetained=true composingSpanRetained=true selection=true rotation=true firstFrame=${selected.first}")
     }
 }
