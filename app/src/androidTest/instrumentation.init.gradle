@@ -1,5 +1,7 @@
 // Test-only opt-in; leaves the approved production Gradle/identity bytes untouched.
 gradle.beforeProject { project ->
+    // Only the product module owns debugNoMinify. R252c editor fixtures have plain debug.
+    if (project.path != ":app") return
     project.plugins.withId("com.android.application") {
         def android = project.extensions.getByName("android")
         android.defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

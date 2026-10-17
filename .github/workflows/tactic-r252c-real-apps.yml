@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/tactic-r252c-real-apps.yml'
       - '.github/scripts/r252c-real-apps-gate.sh'
+      - 'app/src/androidTest/instrumentation.init.gradle'
       - 'experiments/dynamic-by-app/r252c-fixtures/**'
       - 'app/src/androidTest/java/helium314/keyboard/latin/common/dynamic/R252cRealAppsTest.kt'
   workflow_dispatch:
