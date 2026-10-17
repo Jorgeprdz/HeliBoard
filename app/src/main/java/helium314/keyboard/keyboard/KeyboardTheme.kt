@@ -44,6 +44,23 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
     override fun hashCode(): Int = themeId
 
     companion object {
+        /** R2.5.2 local scheme-only candidate, no public setting or preference writes. */
+        internal fun paletteIdentityForSession(context: Context, snapshot: helium314.keyboard.latin.common.dynamic.SessionColorSnapshot): helium314.keyboard.latin.common.dynamic.PaletteIdentity? {
+            val prefs = context.prefs()
+            val night = SettingsActivity.forceNight
+                ?: (ResourceUtils.isNight(context.resources) && prefs.getBoolean(Settings.PREF_THEME_DAY_NIGHT, Defaults.PREF_THEME_DAY_NIGHT))
+            val name = SettingsActivity.forceTheme ?: if (night)
+                prefs.getString(Settings.PREF_THEME_COLORS_NIGHT, Defaults.PREF_THEME_COLORS_NIGHT)
+            else prefs.getString(Settings.PREF_THEME_COLORS, Defaults.PREF_THEME_COLORS)
+            val family = LOCAL_DYNAMIC_SCHEMES[name] ?: return null
+            // User image backgrounds need a separate contrast gate; retain prior theme.
+            if (Settings.readUserBackgroundImage(context, night) != null) return null
+            val style = prefs.getString(Settings.PREF_THEME_STYLE, Defaults.PREF_THEME_STYLE) ?: return null
+            val borders = prefs.getBoolean(Settings.PREF_THEME_KEY_BORDERS, Defaults.PREF_THEME_KEY_BORDERS)
+            return helium314.keyboard.latin.common.dynamic.PaletteIdentity(
+                snapshot.seed, family.name, night, style, borders, null, 1, true)
+        }
+
 
         fun normalizeThemeName(themeName: String): String {
             return themeName

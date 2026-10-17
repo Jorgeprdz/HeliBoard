@@ -910,14 +910,20 @@ public class LatinIME extends InputMethodService implements
         boolean inputTypeChanged = !currentSettingsValues.isSameInputType(editorInfo);
         boolean isDifferentTextField = !restarting || inputTypeChanged;
 
-        // we want to reload the settings before calling updateKeyboardTheme, because updateKeyboardTheme reads SettingsValues.mToolbarMode
-        if (isDifferentTextField || !currentSettingsValues.hasSameOrientation(getResources().getConfiguration())) {
+        // R2.5.2: compute once at the input boundary; workers never repaint the view.
+        // Existing composition/selection detection is boolean-only (no editor text read).
+        final boolean r252PaletteBoundary = mR252ColorLifecycle != null
+                && mR252ColorLifecycle.prepareAtInputBoundary(this, restarting,
+                        hasAiComposition(), mInputLogic.mConnection.hasSelection());
+        // Only reload settings for existing reasons or an effective palette change.
+        if (isDifferentTextField || !currentSettingsValues.hasSameOrientation(getResources().getConfiguration())
+                || r252PaletteBoundary) {
             loadSettings();
             if (hasSuggestionStripView())
                 mSuggestionStripView.updateVoiceKey();
         }
 
-        switcher.updateKeyboardTheme(mDisplayContext);
+        switcher.updateKeyboardTheme(mDisplayContext, r252PaletteBoundary);
         MainKeyboardView mainKeyboardView = switcher.getMainKeyboardView();
         currentSettingsValues = mSettings.getCurrent(); // settingsValues may have been reloaded
 

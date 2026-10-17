@@ -93,6 +93,13 @@ public final class KeyboardSwitcher {
     private int mCurrentOrientation;
     private int mCurrentDpi;
     private boolean mThemeNeedsReload;
+    private int mR252PaletteViewReplacements;
+    private int mR252PaletteHideCalls;
+    private int mR252PaletteShowCalls;
+
+    public int getR252PaletteViewReplacements() { return mR252PaletteViewReplacements; }
+    public int getR252PaletteHideCalls() { return mR252PaletteHideCalls; }
+    public int getR252PaletteShowCalls() { return mR252PaletteShowCalls; }
 
     @SuppressLint("StaticFieldLeak") // this is a keyboard, we want to keep it alive in background
     private static final KeyboardSwitcher sInstance = new KeyboardSwitcher();
@@ -117,13 +124,24 @@ public final class KeyboardSwitcher {
     }
 
     public void updateKeyboardTheme(@NonNull Context displayContext) {
+        updateKeyboardTheme(displayContext, false);
+    }
+
+    /** Only called from onStartInputViewInternal; never by a chromatic worker. */
+    public void updateKeyboardTheme(@NonNull Context displayContext, boolean r252InputBoundary) {
+        if (r252InputBoundary && (mLatinIME.hasAiComposition()
+                || mLatinIME.getAiInputConnection().hasSelection())) {
+            throw new IllegalStateException("R252 view rebuild during composition/selection");
+        }
         final boolean themeUpdated = updateKeyboardThemeAndContextThemeWrapper(
-                displayContext, KeyboardTheme.getKeyboardTheme(displayContext));
+                displayContext, KeyboardTheme.getKeyboardTheme(displayContext), r252InputBoundary);
         if (themeUpdated) {
             Settings settings = Settings.getInstance();
             settings.loadSettings(displayContext, settings.getCurrent().mLocale, settings.getCurrent().mInputAttributes);
-            if (mKeyboardView != null)
+            if (mKeyboardView != null) {
+                if (r252InputBoundary) mR252PaletteViewReplacements++;
                 mLatinIME.setInputView(onCreateInputView(displayContext, mIsHardwareAcceleratedDrawingEnabled));
+            }
         } else if (mCurrentInputView != null && mLatinIME.hasSuggestionStripView()
                     == (Settings.getValues().mToolbarMode == ToolbarMode.HIDDEN || mLatinIME.isEmojiSearch())) {
             mLatinIME.updateSuggestionStripView(mCurrentInputView);
@@ -131,8 +149,13 @@ public final class KeyboardSwitcher {
     }
 
     private boolean updateKeyboardThemeAndContextThemeWrapper(final Context context, final KeyboardTheme keyboardTheme) {
+        return updateKeyboardThemeAndContextThemeWrapper(context, keyboardTheme, false);
+    }
+
+    private boolean updateKeyboardThemeAndContextThemeWrapper(final Context context,
+            final KeyboardTheme keyboardTheme, final boolean r252InputBoundary) {
         final Resources res = context.getResources();
-        if (mThemeNeedsReload
+        if (r252InputBoundary || mThemeNeedsReload
                 || mThemeContext == null
                 || !keyboardTheme.equals(mKeyboardTheme)
                 || mCurrentDpi != res.getDisplayMetrics().densityDpi
@@ -621,8 +644,10 @@ public final class KeyboardSwitcher {
 
         // Hide and show IME, showing will trigger the reload.
         // Reloading while IME is shown is glitchy, and hiding / showing is so fast the user shouldn't notice.
+        mR252PaletteHideCalls++;
         mLatinIME.hideWindow();
         try {
+            mR252PaletteShowCalls++;
             mLatinIME.showWindow(true);
         } catch (IllegalStateException e) {
             // in tests isInputViewShown returns true, but showWindow throws "IllegalStateException: Window token is not set yet."

@@ -2,6 +2,7 @@
 package helium314.keyboard.latin.common.dynamic
 
 import android.content.Context
+import helium314.keyboard.keyboard.KeyboardTheme
 
 /** No paint, view, input text, worker callback or theme reconstruction. OFF by default. */
 class R252ColorLifecycle internal constructor(
@@ -11,6 +12,7 @@ class R252ColorLifecycle internal constructor(
 
     private var enabled = false
     private var active: SessionIdentity? = null
+    private var previous: SessionIdentity? = null
     private var snapshot: SessionColorSnapshot? = null
 
     @Synchronized
@@ -18,7 +20,9 @@ class R252ColorLifecycle internal constructor(
         if (enabled == value) return
         enabled = value
         active = null
+        previous = null
         snapshot = null
+        R252PaletteRegistry.clear()
         coordinator.setEnabled(value)
     }
 
@@ -30,8 +34,42 @@ class R252ColorLifecycle internal constructor(
     ) {
         if (!enabled) return
         val next = coordinator.onEditorStarted(packageName, isDark, restarting = restarting)
+        previous = active
         active = SessionIdentity(packageName, fieldId, inputType, imeOptions, displayId, next.epoch)
         snapshot = next
+    }
+
+    /**
+     * Called strictly from LatinIME.onStartInputViewInternal before SettingsValues and
+     * KeyboardSwitcher render. A delayed worker has no access to this method or the view.
+     */
+    @Synchronized
+    fun prepareAtInputBoundary(context: Context, restarting: Boolean,
+                               composing: Boolean, selected: Boolean): Boolean {
+        if (!enabled) return false
+        val currentSession = active ?: return false
+        val currentSnapshot = snapshot ?: return false
+        val candidate = KeyboardTheme.paletteIdentityForSession(context, currentSnapshot)
+        val previousPalette = R252PaletteRegistry.current()?.palette
+        val decision = PaletteTransitionPolicy.decide(previous, currentSession,
+            restarting, composing || selected, previousPalette, candidate, currentSession.epoch)
+        return when (decision) {
+            is PaletteDecision.ApplyAtBoundary -> {
+                R252PaletteRegistry.bind(currentSnapshot, decision.palette)
+                true
+            }
+            PaletteDecision.KeepPalette -> {
+                if (candidate != null) R252PaletteRegistry.bind(currentSnapshot, candidate)
+                false
+            }
+            is PaletteDecision.Fallback -> {
+                // Non-local/unsupported theme: use the existing system/static path.
+                val wasApp = previousPalette != null
+                R252PaletteRegistry.clear()
+                wasApp
+            }
+            is PaletteDecision.Defer, PaletteDecision.RejectStale -> false
+        }
     }
 
     @Synchronized

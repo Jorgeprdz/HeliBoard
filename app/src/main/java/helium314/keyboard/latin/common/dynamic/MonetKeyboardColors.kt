@@ -20,18 +20,28 @@ class MonetKeyboardColors(
     backgroundImage: Drawable? = null,
     seedOverride: Int? = null,
 ) : Colors {
-    private val tracksSeedProvider = seedOverride == null
-    private val seedSnapshot = if (seedOverride == null) {
-        DynamicColorSeedProvider.snapshot(context, isDark)
-    } else {
-        DynamicColorSeedProvider.Snapshot(seedOverride, seedOverride.toLong(), false)
+    // Snapshot binding is written only at input boundaries, never by an icon worker.
+    private val sessionBinding = R252PaletteRegistry.current()?.takeIf {
+        it.palette.family == schemeType.name && it.palette.dark == isDark
+    }
+    private val tracksSeedProvider = sessionBinding == null && seedOverride == null
+    private val seedSnapshot = when {
+        sessionBinding != null -> DynamicColorSeedProvider.Snapshot(
+            sessionBinding.snapshot.seed, sessionBinding.palette.hashCode().toLong(), false)
+        seedOverride != null -> DynamicColorSeedProvider.Snapshot(
+            seedOverride, seedOverride.toLong(), false)
+        else -> DynamicColorSeedProvider.snapshot(context, isDark)
     }
     private val scheme = DynamicSchemeProvider.get(seedSnapshot.seed, schemeType, isDark)
     internal val mappedColors = MonetColorMapper.map(scheme, themeStyle, hasKeyBorders)
     private val delegate = AllColors(mappedColors, themeStyle, hasKeyBorders, backgroundImage)
 
-    override fun haveColorsChanged(context: Context): Boolean =
-        tracksSeedProvider && DynamicColorSeedProvider.snapshot(context, isDark).fingerprint != seedSnapshot.fingerprint
+    override fun haveColorsChanged(context: Context): Boolean = when {
+        sessionBinding != null -> R252PaletteRegistry.current()?.palette != sessionBinding.palette
+        R252PaletteRegistry.current() != null -> true
+        else -> tracksSeedProvider &&
+            DynamicColorSeedProvider.snapshot(context, isDark).fingerprint != seedSnapshot.fingerprint
+    }
 
     override fun get(color: ColorType): Int = delegate.get(color)
     override fun setColor(drawable: Drawable, color: ColorType) = delegate.setColor(drawable, color)
