@@ -148,7 +148,7 @@ for path in reports:
     root=ET.parse(path).getroot()
     for k in total: total[k]+=int(root.attrib.get(k,0))
 print('R252B_REAL_IME_GATE',total)
-assert total==dict(tests=4,failures=0,errors=0,skipped=0),total
+assert total==dict(tests=5,failures=0,errors=0,skipped=0),total
 PY
 if [ "$?" -ne 0 ]; then
   echo 'R252B_NO_GO: strict frame/composition test XML mismatch'
@@ -159,5 +159,5 @@ if ! diff -u r25-evidence/ime-before.txt r25-evidence/ime-after-r252b.txt > r25-
   echo 'R252B_NO_GO: original IME not restored after the real host tests'
   exit 1
 fi
-echo 'R252B_REAL_IME_PASS 4/4'
+echo 'R252B_REAL_IME_PASS 5/5 (R252c surface and OFF baseline)'
 

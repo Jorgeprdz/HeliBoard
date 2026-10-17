@@ -12,6 +12,9 @@ import android.os.SystemClock
 import android.text.InputType
 import android.view.View
 import android.view.ViewGroup
+import android.content.res.Configuration
+import helium314.keyboard.latin.IosGlassController
+import helium314.keyboard.latin.common.dynamic.MonetKeyboardColors
 import android.widget.ImageView
 import android.view.ViewTreeObserver
 import android.view.inputmethod.EditorInfo
@@ -274,6 +277,46 @@ class R252bRealImeFirstFrameTest {
         val again=transition(ime,host,o,"r252.alpha")
         assertEquals(a.expected,again.expected)
         assertEquals("PaletteIdentity equal must not recreate InputView",oldCount,o.installed)
+    }
+    /** A/B OFF must preserve the exact frost tint from a686f7d, before R2.5.2b. */
+    @Test fun r252cByAppOffMatchesOriginalFrostAndThemeRoles() = runFixture {ime,host,o->
+        R252PaletteRegistry.clear()
+        val reload=ime.javaClass.getDeclaredMethod("loadSettings").apply{isAccessible=true}
+        main {reload.invoke(ime)}
+        val colors=Settings.getValues().mColors
+        assertFalse("OFF unexpectedly bound a By App session",
+            (colors as? MonetKeyboardColors)?.isByAppPaletteBound()==true)
+        val allRoles=ColorType.entries.associateWith{colors.get(it)}
+        fun check(dark:Boolean,original:Int) {
+            val config=Configuration(context.resources.configuration).apply {
+                uiMode=(uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                    (if(dark) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO)
+            }
+            val themed=context.createConfigurationContext(config)
+            val root=View(themed);val panel=View(themed)
+            main { IosGlassController.apply(root,panel) }
+            fun sample(v:View):Int {
+                val d=requireNotNull(v.background)
+                val old=android.graphics.Rect(d.bounds)
+                val bm=Bitmap.createBitmap(256,256,Bitmap.Config.ARGB_8888)
+                return try {
+                    d.setBounds(0,0,256,256);d.draw(Canvas(bm));bm.getPixel(128,128)
+                } finally { d.bounds=old;bm.recycle() }
+            }
+            assertEquals("By App OFF frost deviated from pre-fix base",original,main{sample(panel)})
+            assertEquals("Transparent keyboard root changed",Color.TRANSPARENT,main{sample(root)})
+            assertTrue("Frost clip-to-outline changed",main{panel.clipToOutline})
+            val corner=(panel.background as android.graphics.drawable.GradientDrawable).cornerRadii
+            assertNotNull("Original 8 rounded-corner radii missing",corner)
+            assertEquals(8,corner!!.size)
+            android.util.Log.i("R252C_OFF_BASELINE",
+                "mode=${if(dark) "dark" else "light"} expected=$original observed=${main{sample(panel)}} " +
+                "clip=${main{panel.clipToOutline}} corners=${corner.joinToString()}")
+        }
+        check(false,Color.argb(202,242,242,247))
+        check(true,Color.argb(196,31,31,33))
+        val after=ColorType.entries.associateWith{Settings.getValues().mColors.get(it)}
+        assertEquals("By App OFF changed ColorType role values",allRoles,after)
     }
     @Test fun r252cWholeInputViewSurfaceSweepOnFirstPreDraw() = runFixture {ime,host,o->
         val frames=listOf(transition(ime,host,o,"r252.alpha"),
