@@ -14,7 +14,7 @@ permissions:
   contents: read
 concurrency:
   group: tactic-r252c2-debug-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   debug-apk-only:
     runs-on: ubuntu-latest
@@ -38,14 +38,30 @@ jobs:
           mkdir -p r252c2-evidence
           git rev-parse HEAD > r252c2-evidence/commit.txt
           python3 experiments/r243/check_branding.py 2>&1 | tee r252c2-evidence/branding.log
-      - name: Verify ADB switch in debug and RELEASE test variants; no release APK
+      - name: Verify isolated-debug switch tests and release compile-time OFF gate; no release APK
         id: variants
         continue-on-error: true
         run: |
           set -o pipefail
-          ./gradlew :app:testR252cDebugUnitTest :app:testReleaseUnitTest \
+          ./gradlew :app:testR252cDebugUnitTest \
             --tests 'helium314.keyboard.latin.common.dynamic.R252cDebugSwitchTest' \
             --no-daemon 2>&1 | tee r252c2-evidence/switch-tests.log
+          status=${PIPESTATUS[0]}
+          if [[ "$status" -ne 0 ]]; then exit "$status"; fi
+          # Release has no testReleaseUnitTest task in this project; inspect its
+          # generated BuildConfig.DEBUG constant WITHOUT producing a release APK.
+          ./gradlew :app:generateReleaseBuildConfig --no-daemon
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          candidates=list(Path("app/build/generated").rglob("BuildConfig.java"))
+          release=[p for p in candidates if "/release/" in str(p)]
+          assert release, "No generated release BuildConfig to inspect"
+          assert any(re.search(r"DEBUG\s*=\s*(?:false|Boolean\.parseBoolean\(\"false\"\))", p.read_text()) for p in release), release
+          kotlin=Path("app/src/main/java/helium314/keyboard/latin/common/dynamic/R252cDebugSwitch.kt").read_text()
+          assert "if (!BuildConfig.DEBUG) return false" in kotlin
+          print("R252C2_RELEASE_COMPILETIME_GUARD=PASS; RELEASE_APK=NOT_BUILT")
+          PY
       - name: Host edit contracts (no engine changes)
         id: contracts
         continue-on-error: true
@@ -103,7 +119,7 @@ jobs:
           apk=p/os.environ["APK_NAME"]
           assert apk.is_file() and apk.stat().st_size>0
           digest=hashlib.sha256(apk.read_bytes()).hexdigest()
-          (p/"SHA256SUMS.txt").write_text(f"${digest}  ${apk.name}\n")
+          (p/"SHA256SUMS.txt").write_text(f"{digest}  {apk.name}\n")
           status={"classification":"NO_VALIDADO","commit":os.environ["GITHUB_SHA"],
                   "apk":apk.name,"package":pkg[1],"sha256":digest,
                   "debugVariant":"assembleR252cDebug",
