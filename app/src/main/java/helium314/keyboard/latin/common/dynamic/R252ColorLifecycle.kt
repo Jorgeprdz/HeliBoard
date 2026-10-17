@@ -3,6 +3,7 @@ package helium314.keyboard.latin.common.dynamic
 
 import android.content.Context
 import helium314.keyboard.keyboard.KeyboardTheme
+import helium314.keyboard.latin.utils.prefs
 
 /** No paint, view, input text, worker callback or theme reconstruction. OFF by default. */
 class R252ColorLifecycle internal constructor(
@@ -23,7 +24,7 @@ class R252ColorLifecycle internal constructor(
      */
     @Synchronized
     fun refreshActivation(context: Context) {
-        val userOptIn = helium314.keyboard.latin.utils.KtxKt.prefs(context).getBoolean(
+        val userOptIn = context.prefs().getBoolean(
             helium314.keyboard.latin.settings.Settings.PREF_R252_BY_APP_COLORS, false)
         val debugAdbRequested = helium314.keyboard.latin.BuildConfig.DEBUG &&
             R252cDebugSwitch.requested(context)
