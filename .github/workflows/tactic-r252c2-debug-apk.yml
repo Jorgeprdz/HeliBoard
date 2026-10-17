@@ -20,7 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 85
     env:
-      TACTIC_R252C_ISOLATED_APK: '1'
       APK_NAME: Tactic-Keyboard-R252C2-NO-VALIDADO-debug.apk
       PACKAGE_ID: com.jorgeprdz.ioskeyboard.debug.r252c
     steps:
@@ -44,7 +43,7 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          ./gradlew :app:testDebugUnitTest :app:testReleaseUnitTest \
+          ./gradlew :app:testR252cDebugUnitTest :app:testReleaseUnitTest \
             --tests 'helium314.keyboard.latin.common.dynamic.R252cDebugSwitchTest' \
             --no-daemon 2>&1 | tee r252c2-evidence/switch-tests.log
       - name: Host edit contracts (no engine changes)
@@ -54,13 +53,15 @@ jobs:
           set -o pipefail
           bash experiments/r243/tests/run_android_edit_contract_host.sh \
             2>&1 | tee r252c2-evidence/contracts.log
-      - name: Full JVM regression (record failure; never claim VALIDATED)
-        id: jvm
-        continue-on-error: true
+      - name: Preserve historical JVM regression provenance (NO VALIDADO)
         run: |
-          set -o pipefail
-          ./gradlew :app:testDebugUnitTest --no-daemon \
-            2>&1 | tee r252c2-evidence/jvm.log
+          cat > r252c2-evidence/jvm-provenance.txt <<'EOF'
+          New reduced build: no redundant full JVM retest of unchanged production sources.
+          Previous R252C2 code commit 49e33e3: full JVM regression PASS in workflow 39001651540.
+          Earlier 39000407904: 540/541; XLinkTest.knownDictionaries HTTPS read timeout.
+          Earlier 39000140968: 540/541; InputLogicTest pending delayed handler message.
+          This artifact remains NO_VALIDADO irrespective of test status.
+          EOF
       - uses: actions/cache@v4
         with:
           path: |
@@ -70,17 +71,17 @@ jobs:
           key: tactic-r252c2-b5046-${{ hashFiles('native-writing/writing.cpp','native-writing/CMakeLists.txt') }}
       - name: Restore existing ARM64 writing runtime (unmodified)
         run: bash scripts/ci/build-writing-runtime.sh
-      - name: Assemble normal debug ONLY (no debugNoMinify or release)
-        run: ./gradlew :app:assembleDebug --no-daemon
+      - name: Assemble isolated debug-derived APK ONLY (no debugNoMinify or release)
+        run: ./gradlew :app:assembleR252cDebug --no-daemon
       - name: Validate structural installability and permanent NO VALIDADO label
         env:
           VARIANT_RESULT: ${{ steps.variants.outcome }}
           CONTRACT_RESULT: ${{ steps.contracts.outcome }}
-          JVM_RESULT: ${{ steps.jvm.outcome }}
+          JVM_RESULT: NOT_REEXECUTED
         run: |
           set -euo pipefail
           mkdir -p r252c2-artifact
-          mapfile -t apks < <(find app/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk')
+          mapfile -t apks < <(find app/build/outputs/apk/r252cDebug -maxdepth 1 -type f -name '*.apk')
           test "${#apks[@]}" -eq 1
           test -s "${apks[0]}"
           cp "${apks[0]}" "r252c2-artifact/$APK_NAME"
@@ -105,7 +106,7 @@ jobs:
           (p/"SHA256SUMS.txt").write_text(f"${digest}  ${apk.name}\n")
           status={"classification":"NO_VALIDADO","commit":os.environ["GITHUB_SHA"],
                   "apk":apk.name,"package":pkg[1],"sha256":digest,
-                  "debugVariant":"assembleDebug",
+                  "debugVariant":"assembleR252cDebug",
                   "testVariants":os.getenv("VARIANT_RESULT"),
                   "hostContracts":os.getenv("CONTRACT_RESULT"),
                   "fullJvm":os.getenv("JVM_RESULT"),

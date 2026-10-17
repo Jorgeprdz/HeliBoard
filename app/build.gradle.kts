@@ -53,9 +53,17 @@ android {
             // and for better performance in case users want to install a debug APK
             isMinifyEnabled = true
             isJniDebuggable = false
-            applicationIdSuffix = if (providers.environmentVariable("TACTIC_R252C_ISOLATED_APK").orNull == "1")
-                ".debug.r252c" else ".debug"
+            applicationIdSuffix = ".debug"
             if (ownerSigning != null) signingConfig = ownerSigning
+        }
+        // Experiment-only DEBUG-derived APK with isolated package AND content provider authorities.
+        // Does not affect release, normal debug or the protected debugNoMinify variant.
+        create("r252cDebug") {
+            initWith(getByName("debug"))
+            isDebuggable = true
+            applicationIdSuffix = ".debug.r252c"
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("debug")
         }
         create("runTests") { // build variant for running tests on CI that skips tests known to fail
             isMinifyEnabled = false
@@ -71,7 +79,7 @@ android {
         }
 
         androidComponents.onVariants { variant: ApplicationVariant ->
-            if (variant.buildType == "debug") {
+            if (variant.buildType == "debug" || variant.buildType == "r252cDebug") {
                 // got a little too big for GitHub after some dependency upgrades, so we remove the largest dictionary
                 variant.androidResources.ignoreAssetsPatterns = listOf("main_ro.dict")
                 variant.proguardFiles = emptyList()
