@@ -20,7 +20,7 @@ public final class R252SwitcherGuardTest {
         field.setAccessible(true);
         final Object previous = field.get(switcher);
         final LatinIME ime = mock(LatinIME.class);
-        when(ime.hasAiComposition()).thenReturn(true);
+        when(ime.isComposingForPalette()).thenReturn(true);
         final int before = switcher.getR252PaletteViewReplacements();
         field.set(switcher, ime);
         try {
@@ -28,6 +28,7 @@ public final class R252SwitcherGuardTest {
                     switcher.updateKeyboardTheme(RuntimeEnvironment.getApplication(), true));
             assertEquals(before, switcher.getR252PaletteViewReplacements());
             verify(ime, never()).getAiInputConnection();
+            verify(ime, never()).hasAiComposition();
         } finally { field.set(switcher, previous); }
     }
     @Test public void textSelectionBlocksR252ViewRebuild() throws Exception {
@@ -37,7 +38,7 @@ public final class R252SwitcherGuardTest {
         final Object previous = field.get(switcher);
         final LatinIME ime = mock(LatinIME.class);
         final RichInputConnection input = mock(RichInputConnection.class);
-        when(ime.hasAiComposition()).thenReturn(false);
+        when(ime.isComposingForPalette()).thenReturn(false);
         when(ime.getAiInputConnection()).thenReturn(input);
         when(input.hasSelection()).thenReturn(true);
         final int before = switcher.getR252PaletteViewReplacements();

@@ -914,7 +914,7 @@ public class LatinIME extends InputMethodService implements
         // Existing composition/selection detection is boolean-only (no editor text read).
         final boolean r252PaletteBoundary = mR252ColorLifecycle != null
                 && mR252ColorLifecycle.prepareAtInputBoundary(this, restarting,
-                        hasAiComposition(), mInputLogic.mConnection.hasSelection());
+                        isComposingForPalette(), mInputLogic.mConnection.hasSelection());
         // Only reload settings for existing reasons or an effective palette change.
         if (isDifferentTextField || !currentSettingsValues.hasSameOrientation(getResources().getConfiguration())
                 || r252PaletteBoundary) {
@@ -1456,6 +1456,9 @@ public class LatinIME extends InputMethodService implements
     }
 
     public DictionaryFacilitator getAiDictionary(){return mDictionaryFacilitator;}
+    /** Read-only composing flag for R2.5.2b palette safety; legacy AI API remains unchanged. */
+    public boolean isComposingForPalette() { return mInputLogic.isComposingForPalette(); }
+
     public boolean hasAiComposition(){return !mInputLogic.getAiComposingWord().isEmpty();}
     public void showAiContextSuggestions(SuggestedWords words){
         if(mSuggestionStripView!=null&&!mSuggestionStripView.isAiActive())

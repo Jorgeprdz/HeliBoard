@@ -129,7 +129,7 @@ public final class KeyboardSwitcher {
 
     /** Only called from onStartInputViewInternal; never by a chromatic worker. */
     public void updateKeyboardTheme(@NonNull Context displayContext, boolean r252InputBoundary) {
-        if (r252InputBoundary && (mLatinIME.hasAiComposition()
+        if (r252InputBoundary && (mLatinIME.isComposingForPalette()
                 || mLatinIME.getAiInputConnection().hasSelection())) {
             throw new IllegalStateException("R252 view rebuild during composition/selection");
         }
