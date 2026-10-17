@@ -134,3 +134,15 @@ The isolated [run 38986010569](https://github.com/Jorgeprdz/HeliBoard/actions/ru
 The narrowly scoped workaround is `app/src/debugNoMinify/AndroidManifest.xml` with one manifest-merger `tools:node="remove"` entry for `SystemBroadcastReceiver`. Android instrumentation targets exactly `debugNoMinify`, so this removes the boot/locale/package receiver only from the **test target variant**; main/release manifests, source receiver, production IME behavior and `app/build.gradle.kts` remain unchanged. This does **not** validate production BOOT_COMPLETED handling; it prevents incidental kill while testing color extraction and must remain restricted to this variant. No by-app color connection is authorized.
 
 Following smoke PASS, the workflow runs the existing five Android tests, validates metrics and runs an independent strict JVM regression job with XML evidence. CI must report NO-GO if smoke or five cases fail, if JVM assertions regress, or if actual seed/hue/timing evidence is absent.
+
+
+## R2.5.2 lifecycle gate — FORENSIC NO-GO, 2026-10-16
+
+The Owner authorized **R2.5.2 only**, conditioned on STOP if the current IME requires an unsafe visible `InputView` rebuild. Static inspection at `d10009ee3d2ae40b02216a8a123ea576c69fe367` identified that exact obstacle; **no production changes or integration attempts were made**. See [R252_LIFECYCLE_AUDIT.md](R252_LIFECYCLE_AUDIT.md).
+
+- `onStartInputInternal` precedes color materialization, but has no link to `AppSessionColorCoordinator`. A package change with `restarting=true`, equal input type/orientation can skip `loadSettings()`.
+- `MonetKeyboardColors(seedOverride)` does not track app identity or session fingerprint; meanwhile a naive session-epoch fingerprint forces updates even when render colors are identical.
+- `KeyboardSwitcher.updateKeyboardTheme` invokes `setInputView(onCreateInputView(...))` on detected theme change while an old view exists, before `InputLogic.startInput` has completed. `setThemeNeedsReload()` performs hide/show while visible. Safe active-composition transition is **unproven**.
+- Current decision: **R2.5.2 NO-GO (integration blocked), R2.5.3 NOT AUTHORIZED**. The product remains exactly as at the R2.5.1 PASS baseline.
+- Structural tripwire `python3 experiments/dynamic-by-app/check_r252_lifecycle.py` must report exit 2 while anchors remain; its output is not proof of keyboard behavior. No fresh Android or JVM integration test results are claimed.
+- To unblock, independently prove a non-disruptive boundary/transitional policy before writing a production bridge. A patch must demonstrate A→B→A, cross-package restarts, composition preservation and zero unsafe view reconstruction; otherwise stop.
