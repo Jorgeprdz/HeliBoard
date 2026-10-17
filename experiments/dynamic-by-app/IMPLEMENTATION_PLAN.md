@@ -108,3 +108,20 @@ El Owner debe autorizar **expresamente** una fase separada de implementación tr
 - Android IME package visibility: https://developer.android.com/training/package-visibility/automatic  
 - EditorInfo: https://developer.android.com/reference/android/view/inputmethod/EditorInfo  
 - MCU image seed: https://github.com/material-foundation/material-color-utilities/blob/main/dev_guide/extracting_colors.md
+
+
+## R2.5 gated sequence — authorization updated 2026-10-16
+
+Owner authorized **only R2.5.1** with initial HEAD `c5bf4aed97e10a82439933d42978eb4474f35d75`. This overrides the earlier documentation-only status **only for the limited R2.5.1 diagnostic/validation scope**; product integration remains prohibited.
+
+| Subphase | Authorized purpose | Release condition |
+|---|---|---|
+| **R2.5.1 — current** | Validate existing isolated chromatic extractor in real Android instrumentation; collect main/system/crash logs and Gradle/XML even on error; diagnose runner first with a one-case smoke test, then run five existing chromatic tests; preserve JVM gate and physical fallback instructions. | Five actual PASS, valid ARGB/HCT vectors, repeatability, safe neutral/missing fallback, worker thread, measured latency and preserved protections. Any missing item = **NO-GO**. |
+| **R2.5.2 — blocked** | Later isolated LatinIME session integration with no mid-session UI reloads. | Separate owner authorization after R2.5.1 GO; not part of this commit. |
+| **R2.5.3 — blocked** | Later preferences and physical visual acceptance. | Separate authorization after R2.5.2; not part of this commit. |
+
+### R2.5.1 incident and forensic design
+
+Failed action [38984755357](https://github.com/Jorgeprdz/HeliBoard/actions/runs/38984755357) assembled both Android packages but logged `Starting 0 tests`, `Process crashed`. **Root crash stack is not present in the main job log**, and the old workflow terminated immediately on Gradle failure before collecting emulator logcat, leaving the underlying reason **unconfirmed**. R2.5.1 repairs only test infrastructure: an isolated `R251RunnerSmokeTest` (no color extraction/IME binding) precedes the existing five-test fixture; a wrapper script always saves logcat/all, crash buffer, DropBox crash entries, instrumentation registrations, activity processes, output XML/HTML and original Gradle exit. These files stay in the no-APK evidence artifact. A failed smoke stops the vector gate rather than masking failures.
+
+The legacy original Android test cases remain unmodified. Neither `app/build.gradle.kts`, production Kotlin/Java, product branding, package ID/signing, writing models, nor LatinIME is authorized to change. **Do not mark R2.5.1 PASS from compilation, host JVM tests or artifact presence alone.** The direct physical S25/DeX test is tracked separately in `VECTOR_ANDROID_PHYSICAL_TEST_GATE.md`; its absence must remain explicit in the report.

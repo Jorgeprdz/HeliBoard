@@ -47,15 +47,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            adb shell getprop ro.product.manufacturer > r25-evidence/manufacturer.txt
-            adb shell getprop ro.product.model > r25-evidence/model.txt
-            adb shell getprop ro.build.version.release > r25-evidence/android-version.txt
-            adb shell settings get secure default_input_method > r25-evidence/ime-before.txt
-            adb logcat -c
-            bash -o pipefail -c './gradlew --init-script app/src/androidTest/instrumentation.init.gradle :app:connectedDebugNoMinifyAndroidTest --no-daemon -Pandroid.injected.build.abi=x86_64 -Pandroid.testInstrumentationRunnerArguments.class=helium314.keyboard.latin.common.dynamic.VectorAndroidGateTest 2>&1 | tee r25-evidence/instrumentation.log'
-            adb logcat -d -s R25_VECTOR_GATE:I '*:S' > r25-evidence/seed-metrics.log
-            adb shell settings get secure default_input_method > r25-evidence/ime-after.txt
-            diff -u r25-evidence/ime-before.txt r25-evidence/ime-after.txt
+            bash .github/scripts/r251-instrumentation-gate.sh
       - name: Strict results and measured seed telemetry
         run: |
           python3 - <<'PY'
