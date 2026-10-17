@@ -15,19 +15,30 @@ class R252ColorLifecycle internal constructor(
     private var previous: SessionIdentity? = null
     private var snapshot: SessionColorSnapshot? = null
 
-    // Debug-only audit marker; not persisted or visible to the user.
-    private var lastDebugGate: Boolean? = null
+    // State is session-scoped, not persisted by the lifecycle.
+    private var lastEnabledGate: Boolean? = null
 
-    /** Checked at a genuine editor boundary, never from an icon extraction worker. */
+    /** Read only a local opt-in preference in release; debug retains its ADB override.
+     * Applied at the next real editor boundary; never from an icon worker.
+     */
     @Synchronized
-    fun refreshDebugGate(context: Context) {
-        if (!helium314.keyboard.latin.BuildConfig.DEBUG) return
-        val requested = R252cDebugSwitch.requested(context)
+    fun refreshActivation(context: Context) {
+        val userOptIn = helium314.keyboard.latin.utils.KtxKt.prefs(context).getBoolean(
+            helium314.keyboard.latin.settings.Settings.PREF_R252_BY_APP_COLORS, false)
+        val debugAdbRequested = helium314.keyboard.latin.BuildConfig.DEBUG &&
+            R252cDebugSwitch.requested(context)
+        val requested = R252ReleaseActivationPolicy.enabled(userOptIn,
+            helium314.keyboard.latin.BuildConfig.DEBUG, debugAdbRequested)
         if (enabled != requested) enableForTests(requested)
-        if (lastDebugGate != requested) {
-            android.util.Log.i("R252C_DEBUG_SWITCH",
-                "state=" + (if (requested) "ON" else "OFF") + " variant=debug source=Settings.Global")
-            lastDebugGate = requested
+        if (lastEnabledGate != requested) {
+            android.util.Log.i("R252_COLOR_SOURCE",
+                "state=" + (if (requested) "ON" else "OFF") +
+                " source=" + (if (userOptIn) "user-opt-in" else if (debugAdbRequested) "debug-adb" else "system"))
+            if (helium314.keyboard.latin.BuildConfig.DEBUG && debugAdbRequested) {
+                android.util.Log.i("R252C_DEBUG_SWITCH",
+                    "state=ON variant=debug source=Settings.Global")
+            }
+            lastEnabledGate = requested
         }
     }
 

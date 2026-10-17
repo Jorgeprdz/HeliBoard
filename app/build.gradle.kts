@@ -41,6 +41,8 @@ android {
             isShrinkResources = false
             isDebuggable = false
             isJniDebuggable = false
+            // Never sign a release with CI's temporary debug identity.
+            if (ownerSigning != null) signingConfig = ownerSigning
         }
         create("nouserlib") { // same as release, but does not allow the user to provide a library
             isMinifyEnabled = true

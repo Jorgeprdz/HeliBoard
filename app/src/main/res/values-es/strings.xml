@@ -549,4 +549,6 @@
     <string name="subtype_tok">Toki Pona</string>
     <string name="layout_dpad" tools:keep="@string/layout_dpad">Cruceta</string>
     <string name="space_swipe_toggle_dpad_entry">Alternar cruceta</string>
+    <string name="r252_by_app_colors">Colores dinámicos por aplicación</string>
+    <string name="r252_by_app_colors_summary">Usa el icono de cada aplicación para las familias dinámicas. Desactivado por defecto; se aplica al abrir otro campo de texto.</string>
 </resources>
