@@ -160,3 +160,12 @@ The Owner explicitly authorized repairing blocks A/B/C; the old `NO-GO before wr
 **No user-facing preference added:** By App is OFF by default and is activated only through an injected test dependency, not through production settings. Old `debugNoMinify/AndroidManifest.xml` boot receiver isolation is unchanged. No writing engine/autocorrection/Gemini/Qwen/permissions/branding/ID/signing changes, merge, release or product APK.
 
 **Gate not to overclaim:** pre-first-frame correctness of the **actual, visible LatinIME InputView** is not proven by snapshot/unit tests or the Android vector extractor. The boundary method runs before its normal input-start logic, but actual first draw and blink-free host switching demand a live IME frame probe; until measured, mark this item **UNVERIFIED**, not PASS. Physical Galaxy S25/One UI/DeX acceptance explicitly remains R2.5.3.
+
+
+## R2.5.2 — informe de ejecución final (16 Oct 2026)
+
+**La autorización posterior del Owner sustituyó el STOP documental previo por la reparación A/B/C.** Ver [R252_FINAL_REPORT.md](R252_FINAL_REPORT.md) para alcance, 10 hallazgos de ciclo de vida, commits, métricas verificadas y criterios pendientes.
+
+**HEAD técnico probado:** `67e181b878badf7801f8e6a42404601933c8e8ef`. [GitHub Actions run 38993165298](https://github.com/Jorgeprdz/HeliBoard/actions/runs/38993165298): **539/539 pruebas JVM PASS**, **80/80 contratos**, emulador API 35 **1/1 smoke + 5/5 vector + 3/3 R2.5.2 PASS**. Validación adicional de `logcat`: **0 llamadas visuales disparadas por el worker**; IME predeterminado igual antes y después. Reporte de evidencia [12086216590](https://github.com/Jorgeprdz/HeliBoard/actions/runs/38993165298/artifacts/12086216590).
+
+**GO técnico condicionado**, no GO para activación a usuarios: la corrección del lifecycle y la paleta por sesión está integrada detrás de inyección interna OFF; **primer frame visible y composición real en LatinIME NO VERIFICADOS**. Samsung/DeX y R2.5.3 quedan fuera de esta autorización. No APK, no merge, no release.
