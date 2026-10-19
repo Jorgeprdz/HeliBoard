@@ -42,6 +42,7 @@ object DictionaryFactory {
             val extractedFile = DictionaryInfoUtils.extractAssetsDictionary(filename, locale, context) ?: return@forEach
             checkAndAddDictionaryToListIfNewType(extractedFile, dictList, locale)
         }
+        ProperNamesDictionary.forLocale(context, locale)?.let { dictList.add(it) }
         return dictList
     }
 
