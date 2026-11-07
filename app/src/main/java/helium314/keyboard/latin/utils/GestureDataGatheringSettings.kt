@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.content.edit
 import helium314.keyboard.keyboard.KeyboardSwitcher
 import helium314.keyboard.latin.R
+import helium314.keyboard.latin.BuildConfig
 import helium314.keyboard.latin.common.Constants.Separators
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.settings.SettingsDestination
@@ -49,9 +50,10 @@ object GestureDataGatheringSettings {
 
 
     fun isInActiveGatheringMode(editorInfo: EditorInfo) =
-        dictTestImeOption == editorInfo.privateImeOptions && gestureDataActiveFacilitator != null
+        BuildConfig.DEBUG && dictTestImeOption == editorInfo.privateImeOptions && gestureDataActiveFacilitator != null
 
     fun isBackgroundGatheringEnabled(prefs: SharedPreferences): Boolean {
+        if (!BuildConfig.DEBUG) return false
         if (!prefs.getBoolean(PREF_BACKGROUND_GATHERING_ENABLED, false)) return false
         val disabledBefore = prefs.getLong(PREF_BACKGROUND_DISABLED_BEFORE_TIME_MILLIS, 0L)
         if (disabledBefore > SystemClock.elapsedRealtime() + 5 * 60 * 1000L) {
@@ -78,7 +80,7 @@ object GestureDataGatheringSettings {
         else ToolbarKey.BACKGROUND_GATHERING.name !in it
     }.joinToString(Separators.ENTRY)
 
-    fun hasBackgroundGatheringPref(prefs: SharedPreferences) = prefs.contains(PREF_BACKGROUND_GATHERING_ENABLED)
+    fun hasBackgroundGatheringPref(prefs: SharedPreferences) = BuildConfig.DEBUG && prefs.contains(PREF_BACKGROUND_GATHERING_ENABLED)
 
     fun addWordExclusion(context: Context, exclusion: String) {
         setWordExclusions(context, getWordExclusions(context) + exclusion)
@@ -173,6 +175,7 @@ object GestureDataGatheringSettings {
 
     /** shows dialog promoting contribution of gesture data, or ask to do again if last contribution was more than 2 weeks ago */
     @Composable fun GestureDataPromotionReminderDialog() {
+        if (!BuildConfig.DEBUG) return
         val ctx = LocalContext.current
         val promotionShowNext = ctx.prefs().getLong(PREF_SHOW_PROMOTION_DIALOG_NEXT, 0)
         val reminderShowNext = ctx.prefs().getLong(PREF_SHOW_REMINDER_DIALOG_NEXT, 0)
@@ -226,6 +229,7 @@ object GestureDataGatheringSettings {
 
     /** shows a toast notification if we're close to the end of the data gathering phase (at most once per 24 hours, only if there is non-exported data) */
     fun showEndNotificationIfNecessary(context: Context) {
+        if (!BuildConfig.DEBUG) return
         val now = System.currentTimeMillis()
         if (now < END_DATE_EPOCH_MILLIS - TWO_WEEKS_IN_MILLIS) return
         val lastShown = context.prefs().getLong(PREF_END_NOTIFICATION_LAST_SHOWN, 0)

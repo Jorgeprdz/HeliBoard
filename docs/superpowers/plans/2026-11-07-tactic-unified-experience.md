@@ -120,3 +120,8 @@ settings/screens/AdvancedScreen.kt, SettingsNavHost.kt and existing panel classe
 - JSON assertion: Android escapes slashes in serialized MIME strings; assert decoded inline_data.mime_type rather than raw JSON bytes. Transport behavior unchanged.
 - GIF categories now show an explicit non-fading scrollbar, and voice/provider errors have actionable fixed messages.
 - Host regression suite stillPASS51tests; appearanceguardPASS; candidateAPK built/signed/runtimeguardPASS but not installed because full Android gate failed. Candidate size35021394bytes; Qwenlibraryexcluded, gesture/digitalinkJNI retained.
+
+### Release research gate
+- Final audit found that hiding research routes alone would preserve a previously enabled background collector.
+- Release now rejects active/background research, hides legacy research toolbar entries and suppresses promotion/end notices with BuildConfig.DEBUG gates. Preferences and stored research records are not deleted. Normal gesture typing remains enabled.
+- This release-only change requires a fresh exact-source build/regression run; it is not an excuse to skip the earlier five failures.
