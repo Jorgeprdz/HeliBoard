@@ -112,3 +112,11 @@ settings/screens/AdvancedScreen.kt, SettingsNavHost.kt and existing panel classe
 - Added consent-separation, invalid-key preservation and controller stale-session Android regressions.
 - Release compilation is running with code20261110/name4.1-tactic-r27.1-unified-ai-keyboard. Source frozen for this build.
 - Device screen currently Dozing/NotificationShade; the attempted baseline capture cannot be treated as a keyboard screenshot. Preserve earlier approved R262 captures and recapture when unlocked.
+
+### First Android regression result and fix pass
+- CI42417125302 ran646tests:641passed,5failed. No tests skipped to hide failures.
+- Real defect: larger shared controls overflowed the250dp translation window. Moved its draft/letter rows into the existing scroll viewport, keeping header/apply/edit actions fixed.
+- JSON harness:3metadata tests hit mockable Android JSONObject stubs. Same assertions now run through Robolectric Android wrapper and a host wrapper, following the existing provider-test architecture.
+- JSON assertion: Android escapes slashes in serialized MIME strings; assert decoded inline_data.mime_type rather than raw JSON bytes. Transport behavior unchanged.
+- GIF categories now show an explicit non-fading scrollbar, and voice/provider errors have actionable fixed messages.
+- Host regression suite stillPASS51tests; appearanceguardPASS; candidateAPK built/signed/runtimeguardPASS but not installed because full Android gate failed. Candidate size35021394bytes; Qwenlibraryexcluded, gesture/digitalinkJNI retained.

@@ -15,6 +15,10 @@ public final class AiConnectionStatus {
             case "FORBIDDEN":return "La clave no tiene permisos para este servicio. Revisa su proyecto y restricciones.";
             case "MODEL_UNAVAILABLE":return "El modelo no está disponible. Usa la selección automática en Avanzado.";
             case "OFFLINE":case "TIMEOUT":return "No se pudo establecer conexión. Comprueba la red y vuelve a intentarlo.";
+            case "INVALID_RESPONSE":return "Gemini devolvió un resultado que no se pudo validar. Reintenta o usa el dictado literal.";
+            case "INPUT_LIMIT":case "OUTPUT_LIMIT":return "El audio o texto supera el límite. Usa un fragmento más corto.";
+            case "SAFETY_BLOCKED":return "Google no procesó esta solicitud. El texto original se conserva.";
+            case "BUSY":return "Ya hay una solicitud en curso. Espera a que termine antes de reintentar.";
             default:return "No se pudo comprobar la conexión. La escritura local sigue disponible.";
         }
     }

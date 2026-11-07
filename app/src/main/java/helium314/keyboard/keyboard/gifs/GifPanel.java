@@ -65,14 +65,14 @@ public final class GifPanel extends LinearLayout implements InternalInputPanel {
         queryView.setBackground(shape(surface,CONTROL_RADIUS));queryView.setContentDescription("Buscar GIF y stickers");queryView.setOnClickListener(v->setTyping(true));
         LayoutParams queryParams=new LayoutParams(0,controlHeight(),1);queryParams.setMargins(dp(4),0,dp(4),0);header.addView(queryView,queryParams);
         fixedButton(header,"⚙","Configurar GIPHY",v->openSettings(),CONTROL_HEIGHT);browse.addView(header,new LayoutParams(-1,controlHeight()+dp(4)));
-        HorizontalScrollView navigation=new HorizontalScrollView(context);navigation.setHorizontalScrollBarEnabled(false);
+        HorizontalScrollView navigation=new HorizontalScrollView(context);navigation.setHorizontalScrollBarEnabled(true);navigation.setScrollbarFadingEnabled(false);navigation.setContentDescription("Categorías GIF: desliza horizontalmente para ver todas");
         LinearLayout tabs=row();tabs.setPadding(dp(6),dp(2),dp(6),dp(2));
         gifTab=fixedButton(tabs,"GIF","GIF",v->{stickers=false;updateSegments();search(0);},54);
         stickerTab=fixedButton(tabs,"Stickers","Stickers",v->{stickers=true;updateSegments();search(0);},80);
         fixedButton(tabs,"Tendencias","Tendencias",v->{query.setLength(0);updateQuery();search(0);},96);
         fixedButton(tabs,"Recientes","Recientes",v->showHistory("recent"),86);
         fixedButton(tabs,"Favoritos","Favoritos",v->showHistory("favorites"),86);
-        navigation.addView(tabs,new HorizontalScrollView.LayoutParams(-2,-1));browse.addView(navigation,new LayoutParams(-1,controlHeight()+dp(4)));updateSegments();
+        navigation.addView(tabs,new HorizontalScrollView.LayoutParams(-2,-1));browse.addView(navigation,new LayoutParams(-1,controlHeight()+dp(8)));updateSegments();
         results=new ScrollView(context);results.setFillViewport(true);results.setClipToPadding(false);results.setTag("gif-scroll");
         grid=new LinearLayout(context);grid.setTag("gif-results");grid.setPadding(dp(8),dp(4),dp(8),dp(4));grid.setOrientation(VERTICAL);results.addView(grid,new ScrollView.LayoutParams(-1,-2));
         browse.addView(results,new LayoutParams(-1,0,1));

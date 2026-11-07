@@ -42,7 +42,10 @@ public final class TranslationPanel extends LinearLayout implements InternalInpu
   LinearLayout actions=PanelViews.row(context);addView(actions);
   PanelViews.button(actions,"Traducir",this::translate);
   use=PanelViews.button(actions,"Usar traducción",this::apply);use.setEnabled(false);
-  keyRows=new LinearLayout(context);keyRows.setOrientation(VERTICAL);addView(keyRows);rebuildKeys();
+  // Keep the letter controls reachable in short windows or with large system text.
+  // Header, apply and editing actions remain fixed; the draft and keys can scroll.
+  reviewScroll.setVerticalScrollBarEnabled(true);
+  keyRows=new LinearLayout(context);keyRows.setOrientation(VERTICAL);review.addView(keyRows);rebuildKeys();
   LinearLayout bottom=PanelViews.row(context);addView(bottom);
   PanelViews.button(bottom,"⇧",()->{shift=!shift;rebuildKeys();});PanelViews.button(bottom,"123",()->{symbols=!symbols;rebuildKeys();});
   PanelViews.button(bottom,"Espacio",()->onTextInput(" "));PanelViews.button(bottom,".",()->onTextInput("."));PanelViews.button(bottom,"⌫",()->onCodeInput(KeyCode.DELETE));
