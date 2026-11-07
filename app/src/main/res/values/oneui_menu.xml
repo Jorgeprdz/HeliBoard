@@ -35,7 +35,6 @@
     </style>
     <style name="OneUiPlatformDialog" parent="@android:style/Theme.Material.Dialog.Alert">
         <item name="android:colorAccent">@color/accent</item>
-        <item name="android:colorBackgroundFloating">@color/oneui_menu_surface</item>
         <item name="android:windowBackground">@drawable/oneui_menu_dialog</item>
         <item name="android:textColorPrimary">@color/oneui_menu_text</item>
         <item name="android:textColorSecondary">@color/oneui_menu_secondary</item>

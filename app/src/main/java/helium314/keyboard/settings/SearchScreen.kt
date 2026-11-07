@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -130,9 +131,10 @@ fun <T: Any?> SearchScreen(
     var searchText by remember { mutableStateOf(TextFieldValue()) }
     var showSearch by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    Scaffold(contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top))
+    Scaffold(contentWindowInsets = WindowInsets.safeDrawing)
     { innerPadding ->
         Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(innerPadding)
+            .consumeWindowInsets(innerPadding)
             .nestedScroll(scrollBehavior.nestedScrollConnection)) {
 
             fun setShowSearch(value: Boolean) {

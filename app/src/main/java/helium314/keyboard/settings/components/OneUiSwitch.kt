@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.SwitchColors
 import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -15,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -29,7 +31,10 @@ fun OneUiSwitch(
     colors: SwitchColors = SwitchDefaults.colors(uncheckedTrackColor = Color(0xff999999)),
 ) {
     val position by animateFloatAsState(if (checked) 1f else 0f, label = "switch")
-    val track = if (checked) colors.checkedTrackColor else colors.uncheckedTrackColor
+    // Material's unchecked container can equal our card surface; keep the off track visible.
+    val track = if (checked) colors.checkedTrackColor
+        else if (MaterialTheme.colorScheme.background.luminance() < .5f) Color(0xff555555)
+        else Color(0xff999999)
     Box(
         modifier.size(52.dp, 48.dp).toggleable(
             value = checked, enabled = enabled && onCheckedChange != null,
