@@ -142,7 +142,8 @@ class EmojiSearchActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         init()
         enableEdgeToEdge()
-        setContent {
+        setContent { helium314.keyboard.latin.utils.Theme {
+            val menu = helium314.keyboard.settings.OneUiMenuStyle.palette(this)
             LocalContext.current.setTheme(KeyboardTheme.getKeyboardTheme(this).mStyleId)
             Surface(modifier = Modifier.fillMaxSize(), color = Color(0x80000000)) {
                 var heightDp by remember { mutableStateOf(0.dp) }
@@ -152,7 +153,7 @@ class EmojiSearchActivity : ComponentActivity() {
                 ) {
                     val localDensity = LocalDensity.current
                     var heightPx by remember { mutableIntStateOf(0) }
-                    Column(modifier = Modifier.wrapContentHeight().background(Color(colors.get(ColorType.MAIN_BACKGROUND)))
+                    Column(modifier = Modifier.wrapContentHeight().background(Color(menu.background))
                         .clickable(false) {}.onGloballyPositioned {
                             val bottom = it.localToScreen(Offset(0f, it.size.height.toFloat())).y.toInt()
                             imeVisible = bottom < screenHeight - 100
@@ -173,16 +174,16 @@ class EmojiSearchActivity : ComponentActivity() {
                             heightPx = it.size.height
                             heightDp = with(localDensity) { it.size.height.toDp() }
                         }) {
-                        val fontFamily = remember { KeyboardTypeface.customFontFamily() }
-                        Row(modifier = Modifier.fillMaxWidth().height(30.dp)) {
+                        val fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif
+                        Row(modifier = Modifier.fillMaxWidth().height(48.dp)) {
                             IconButton(onClick = { cancel() }) {
                                 Icon(painter = painterResource(R.drawable.ic_arrow_back),
                                     stringResource(R.string.spoken_description_action_previous),
-                                    tint = Color(colors.get(ColorType.EMOJI_KEY_TEXT)))
+                                    tint = Color(menu.foreground))
                             }
                             Text(text = stringResource(R.string.emoji_search_title), fontSize = 18.sp,
                                 fontFamily = fontFamily,
-                                color = Color(colors.get(ColorType.EMOJI_KEY_TEXT)),
+                                color = Color(menu.foreground),
                                 modifier = Modifier.fillMaxWidth().align(Alignment.CenterVertically))
                         }
                         key(emojiPageKeyboardView) {
@@ -191,20 +192,20 @@ class EmojiSearchActivity : ComponentActivity() {
                         val focusRequester = remember { FocusRequester() }
                         var text by remember { mutableStateOf(TextFieldValue(searchText, selection = TextRange(searchText.length))) }
                         val textFieldColors = TextFieldDefaults.colors().copy(
-                            unfocusedContainerColor = Color(colors.get(ColorType.EMOJI_SEARCH_BACKGROUND)),
-                            unfocusedTextColor = Color(colors.get(ColorType.EMOJI_SEARCH_TEXT)),
-                            cursorColor = Color(colors.get(ColorType.EMOJI_SEARCH_TEXT)),
-                            unfocusedLeadingIconColor = Color(colors.get(ColorType.EMOJI_SEARCH_TEXT)),
-                            unfocusedTrailingIconColor = Color(colors.get(ColorType.EMOJI_SEARCH_TEXT)),
-                            unfocusedPlaceholderColor = lerp(Color(colors.get(ColorType.EMOJI_SEARCH_BACKGROUND)),
-                                Color(colors.get(ColorType.EMOJI_SEARCH_TEXT)), 0.5f))
+                            unfocusedContainerColor = Color(menu.surface),
+                            unfocusedTextColor = Color(menu.foreground),
+                            cursorColor = Color(menu.foreground),
+                            unfocusedLeadingIconColor = Color(menu.foreground),
+                            unfocusedTrailingIconColor = Color(menu.foreground),
+                            unfocusedPlaceholderColor = lerp(Color(menu.surface),
+                                Color(menu.foreground), 0.5f))
                         CompositionLocalProvider(
                             LocalTextSelectionColors provides textFieldColors.textSelectionColors,
                             LocalTextStyle provides LocalTextStyle.current.copy(fontFamily = fontFamily),
                         ) {
                             BasicTextField(
                                 value = text,
-                                modifier = Modifier.fillMaxWidth().heightIn(20.dp, 30.dp).focusRequester(focusRequester),
+                                modifier = Modifier.fillMaxWidth().heightIn(48.dp, 64.dp).focusRequester(focusRequester),
                                 textStyle = TextStyle(fontFamily = fontFamily, textDirection = TextDirection.Content, color = textFieldColors.unfocusedTextColor),
                                 onValueChange = {
                                     text = it
@@ -250,6 +251,7 @@ class EmojiSearchActivity : ComponentActivity() {
                     }
                 }
             }
+        }
         }
     }
 

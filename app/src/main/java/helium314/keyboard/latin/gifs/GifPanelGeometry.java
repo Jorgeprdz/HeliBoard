@@ -4,6 +4,10 @@ package helium314.keyboard.latin.gifs;
 /** Pixel-only sizing policy; never changes the native keyboard's geometry or preferences. */
 public final class GifPanelGeometry {
     private GifPanelGeometry() {}
+    public static int safeBottom(int panelBottom,int displayHeight,int navigationHeight,int reportedBottom) {
+        int overlap=Math.max(0,Math.min(Math.max(0,navigationHeight),panelBottom-displayHeight+navigationHeight));
+        return Math.max(Math.max(0,reportedBottom),overlap);
+    }
     public static int browseHeight(int normal, int available) {
         int base=Math.max(1,normal);
         long expanded=(base*5L+3)/4;

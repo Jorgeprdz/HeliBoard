@@ -46,15 +46,16 @@ public final class GifPanel extends LinearLayout implements InternalInputPanel {
     private final StringBuilder query=new StringBuilder();
     private boolean closed,stickers,typing;private int offset;private long lastSearch;private String historyCategory;
     private int background,foreground,surface,accent;
+    private androidx.core.view.WindowInsetsCompat browseInsets;
     private static final int CONTROL_HEIGHT=40, CONTROL_RADIUS=12;
     public GifPanel(LatinIME ime){this(ime,ime);}
     GifPanel(Context context,LatinIME ime){
         super(context);this.ime=ime;connection=ime.getCurrentInputConnection();editor=ime.getCurrentInputEditorInfo();history=new GifHistory(context);
         setOrientation(VERTICAL);setClickable(true);
-        try{background=Settings.getValues().mColors.get(ColorType.MAIN_BACKGROUND);foreground=Settings.getValues().mColors.get(ColorType.KEY_TEXT);}
-        catch(RuntimeException unavailable){background=0xfff4f1f7;foreground=0xff29232d;}
+        helium314.keyboard.settings.OneUiMenuStyle.Palette palette=helium314.keyboard.settings.OneUiMenuStyle.palette(context);
+        background=palette.background;foreground=palette.foreground;
         // Panel-only contrast surfaces derive from the keyboard palette; native keys are untouched.
-        surface=androidx.core.graphics.ColorUtils.blendARGB(background,foreground,.075f);
+        surface=palette.surface;
         accent=androidx.core.graphics.ColorUtils.blendARGB(background,foreground,.14f);
         setBackgroundColor(background);
         browse=new LinearLayout(context);browse.setOrientation(VERTICAL);addView(browse,new LayoutParams(-1,-1));
@@ -97,11 +98,31 @@ public final class GifPanel extends LinearLayout implements InternalInputPanel {
         main.post(()->search(0));
     }
     private void applyBrowseInsets(androidx.core.view.WindowInsetsCompat insets){
+        browseInsets=insets;
         androidx.core.graphics.Insets safe=insets.getInsets(
             androidx.core.view.WindowInsetsCompat.Type.navigationBars()
                 |androidx.core.view.WindowInsetsCompat.Type.displayCutout());
         // Only browse content moves; the native search keys and toolbar retain their geometry.
-        browse.setPadding(safe.left,0,safe.right,safe.bottom);
+        int bottom=safe.bottom;
+        if(isAttachedToWindow()&&getHeight()>0){
+            android.graphics.Point display=new android.graphics.Point();
+            android.view.WindowManager windows=(android.view.WindowManager)getContext().getSystemService(Context.WINDOW_SERVICE);
+            if(windows!=null){
+                windows.getDefaultDisplay().getRealSize(display);
+                int[] location=new int[2];getLocationOnScreen(location);
+                String dimension=getResources().getConfiguration().orientation==android.content.res.Configuration.ORIENTATION_LANDSCAPE?
+                    "navigation_bar_height_landscape":"navigation_bar_height";
+                int id=getResources().getIdentifier(dimension,"dimen","android");
+                int navigation=id==0?0:getResources().getDimensionPixelSize(id);
+                bottom=helium314.keyboard.latin.gifs.GifPanelGeometry.safeBottom(location[1]+getHeight(),display.y,navigation,bottom);
+            }
+        }
+        if(browse.getPaddingLeft()!=safe.left||browse.getPaddingRight()!=safe.right||browse.getPaddingBottom()!=bottom)
+            browse.setPadding(safe.left,0,safe.right,bottom);
+    }
+    @Override protected void onLayout(boolean changed,int left,int top,int right,int bottom){
+        super.onLayout(changed,left,top,right,bottom);
+        if(changed&&browseInsets!=null)post(()->{if(!closed)applyBrowseInsets(browseInsets);});
     }
     @Override protected void onAttachedToWindow(){
         super.onAttachedToWindow();androidx.core.view.ViewCompat.requestApplyInsets(this);

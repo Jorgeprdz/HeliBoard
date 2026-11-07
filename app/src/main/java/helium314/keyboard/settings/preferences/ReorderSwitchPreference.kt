@@ -2,7 +2,7 @@
 package helium314.keyboard.settings.preferences
 
 import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.Switch
+import helium314.keyboard.settings.components.OneUiSwitch as Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text

@@ -15,19 +15,32 @@ import androidx.core.content.ContextCompat
 import helium314.keyboard.latin.R
 
 /** Resolves colors for HeliBoard's app surfaces only; keyboard colors are managed separately. */
-internal fun resolveAppColorScheme(context: Context, dark: Boolean): ColorScheme =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+internal fun resolveAppColorScheme(context: Context, dark: Boolean): ColorScheme {
+    val base = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else {
         val accent = ContextCompat.getColor(context, R.color.accent)
         if (dark) darkColorScheme(primary = androidx.compose.ui.graphics.Color(accent))
         else lightColorScheme(primary = androidx.compose.ui.graphics.Color(accent))
     }
+    val palette = helium314.keyboard.settings.OneUiMenuStyle.palette(dark, ContextCompat.getColor(context, R.color.accent))
+    val background = androidx.compose.ui.graphics.Color(palette.background)
+    val surface = androidx.compose.ui.graphics.Color(palette.surface)
+    val text = androidx.compose.ui.graphics.Color(palette.foreground)
+    return base.copy(
+        background = background, onBackground = text,
+        surface = surface, onSurface = text,
+        surfaceContainerLowest = surface, surfaceContainerLow = background,
+        surfaceContainer = surface, surfaceContainerHigh = surface, surfaceContainerHighest = surface,
+        onSurfaceVariant = androidx.compose.ui.graphics.Color(palette.secondary),
+        outlineVariant = androidx.compose.ui.graphics.Color(palette.divider),
+    )
+}
 
 internal object AppShapes {
     val compact = RoundedCornerShape(12.dp)
-    val medium = RoundedCornerShape(20.dp)
-    val large = RoundedCornerShape(28.dp)
+    val medium = RoundedCornerShape(26.dp)
+    val large = RoundedCornerShape(26.dp)
 }
 
 internal object AppSpacing {

@@ -61,20 +61,21 @@ class ClipboardAdapter(
                 setBackgroundResource(itemBackgroundId)
                 isHapticFeedbackEnabled = false
             }
-            Settings.getValues().mColors.setBackground(view, ColorType.KEY_BACKGROUND)
+            val palette = helium314.keyboard.settings.OneUiMenuStyle.palette(view.context)
+            view.background = helium314.keyboard.settings.OneUiMenuStyle.rounded(view.context, palette.surface, 20)
             pinnedIconView = view.findViewById<ImageView>(R.id.clipboard_entry_pinned_icon).apply {
                 visibility = View.GONE
                 setImageResource(pinnedIconResId)
             }
             contentTextView = view.findViewById<TextView>(R.id.clipboard_entry_text_content).apply {
-                typeface = itemTypeFace
-                setTextColor(itemTextColor)
-                setTextSize(TypedValue.COMPLEX_UNIT_PX, itemTextSize)
+                typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL)
+                setTextColor(palette.foreground)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
             }
             contentImageView = view.findViewById(R.id.clipboard_entry_image_content)
             clipboardLayoutParams.setItemProperties(view)
             val colors = Settings.getValues().mColors
-            colors.setColor(pinnedIconView, ColorType.CLIPBOARD_PIN)
+            pinnedIconView.imageTintList = android.content.res.ColorStateList.valueOf(palette.accent)
         }
 
         fun setContent(historyEntry: ClipboardHistoryEntry?) {

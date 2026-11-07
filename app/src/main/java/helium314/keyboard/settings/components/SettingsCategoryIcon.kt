@@ -21,8 +21,8 @@ fun SettingsCategoryIcon(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier.size(52.dp),
-        shape = RoundedCornerShape(18.dp),
+        modifier = modifier.size(40.dp),
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.secondaryContainer,
         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
     ) {

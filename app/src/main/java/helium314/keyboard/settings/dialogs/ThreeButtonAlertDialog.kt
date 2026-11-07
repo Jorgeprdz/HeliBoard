@@ -60,24 +60,24 @@ fun ThreeButtonAlertDialog(
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHigh),
-                tonalElevation = 2.dp,
+                tonalElevation = 0.dp,
                 shadowElevation = 8.dp,
             ) {
                 Column(modifier = Modifier.padding(
-                    start = if (reducePadding) 8.dp else 16.dp,
-                    end = if (reducePadding) 8.dp else 16.dp,
-                    top = if (reducePadding) 8.dp else 16.dp,
+                    start = if (reducePadding) 12.dp else 24.dp,
+                    end = if (reducePadding) 12.dp else 24.dp,
+                    top = if (reducePadding) 12.dp else 24.dp,
                     bottom = if (reducePadding) 2.dp else 6.dp
                 )) {
                     title?.let {
-                        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.titleMedium) {
+                        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.titleLarge) {
                             Box(Modifier.padding(PaddingValues(bottom = if (reducePadding) 4.dp else 16.dp))) {
                                 title()
                             }
                         }
                     }
                     content?.let {
-                        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodyMedium) {
+                        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodyLarge) {
                             if (scrollContent) {
                                 val scrollState = rememberScrollState()
                                 Box(Modifier

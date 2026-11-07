@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-only
+     Independent One UI 8 adaptation. Reference: github.com/tribalfs/oneui-design.
+     Scoped to app menus; native typing themes and resources are preserved. -->
+<resources>
+    <color name="oneui_menu_background">#F2F2F2</color>
+    <color name="oneui_menu_surface">#FAFAFA</color>
+    <color name="oneui_menu_text">#010101</color>
+    <color name="oneui_menu_secondary">#666666</color>
+    <style name="OneUiMenuTheme" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:windowBackground">@color/oneui_menu_background</item>
+        <item name="android:colorBackground">@color/oneui_menu_background</item>
+        <item name="android:statusBarColor">@color/oneui_menu_background</item>
+        <item name="android:navigationBarColor">@color/oneui_menu_background</item>
+        <item name="android:textColorPrimary">@color/oneui_menu_text</item>
+        <item name="android:textColorSecondary">@color/oneui_menu_secondary</item>
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorSurface">@color/oneui_menu_surface</item>
+        <item name="colorOnSurface">@color/oneui_menu_text</item>
+        <item name="shapeAppearanceSmallComponent">@style/OneUiMenuShape</item>
+        <item name="shapeAppearanceMediumComponent">@style/OneUiMenuShape</item>
+        <item name="shapeAppearanceLargeComponent">@style/OneUiMenuShape</item>
+        <item name="materialAlertDialogTheme">@style/OneUiMaterialDialog</item>
+        <item name="android:alertDialogTheme">@style/OneUiPlatformDialog</item>
+    </style>
+    <style name="OneUiMenuShape" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">26dp</item>
+    </style>
+    <style name="OneUiMaterialDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="shapeAppearanceMediumComponent">@style/OneUiMenuShape</item>
+        <item name="colorSurface">@color/oneui_menu_surface</item>
+        <item name="colorOnSurface">@color/oneui_menu_text</item>
+    </style>
+    <style name="OneUiPlatformDialog" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:colorBackgroundFloating">@color/oneui_menu_surface</item>
+        <item name="android:windowBackground">@drawable/oneui_menu_dialog</item>
+        <item name="android:textColorPrimary">@color/oneui_menu_text</item>
+        <item name="android:textColorSecondary">@color/oneui_menu_secondary</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+</resources>

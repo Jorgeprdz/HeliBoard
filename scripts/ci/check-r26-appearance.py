@@ -23,7 +23,14 @@ changed = subprocess.check_output([
     "app/src/main/java/helium314/keyboard/keyboard/Key.java",
     "app/src/main/java/helium314/keyboard/settings/screens/AppearanceScreen.kt",
 ], cwd=ROOT, text=True).splitlines()
-assert set(changed) <= {"app/src/main/res/xml/gif_provider_paths.xml"}, changed
+# User authorized One UI 8 for secondary menus on 2026-11-07. Only NEW scoped
+# menu resources are exempt; approved typing resources/renderers remain immutable.
+assert set(changed) <= {
+    "app/src/main/res/xml/gif_provider_paths.xml",
+    "app/src/main/res/values/oneui_menu.xml",
+    "app/src/main/res/values-night/oneui_menu.xml",
+    "app/src/main/res/drawable/oneui_menu_dialog.xml",
+}, changed
 gradle = (ROOT / "app/build.gradle.kts").read_text()
 assert 'applicationId = "com.jorgeprdz.ioskeyboard"' in gradle
 assert "minSdk = 21" in gradle

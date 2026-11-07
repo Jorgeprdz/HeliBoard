@@ -3,6 +3,9 @@ package helium314.keyboard.settings.preferences
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,7 +18,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
+import helium314.keyboard.settings.components.OneUiSwitch as Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -55,9 +58,12 @@ fun Preference(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surface)
             .clickable { onClick() }
             .heightIn(min = if (description == null) 64.dp else 76.dp)
-            .padding(vertical = AppSpacing.medium, horizontal = AppSpacing.large),
+            .padding(vertical = 14.dp, horizontal = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(AppSpacing.large),
         verticalAlignment = Alignment.CenterVertically
     ) {

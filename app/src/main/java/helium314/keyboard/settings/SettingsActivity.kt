@@ -104,26 +104,12 @@ open class SettingsActivity : ComponentActivity(), SharedPreferences.OnSharedPre
                                 || !UncachedInputMethodManagerUtils.isThisImeEnabled(this, imm)
                     ) }
                     if (spellchecker)
-                        Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { innerPadding ->
-                            Column(Modifier.padding(innerPadding)) {
-                                TopAppBar(
-                                    title = { Text(stringResource(R.string.android_spell_checker_settings)) },
-                                    colors = TopAppBarDefaults.topAppBarColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                        titleContentColor = MaterialTheme.colorScheme.onSurface,
-                                        navigationIconContentColor = MaterialTheme.colorScheme.primary,
-                                    ),
-                                    windowInsets = WindowInsets(0),
-                                    navigationIcon = {
-                                        BackButton { this@SettingsActivity.finish() }
-                                    },
-                                )
-                                settingsContainer[Settings.PREF_USE_CONTACTS]!!.Preference()
-                                settingsContainer[Settings.PREF_USE_APPS]!!.Preference()
-                                settingsContainer[Settings.PREF_BLOCK_POTENTIALLY_OFFENSIVE]!!.Preference()
-                                settingsContainer[Settings.PREF_SPELLCHECK_SUGGEST]!!.Preference()
-                            }
-                        }
+                        SearchSettingsScreen(
+                            onClickBack = { this@SettingsActivity.finish() },
+                            title = stringResource(R.string.android_spell_checker_settings),
+                            settings = listOf(Settings.PREF_USE_CONTACTS, Settings.PREF_USE_APPS,
+                                Settings.PREF_BLOCK_POTENTIALLY_OFFENSIVE, Settings.PREF_SPELLCHECK_SUGGEST),
+                        )
                     else {
                         SettingsNavHost(onClickBack = { this.finish() })
                         if (showWelcomeWizard) {

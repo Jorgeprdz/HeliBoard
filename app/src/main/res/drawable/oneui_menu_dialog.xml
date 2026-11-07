@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/oneui_menu_surface" />
+    <corners android:radius="26dp" />
+</shape>

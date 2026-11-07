@@ -77,20 +77,20 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/gif_provider_paths" />
         </provider>
         <activity android:name="helium314.keyboard.latin.gifs.GiphySettingsActivity"
-            android:exported="false" android:directBootAware="false" android:theme="@style/platformActivityTheme" />
+            android:exported="false" android:directBootAware="false" android:theme="@style/OneUiMenuTheme" />
 
         <!-- Activities -->
-        <activity android:name="helium314.keyboard.latin.ai.cloud.TypingCloudActivity" android:exported="false" android:theme="@style/platformActivityTheme" />
-        <activity android:name="helium314.keyboard.latin.ai.AiSharedTextActivity" android:exported="true" android:excludeFromRecents="true" android:label="@string/ai_keyboard_settings" android:theme="@style/platformActivityTheme" android:windowSoftInputMode="stateAlwaysHidden">
+        <activity android:name="helium314.keyboard.latin.ai.cloud.TypingCloudActivity" android:exported="false" android:theme="@style/OneUiMenuTheme" />
+        <activity android:name="helium314.keyboard.latin.ai.AiSharedTextActivity" android:exported="true" android:excludeFromRecents="true" android:label="@string/ai_keyboard_settings" android:theme="@style/OneUiMenuTheme" android:windowSoftInputMode="stateAlwaysHidden">
             <intent-filter><action android:name="android.intent.action.PROCESS_TEXT" /><category android:name="android.intent.category.DEFAULT" /><data android:mimeType="text/plain" /></intent-filter>
             <intent-filter><action android:name="android.intent.action.SEND" /><category android:name="android.intent.category.DEFAULT" /><data android:mimeType="text/plain" /></intent-filter>
         </activity>
-        <activity android:name="helium314.keyboard.latin.ai.dictation.DictationPermissionActivity" android:exported="false" android:theme="@style/platformActivityTheme" />
+        <activity android:name="helium314.keyboard.latin.ai.dictation.DictationPermissionActivity" android:exported="false" android:theme="@style/OneUiMenuTheme" />
         <activity android:name="helium314.keyboard.latin.ai.AiSettingsActivity"
             android:exported="false"
-            android:theme="@style/platformActivityTheme" />
+            android:theme="@style/OneUiMenuTheme" />
         <activity android:name="helium314.keyboard.settings.SettingsActivity"
-                android:theme="@style/platformActivityTheme"
+                android:theme="@style/OneUiMenuTheme"
                 android:icon="@mipmap/ic_launcher"
                 android:windowSoftInputMode="adjustResize"
                 android:exported="true">
@@ -102,7 +102,7 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
 
         <!-- separate activity that's used internally, only necessary in case the launcher icon is disabled on Android < 10 -->
         <activity android:name="helium314.keyboard.settings.SettingsActivity2"
-            android:theme="@style/platformActivityTheme"
+            android:theme="@style/OneUiMenuTheme"
             android:icon="@mipmap/ic_launcher"
             android:windowSoftInputMode="adjustResize"
             android:exported="true">
@@ -116,7 +116,7 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
         </activity>
 
         <activity android:name=".spellcheck.SpellCheckerSettingsActivity"
-                android:theme="@style/platformActivityTheme"
+                android:theme="@style/OneUiMenuTheme"
                 android:label="@string/spell_checker_service_name"
                 android:exported="true">
             <intent-filter>

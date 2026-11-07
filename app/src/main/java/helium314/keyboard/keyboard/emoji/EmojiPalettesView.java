@@ -194,6 +194,7 @@ public final class EmojiPalettesView extends LinearLayout
 
     private boolean initialized = false;
     private final Colors mColors;
+    private final helium314.keyboard.settings.OneUiMenuStyle.Palette mMenuColors;
     private final EmojiLayoutParams mEmojiLayoutParams;
     private LinearLayout mTabStrip;
     private EmojiCategoryPageIndicatorView mEmojiCategoryPageIndicatorView;
@@ -208,6 +209,8 @@ public final class EmojiPalettesView extends LinearLayout
     public EmojiPalettesView(final Context context, final AttributeSet attrs, final int defStyle) {
         super(context, attrs, defStyle);
         mColors = Settings.getValues().mColors;
+        mMenuColors=helium314.keyboard.settings.OneUiMenuStyle.palette(context);
+        setBackgroundColor(mMenuColors.background);
         final KeyboardLayoutSet.Builder builder = new KeyboardLayoutSet.Builder(context, null, null);
         final Resources res = context.getResources();
         mEmojiLayoutParams = new EmojiLayoutParams(res);
@@ -237,8 +240,8 @@ public final class EmojiPalettesView extends LinearLayout
 
     private void addTab(LinearLayout host, EmojiCategory.Category category) {
         final ImageView iconView = new ImageView(getContext());
-        mColors.setBackground(iconView, ColorType.STRIP_BACKGROUND);
-        mColors.setColor(iconView, ColorType.EMOJI_CATEGORY);
+        iconView.setBackgroundColor(mMenuColors.background);
+        iconView.setImageTintList(android.content.res.ColorStateList.valueOf(mMenuColors.secondary));
         iconView.setScaleType(ImageView.ScaleType.CENTER);
         iconView.setImageResource(mEmojiCategory.getCategoryTabIcon(category));
         iconView.setContentDescription(mEmojiCategory.getAccessibilityDescription(category));
@@ -261,6 +264,7 @@ public final class EmojiPalettesView extends LinearLayout
         if (initialized) return;
         mEmojiCategory.initialize();
         mTabStrip = (LinearLayout) KeyboardSwitcher.getInstance().getEmojiTabStrip();
+        mTabStrip.setBackgroundColor(mMenuColors.background);
         if (Settings.getValues().isSecondaryStripVisible()) {
             for (EmojiCategory.CategoryProperties properties : mEmojiCategory.getShownCategories()) {
                 addTab(mTabStrip, properties.getCategory());
@@ -268,12 +272,13 @@ public final class EmojiPalettesView extends LinearLayout
         }
 
         mPager = findViewById(R.id.emoji_pager);
+        mPager.setBackgroundColor(mMenuColors.surface);
         mPager.setAdapter(new PagerAdapter(mPager));
         mEmojiLayoutParams.setEmojiListProperties(mPager);
         mEmojiCategoryPageIndicatorView = findViewById(R.id.emoji_category_page_id_view);
         mEmojiLayoutParams.setCategoryPageIdViewProperties(mEmojiCategoryPageIndicatorView);
         setCurrentCategory(mEmojiCategory.getCurrentCategory(), true);
-        mEmojiCategoryPageIndicatorView.setColors(mColors.get(ColorType.EMOJI_CATEGORY_SELECTED), mColors.get(ColorType.STRIP_BACKGROUND));
+        mEmojiCategoryPageIndicatorView.setColors(mMenuColors.accent, mMenuColors.background);
         initialized = true;
     }
 
@@ -457,9 +462,9 @@ public final class EmojiPalettesView extends LinearLayout
                 View current = mTabStrip.findViewWithTag(category);
 
                 if (old instanceof ImageView)
-                    Settings.getValues().mColors.setColor((ImageView) old, ColorType.EMOJI_CATEGORY);
+                    ((ImageView)old).setImageTintList(android.content.res.ColorStateList.valueOf(mMenuColors.secondary));
                 if (current instanceof ImageView)
-                    Settings.getValues().mColors.setColor((ImageView) current, ColorType.EMOJI_CATEGORY_SELECTED);
+                    ((ImageView)current).setImageTintList(android.content.res.ColorStateList.valueOf(mMenuColors.accent));
             }
         }
     }

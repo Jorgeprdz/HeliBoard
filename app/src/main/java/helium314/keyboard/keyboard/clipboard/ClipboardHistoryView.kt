@@ -87,11 +87,16 @@ class ClipboardHistoryView @JvmOverloads constructor(
     private fun initialize() { // needs to be delayed for access to ClipboardStrip, which is not a child of this view
         if (this::clipboardAdapter.isInitialized) return
         val colors = Settings.getValues().mColors
+        val menu = helium314.keyboard.settings.OneUiMenuStyle.palette(context)
+        setBackgroundColor(menu.background)
         clipboardAdapter = ClipboardAdapter(clipboardLayoutParams, this).apply {
             itemBackgroundId = keyBackgroundId
             pinnedIconResId = pinIconId
         }
-        placeholderView = findViewById(R.id.clipboard_empty_view)
+        placeholderView = findViewById<TextView>(R.id.clipboard_empty_view).apply {
+            setTextColor(menu.secondary)
+            textSize = 17f
+        }
         clipboardRecyclerView = findViewById<ClipboardHistoryRecyclerView>(R.id.clipboard_list).apply {
             val colCount = resources.getInteger(R.integer.config_clipboard_keyboard_col_count)
             layoutManager = StaggeredGridLayoutManager(colCount, StaggeredGridLayoutManager.VERTICAL)
@@ -105,8 +110,8 @@ class ClipboardHistoryView @JvmOverloads constructor(
             clipboardStrip.addView(it)
             it.setOnClickListener(this@ClipboardHistoryView)
             it.setOnLongClickListener(this@ClipboardHistoryView)
-            colors.setColor(it, ColorType.TOOL_BAR_KEY)
-            colors.setBackground(it, ColorType.STRIP_BACKGROUND)
+            it.imageTintList = android.content.res.ColorStateList.valueOf(menu.foreground)
+            it.setBackgroundColor(menu.background)
         }
     }
 

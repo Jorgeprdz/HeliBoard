@@ -14,8 +14,8 @@ fun SettingsSectionHeader(title: String, modifier: Modifier = Modifier) {
     Column(modifier.padding(start = 20.dp, end = 16.dp, top = 24.dp, bottom = 8.dp)) {
         Text(
             text = title,
-            color = MaterialTheme.colorScheme.primary,
-            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium,
         )
     }
 }

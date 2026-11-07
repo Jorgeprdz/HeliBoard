@@ -52,7 +52,7 @@ fun MainSettingsScreen(
 ) {
     SearchSettingsScreen(
         onClickBack = onClickBack,
-        title = stringResource(R.string.ime_settings),
+        title = "Tactic Keyboard",
         settings = emptyList(),
     ) {
         val enabledSubtypes = SubtypeSettings.getEnabledSubtypes(true)

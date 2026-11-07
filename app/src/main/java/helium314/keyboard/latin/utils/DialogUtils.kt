@@ -8,5 +8,5 @@ import helium314.keyboard.latin.R
 fun getPlatformDialogThemeContext(context: Context): Context {
     // Because {@link AlertDialog.Builder.create()} doesn't honor the specified theme with
     // createThemeContextWrapper=false, the result dialog box has unneeded paddings around it.
-    return ContextThemeWrapper(context, R.style.platformActivityTheme)
+    return ContextThemeWrapper(context, R.style.OneUiMenuTheme)
 }
