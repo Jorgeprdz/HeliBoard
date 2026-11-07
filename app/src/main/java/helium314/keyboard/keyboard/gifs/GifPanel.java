@@ -163,7 +163,7 @@ public final class GifPanel extends LinearLayout implements InternalInputPanel {
             cell.addView(tile,new LayoutParams(-1,dp(index%3==0?142:166)));
             LinearLayout actions=row();actions.setBackgroundColor(androidx.core.graphics.ColorUtils.setAlphaComponent(background,225));Button favorite=fixedButton(actions,history.contains("favorites",item)?"★":"☆","Favorito",v->{history.put("favorites",item,true);((Button)v).setText(history.contains("favorites",item)?"★":"☆");},CONTROL_HEIGHT);favorite.setContentDescription("Favorito: "+item.title);
             button(actions,"Enlace",v->{ClipboardManager clipboard=(ClipboardManager)ime.getSystemService(Context.CLIPBOARD_SERVICE);if(clipboard!=null){clipboard.setPrimaryClip(ClipData.newPlainText("GIPHY",item.link));status.setText("Enlace copiado");}});
-            tile.addView(actions,new FrameLayout.LayoutParams(-1,dp(32),android.view.Gravity.BOTTOM));LayoutParams cellParams=new LayoutParams(-1,-2);cellParams.setMargins(dp(4),0,dp(4),dp(8));column[index%2].addView(cell,cellParams);
+            tile.addView(actions,new FrameLayout.LayoutParams(-1,dp(CONTROL_HEIGHT),android.view.Gravity.BOTTOM));LayoutParams cellParams=new LayoutParams(-1,-2);cellParams.setMargins(dp(4),0,dp(4),dp(8));column[index%2].addView(cell,cellParams);
             if(allowNetwork)work.add(worker.submit(()->{GiphyClient client=new GiphyClient();clients.add(client);try{byte[] bytes=client.media(item.preview,true);main.post(()->{if(current(token))preview.load(bytes);});}catch(Exception ignored){}finally{clients.remove(client);}}));
         }
     }
