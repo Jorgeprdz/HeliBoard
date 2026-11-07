@@ -27,7 +27,20 @@ internal fun resolveAppColorScheme(context: Context, dark: Boolean): ColorScheme
     val background = androidx.compose.ui.graphics.Color(palette.background)
     val surface = androidx.compose.ui.graphics.Color(palette.surface)
     val text = androidx.compose.ui.graphics.Color(palette.foreground)
+    val accentColor = androidx.compose.ui.graphics.Color(palette.accent)
+    val onAccent = androidx.compose.ui.graphics.Color(
+        if (androidx.core.graphics.ColorUtils.calculateContrast(android.graphics.Color.WHITE, palette.accent) >= 4.5)
+            android.graphics.Color.WHITE else android.graphics.Color.BLACK
+    )
+    val accentContainer = androidx.compose.ui.graphics.Color(
+        androidx.core.graphics.ColorUtils.blendARGB(palette.surface, palette.accent, .12f)
+    )
     return base.copy(
+        primary = accentColor, onPrimary = onAccent,
+        secondary = accentColor, onSecondary = onAccent,
+        primaryContainer = accentContainer, onPrimaryContainer = accentColor,
+        secondaryContainer = accentContainer, onSecondaryContainer = accentColor,
+        surfaceTint = androidx.compose.ui.graphics.Color.Transparent,
         background = background, onBackground = text,
         surface = surface, onSurface = text,
         surfaceContainerLowest = surface, surfaceContainerLow = background,
