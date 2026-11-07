@@ -43,4 +43,29 @@ public class GuardedGestureDeliveryTest {
   verify(logic,times(1)).onUpdateTailBatchInputCompleted(null,words,null);
   verify(ime,times(1)).onTailBatchInputResultShown(words);
  }
+ @Test public void queuedPreviewCannotDisplayInReplacedEditor()throws Exception{
+  LatinIME ime=mock(LatinIME.class);InputLogic logic=mock(InputLogic.class);
+  assign(ime,"mInputLogic",logic);assign(ime,"mSettings",mock(Settings.class));
+  LatinIME.UIHandler handler=new LatinIME.UIHandler(ime);
+  boolean[] current={true};
+  handler.getClass().getMethod("showGesturePreviewAndSetSuggestions",SuggestedWords.class,boolean.class,BooleanSupplier.class)
+   .invoke(handler,SuggestedWords.getEmptyInstance(),false,(BooleanSupplier)()->current[0]);
+  current[0]=false;shadowOf(Looper.getMainLooper()).idle();
+  verifyNoInteractions(logic);
+  verify(ime,never()).setSuggestions(any());
+ }
+ @Test public void currentQueuedPreviewUsesExistingKeyboardPreview()throws Exception{
+  LatinIME ime=mock(LatinIME.class);
+  helium314.keyboard.keyboard.KeyboardSwitcher switcher=mock(helium314.keyboard.keyboard.KeyboardSwitcher.class);
+  helium314.keyboard.keyboard.MainKeyboardView view=mock(helium314.keyboard.keyboard.MainKeyboardView.class);
+  when(switcher.getMainKeyboardView()).thenReturn(view);assign(ime,"mKeyboardSwitcher",switcher);
+  LatinIME.UIHandler handler=new LatinIME.UIHandler(ime);
+  SuggestedWords words=SuggestedWords.getEmptyInstance();
+  handler.getClass().getMethod("showGesturePreviewAndSetSuggestions",SuggestedWords.class,boolean.class,BooleanSupplier.class)
+   .invoke(handler,words,false,(BooleanSupplier)()->true);
+  shadowOf(Looper.getMainLooper()).idle();
+  verify(ime,times(1)).setSuggestions(words);
+  verify(view,times(1)).showGestureFloatingPreviewText(words,false);
+ }
+
 }

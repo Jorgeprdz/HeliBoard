@@ -26,8 +26,10 @@ jobs:
           packages: 'platform-tools'
           log-accepted-android-sdk-licenses: false
       - uses: gradle/actions/setup-gradle@v4
-      - name: Preserve approved branding
-        run: python3 experiments/r243/check_branding.py
+      - name: Preserve approved appearance and identity
+        run: |
+          git fetch --depth=1 origin 9451fa9a7ab7994e32c5cbb1b13b8914d741a290
+          python3 scripts/ci/check-r26-appearance.py
       - name: Full JVM regression and Android lint
         run: |
           chmod +x gradlew

@@ -279,11 +279,18 @@ public class LatinIME extends InputMethodService implements
                             latinIme.getCurrentRecapitalizeState());
                     break;
                 case MSG_SHOW_GESTURE_PREVIEW_AND_SET_SUGGESTIONS:
-                    if (msg.arg1 == ARG1_NOT_GESTURE_INPUT) {
-                        final SuggestedWords suggestedWords = (SuggestedWords) msg.obj;
-                        latinIme.setSuggestedWords(suggestedWords);
+                    final SuggestedWords previewWords;
+                    if (msg.obj instanceof GuardedGestureResult) {
+                        final GuardedGestureResult result = (GuardedGestureResult) msg.obj;
+                        if (!result.current.getAsBoolean()) break;
+                        previewWords = result.words;
                     } else {
-                        latinIme.showGesturePreviewAndSetSuggestions((SuggestedWords) msg.obj,
+                        previewWords = (SuggestedWords) msg.obj;
+                    }
+                    if (msg.arg1 == ARG1_NOT_GESTURE_INPUT) {
+                        latinIme.setSuggestedWords(previewWords);
+                    } else {
+                        latinIme.showGesturePreviewAndSetSuggestions(previewWords,
                                 msg.arg1 == ARG1_DISMISS_GESTURE_FLOATING_PREVIEW_TEXT);
                     }
                     break;
@@ -300,8 +307,8 @@ public class LatinIME extends InputMethodService implements
                     break;
                 case MSG_UPDATE_TAIL_BATCH_INPUT_COMPLETED:
                     final SuggestedWords suggestedWords;
-                    if (msg.obj instanceof GuardedTailBatchResult) {
-                        final GuardedTailBatchResult result = (GuardedTailBatchResult) msg.obj;
+                    if (msg.obj instanceof GuardedGestureResult) {
+                        final GuardedGestureResult result = (GuardedGestureResult) msg.obj;
                         // Last asynchronous boundary: cancel/editor replacement must win even
                         // after the worker's validated UI runnable enqueued this message.
                         if (!result.current.getAsBoolean()) break;
@@ -437,6 +444,17 @@ public class LatinIME extends InputMethodService implements
                     ARG2_UNUSED, suggestedWords).sendToTarget();
         }
 
+        /** Recheck ownership when the preview message is consumed, before showing candidates. */
+        public void showGesturePreviewAndSetSuggestions(final SuggestedWords suggestedWords,
+                final boolean dismissGestureFloatingPreviewText,
+                final java.util.function.BooleanSupplier current) {
+            final int arg1 = dismissGestureFloatingPreviewText
+                    ? ARG1_DISMISS_GESTURE_FLOATING_PREVIEW_TEXT
+                    : ARG1_SHOW_GESTURE_FLOATING_PREVIEW_TEXT;
+            obtainMessage(MSG_SHOW_GESTURE_PREVIEW_AND_SET_SUGGESTIONS, arg1, ARG2_UNUSED,
+                    new GuardedGestureResult(suggestedWords, current)).sendToTarget();
+        }
+
         public void setSuggestions(final SuggestedWords suggestedWords) {
             removeMessages(MSG_SHOW_GESTURE_PREVIEW_AND_SET_SUGGESTIONS);
             obtainMessage(MSG_SHOW_GESTURE_PREVIEW_AND_SET_SUGGESTIONS,
@@ -447,10 +465,10 @@ public class LatinIME extends InputMethodService implements
             obtainMessage(MSG_UPDATE_TAIL_BATCH_INPUT_COMPLETED, suggestedWords).sendToTarget();
         }
 
-        private static final class GuardedTailBatchResult {
+        private static final class GuardedGestureResult {
             final SuggestedWords words;
             final java.util.function.BooleanSupplier current;
-            GuardedTailBatchResult(SuggestedWords words, java.util.function.BooleanSupplier current) {
+            GuardedGestureResult(SuggestedWords words, java.util.function.BooleanSupplier current) {
                 this.words = words; this.current = java.util.Objects.requireNonNull(current);
             }
         }
@@ -459,7 +477,7 @@ public class LatinIME extends InputMethodService implements
         public void showTailBatchInputResult(final SuggestedWords suggestedWords,
                 final java.util.function.BooleanSupplier current) {
             obtainMessage(MSG_UPDATE_TAIL_BATCH_INPUT_COMPLETED,
-                    new GuardedTailBatchResult(suggestedWords, current)).sendToTarget();
+                    new GuardedGestureResult(suggestedWords, current)).sendToTarget();
         }
 
         public void postSwitchLanguage(final InputMethodSubtype subtype) {

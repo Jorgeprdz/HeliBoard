@@ -123,30 +123,28 @@ class InputLogicHandler implements Handler.Callback {
                 catch(RuntimeException|LinkageError unavailable){result=new SuggestedWords(new java.util.ArrayList<>(),null,null,false,false,false,
                         tail?SuggestedWords.INPUT_STYLE_TAIL_BATCH:SuggestedWords.INPUT_STYLE_UPDATE_BATCH,sequence);}
                 final SuggestedWords ready=result;
+                final java.util.function.BooleanSupplier current=()->{
+                    synchronized(mLock){
+                        return generation==mGestureGeneration&&mInputLogic.mDictionaryFacilitator==facilitator
+                                &&facilitator.getGestureDictionaryIdentity()==dictionary
+                                &&mInputLogic.mConnection.getExpectedSelectionStart()==selectionStart
+                                &&mInputLogic.mConnection.getExpectedSelectionEnd()==selectionEnd
+                                &&composing.equals(mInputLogic.mWordComposer.getTypedWord())
+                                &&helium314.keyboard.keyboard.KeyboardSwitcher.getInstance().getKeyboard()==keyboard;
+                    }
+                };
                 mLatinIMEHandler.post(()->{
                     synchronized(mLock){
                         if(!mInBatchInput||generation!=mGestureGeneration)return;
-                        if(mInputLogic.mDictionaryFacilitator!=facilitator||facilitator.getGestureDictionaryIdentity()!=dictionary
-                                ||mInputLogic.mConnection.getExpectedSelectionStart()!=selectionStart
-                                ||mInputLogic.mConnection.getExpectedSelectionEnd()!=selectionEnd
-                                ||!composing.equals(mInputLogic.mWordComposer.getTypedWord())
-                                ||helium314.keyboard.keyboard.KeyboardSwitcher.getInstance().getKeyboard()!=keyboard){
+                        if(!current.getAsBoolean()){
                             mInBatchInput=false;++mGestureGeneration;return;
                         }
+                        // Both queued consumers recheck this lease at their actual UI boundary.
                         // Abstention must not recycle an unrelated previous typing suggestion.
-                        mLatinIMEHandler.showGesturePreviewAndSetSuggestions(ready,tail);
+                        mLatinIMEHandler.showGesturePreviewAndSetSuggestions(ready,tail,current);
                         if(tail){
                             mInBatchInput=false;mPendingJavaGesture=null;
-                            mLatinIMEHandler.showTailBatchInputResult(ready,()->{
-                                synchronized(mLock){
-                                    return generation==mGestureGeneration&&mInputLogic.mDictionaryFacilitator==facilitator
-                                            &&facilitator.getGestureDictionaryIdentity()==dictionary
-                                            &&mInputLogic.mConnection.getExpectedSelectionStart()==selectionStart
-                                            &&mInputLogic.mConnection.getExpectedSelectionEnd()==selectionEnd
-                                            &&composing.equals(mInputLogic.mWordComposer.getTypedWord())
-                                            &&helium314.keyboard.keyboard.KeyboardSwitcher.getInstance().getKeyboard()==keyboard;
-                                }
-                            });
+                            mLatinIMEHandler.showTailBatchInputResult(ready,current);
                         }
                     }
                 });
