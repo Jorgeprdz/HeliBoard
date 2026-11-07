@@ -1487,11 +1487,13 @@ public class LatinIME extends InputMethodService implements
     }
 
     public int getCurrentAutoCapsState() {
+        if (isGifSearchTyping()) return 0;
         return mInputLogic.getCurrentAutoCapsState(mSettings.getCurrent());
     }
 
     @Nullable
     public RecapitalizeMode getCurrentRecapitalizeState() {
+        if (isGifSearchTyping()) return null;
         return mInputLogic.getCurrentRecapitalizeState();
     }
 
@@ -1611,6 +1613,13 @@ public class LatinIME extends InputMethodService implements
             helium314.keyboard.keyboard.gifs.InternalInputPanel input = (helium314.keyboard.keyboard.gifs.InternalInputPanel)panel;
             if (event.getText() != null) input.onTextInput(event.getText().toString());
             else input.onCodeInput(event.getCodePoint() > 0 ? event.getCodePoint() : event.getKeyCode());
+            if (panel instanceof helium314.keyboard.keyboard.gifs.GifPanel
+                    && ((helium314.keyboard.keyboard.gifs.GifPanel)panel).isSearchTyping()) {
+                int code = event.getKeyCode();
+                if (!event.isFunctionalKeyEvent() || code == KeyCode.SYMBOL || code == KeyCode.ALPHA
+                        || code == KeyCode.SYMBOL_ALPHA || code == KeyCode.SHIFT || code == KeyCode.EMOJI)
+                    mKeyboardSwitcher.onEvent(event, 0, null);
+            }
             return;
         }
         if(KeyCode.VOICE_INPUT==event.getKeyCode()&&helium314.keyboard.latin.ai.AiSettingsActivity.dictationEnabled(this)) {
@@ -2001,6 +2010,17 @@ public class LatinIME extends InputMethodService implements
             throw new IllegalArgumentException("Internal panel must own its input lifecycle");
         if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();
         mKeyboardSwitcher.showInternalInputPanel(panel);
+    }
+
+    private boolean isGifSearchTyping() {
+        View panel = mKeyboardSwitcher == null ? null : mKeyboardSwitcher.getInternalInputPanel();
+        return panel instanceof helium314.keyboard.keyboard.gifs.GifPanel
+                && ((helium314.keyboard.keyboard.gifs.GifPanel)panel).isSearchTyping();
+    }
+
+    public void setGifSearchTyping(final View panel, final boolean typing) {
+        if (mKeyboardSwitcher != null && mKeyboardSwitcher.getInternalInputPanel() == panel)
+            mKeyboardSwitcher.setGifSearchTyping(panel, typing);
     }
 
     public void closeInternalInputPanel() {

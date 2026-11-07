@@ -151,6 +151,8 @@ dependencies {
     implementation("com.google.android.material:material:1.14.0-alpha04")
 
     implementation("com.google.mlkit:digital-ink-recognition:18.1.0")
+    // Public initialization-failure hook (2.7's version was library-restricted).
+    implementation("androidx.work:work-runtime:2.8.1")
 
     // androidx
     implementation("androidx.core:core-ktx:1.17.0") // 1.18.0 requires minSdk 23

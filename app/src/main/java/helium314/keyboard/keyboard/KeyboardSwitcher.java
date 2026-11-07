@@ -73,6 +73,8 @@ public final class KeyboardSwitcher {
     private EmojiPalettesView mEmojiPalettesView;
     private View mInternalInputPanel;
     private int mMainFrameVisibilityBeforePanel = View.VISIBLE;
+    private int mInternalPanelNormalHeight;
+    private boolean mGifSearchTyping;
     private View mEmojiTabStripView;
     private LinearLayout mClipboardStripView;
     private HorizontalScrollView mClipboardStripScrollView;
@@ -256,21 +258,68 @@ public final class KeyboardSwitcher {
         mMainFrameVisibilityBeforePanel = mMainKeyboardFrame.getVisibility();
         mKeyboardView.cancelAllOngoingEvents();
         mSuggestionStripView.dismissMoreSuggestionsPanel();
-        int height = Math.max(mMainKeyboardFrame.getHeight(), (int)(360 * panel.getResources().getDisplayMetrics().density));
+        mInternalPanelNormalHeight = mMainKeyboardFrame.getHeight();
+        if (mInternalPanelNormalHeight <= 0) mInternalPanelNormalHeight = mMainKeyboardFrame.getMeasuredHeight();
+        if (mInternalPanelNormalHeight <= 0) {
+            Keyboard nativeKeyboard = getKeyboard();
+            int stripHeight = mStripContainer.getHeight();
+            if (stripHeight <= 0) stripHeight = panel.getResources().getDimensionPixelSize(R.dimen.config_suggestions_strip_height);
+            mInternalPanelNormalHeight = nativeKeyboard != null ? nativeKeyboard.mOccupiedHeight + stripHeight
+                    : ResourceUtils.getDefaultKeyboardHeight(panel.getResources(), false);
+        }
+        int height = panel instanceof helium314.keyboard.keyboard.gifs.GifPanel
+                ? mInternalPanelNormalHeight
+                : Math.max(mInternalPanelNormalHeight, (int)(360 * panel.getResources().getDisplayMetrics().density));
         android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT, height, android.view.Gravity.BOTTOM);
         mCurrentInputView.addView(panel, params);
         mMainKeyboardFrame.setVisibility(View.INVISIBLE);
+        // First opening can precede layout; replace the native-dimension fallback with the measured frame.
+        mMainKeyboardFrame.post(() -> {
+            if (mInternalInputPanel == panel && panel instanceof helium314.keyboard.keyboard.gifs.GifPanel
+                    && mMainKeyboardFrame.getHeight() > 0) {
+                mInternalPanelNormalHeight = mMainKeyboardFrame.getHeight();
+                if (!mGifSearchTyping) {
+                    android.view.ViewGroup.LayoutParams measured = panel.getLayoutParams();
+                    measured.height = mInternalPanelNormalHeight;
+                    panel.setLayoutParams(measured);
+                }
+            }
+        });
+    }
+
+    /** Search belongs to the GIF session while the original keyboard renders and receives touch. */
+    public void setGifSearchTyping(final View panel, final boolean typing) {
+        if (panel != mInternalInputPanel || !(panel instanceof helium314.keyboard.keyboard.gifs.GifPanel)) return;
+        mKeyboardView.cancelAllOngoingEvents();
+        boolean enteringTyping = typing && !mGifSearchTyping;
+        mGifSearchTyping = typing;
+        if (enteringTyping && mState != null) mState.onResetKeyboardStateToAlphabet(0, null);
+        android.widget.FrameLayout.LayoutParams params = (android.widget.FrameLayout.LayoutParams) panel.getLayoutParams();
+        params.height = typing ? mStripContainer.getHeight() : mInternalPanelNormalHeight;
+        if (params.height <= 0) params.height = typing
+                ? panel.getResources().getDimensionPixelSize(R.dimen.config_suggestions_strip_height)
+                : mMainKeyboardFrame.getMeasuredHeight();
+        params.gravity = typing ? android.view.Gravity.TOP : android.view.Gravity.BOTTOM;
+        params.topMargin = typing ? mMainKeyboardFrame.getTop() + mStripContainer.getTop() : 0;
+        panel.setLayoutParams(params);
+        mMainKeyboardFrame.setVisibility(typing ? View.VISIBLE : View.INVISIBLE);
+        // Keep the overlay last so native toolbar/suggestions cannot receive query touches.
+        panel.bringToFront();
+        mCurrentInputView.requestLayout();
     }
 
     public void closeInternalInputPanel() {
         if (mInternalInputPanel == null) return;
         View panel = mInternalInputPanel;
         mInternalInputPanel = null;
+        mGifSearchTyping = false;
         if (panel instanceof helium314.keyboard.keyboard.gifs.InternalInputPanel)
             ((helium314.keyboard.keyboard.gifs.InternalInputPanel) panel).close();
         if (panel.getParent() instanceof android.view.ViewGroup)
             ((android.view.ViewGroup) panel.getParent()).removeView(panel);
+        if (panel instanceof helium314.keyboard.keyboard.gifs.GifPanel && mState != null && mLatinIME != null)
+            resetKeyboardStateToAlphabet();
         if (mMainKeyboardFrame != null) mMainKeyboardFrame.setVisibility(mMainFrameVisibilityBeforePanel);
     }
 
@@ -535,7 +584,7 @@ public final class KeyboardSwitcher {
     }
 
     public boolean isShowingPopupKeysPanel() {
-        if (mInternalInputPanel != null) return false;
+        if (mInternalInputPanel != null && !mGifSearchTyping) return false;
         if (isShowingEmojiPalettes() || isShowingClipboardHistory()) {
             return false;
         }
@@ -551,7 +600,10 @@ public final class KeyboardSwitcher {
     }
 
     public View getVisibleKeyboardView() {
-        if (mInternalInputPanel != null) return mInternalInputPanel;
+        if (mInternalInputPanel != null) {
+            if (!mGifSearchTyping) return mInternalInputPanel;
+            return isShowingEmojiPalettes() ? mEmojiPalettesView : mKeyboardView;
+        }
         if (isShowingEmojiPalettes()) {
             return mEmojiPalettesView;
         } else if (isShowingClipboardHistory()) {
@@ -561,7 +613,7 @@ public final class KeyboardSwitcher {
     }
 
     public View getWrapperView() {
-        if (mInternalInputPanel != null) return mInternalInputPanel;
+        if (mInternalInputPanel != null) return mGifSearchTyping ? mKeyboardViewWrapper : mInternalInputPanel;
         return mKeyboardViewWrapper;
     }
 

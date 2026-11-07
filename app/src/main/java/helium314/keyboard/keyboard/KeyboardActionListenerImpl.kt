@@ -155,6 +155,7 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
     override fun onTextInput(text: String?) = latinIME.onTextInput(text)
 
     override fun onContent(content: InputContentInfoCompat) {
+        if (latinIME.isInternalInputPanelShowing) return
         val editorInfo = latinIME.currentInputEditorInfo
         val editorMimeTypes = EditorInfoCompat.getContentMimeTypes(editorInfo)
         if (editorMimeTypes.any { content.description.hasMimeType(it) }) {
@@ -178,65 +179,74 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
     override fun onFinishSlidingInput() =
         keyboardSwitcher.onFinishSlidingInput(latinIME.currentAutoCapsState, latinIME.currentRecapitalizeState)
 
-    override fun onCustomRequest(request: KeyboardActionListener.CustomAction) = when (request) {
-        KeyboardActionListener.CustomAction.SHOW_INPUT_METHOD_PICKER -> latinIME.showInputPickerDialog()
-        KeyboardActionListener.CustomAction.TOUCHPAD_ON -> {
-            keyboardSwitcher.mainKeyboardView?.alpha = 0.5f
-            true
-        }
-        KeyboardActionListener.CustomAction.TOUCHPAD_OFF -> {
-            keyboardSwitcher.mainKeyboardView?.alpha = 1f
-            true
-        }
-        KeyboardActionListener.CustomAction.PERFORM_HAPTIC -> {
-            performHapticFeedback(HapticEvent.KEY_LONG_PRESS)
-            true
-        }
-    }
-
-    override fun onHorizontalSpaceSwipe(steps: Int): Boolean = when (Settings.getValues().mSpaceSwipeHorizontal) {
-        KeyboardActionListener.SwipeAction.MOVE_CURSOR -> onMoveCursorHorizontally(steps)
-        KeyboardActionListener.SwipeAction.SWITCH_LANGUAGE -> onLanguageSlide(steps)
-        KeyboardActionListener.SwipeAction.TOGGLE_NUMPAD -> {
-            toggleLayout(LayoutDirective.Utility.NUMPAD, latinIME.currentAutoCapsState, latinIME.currentRecapitalizeState)
-            true
-        }
-        KeyboardActionListener.SwipeAction.TOGGLE_DPAD -> {
-            toggleLayout(LayoutDirective.Utility.DPAD, latinIME.currentAutoCapsState, latinIME.currentRecapitalizeState)
-            true
-        }
-        else -> false
-    }
-
-    override fun onVerticalSpaceSwipe(steps: Int): Boolean = when (Settings.getValues().mSpaceSwipeVertical) {
-        KeyboardActionListener.SwipeAction.MOVE_CURSOR -> onMoveCursorVertically(steps)
-        KeyboardActionListener.SwipeAction.SWITCH_LANGUAGE -> onLanguageSlide(steps)
-        KeyboardActionListener.SwipeAction.TOGGLE_NUMPAD -> {
-            toggleLayout(LayoutDirective.Utility.NUMPAD, latinIME.currentAutoCapsState, latinIME.currentRecapitalizeState)
-            true
-        }
-        KeyboardActionListener.SwipeAction.TOGGLE_DPAD -> {
-            toggleLayout(LayoutDirective.Utility.DPAD, latinIME.currentAutoCapsState, latinIME.currentRecapitalizeState)
-            true
-        }
-        KeyboardActionListener.SwipeAction.HIDE_KEYBOARD -> {
-            latinIME.requestHideSelf(0)
-            true
-        }
-        KeyboardActionListener.SwipeAction.TOUCHPAD_MODE -> {
-            // Activate touchpad mode - the actual cursor movement will be handled in PointerTracker
-
-            // Activation and ensure enough room for navigation.
-            val requiredSteps = 8
-
-            if (abs(steps) >= requiredSteps) {
-                TouchpadHandler.setTouchpadModeActive(true)
+    override fun onCustomRequest(request: KeyboardActionListener.CustomAction): Boolean {
+        if (latinIME.isInternalInputPanelShowing && request != KeyboardActionListener.CustomAction.PERFORM_HAPTIC) return true
+        return when (request) {
+            KeyboardActionListener.CustomAction.SHOW_INPUT_METHOD_PICKER -> latinIME.showInputPickerDialog()
+            KeyboardActionListener.CustomAction.TOUCHPAD_ON -> {
+                keyboardSwitcher.mainKeyboardView?.alpha = 0.5f
                 true
-            } else {
-                false
+            }
+            KeyboardActionListener.CustomAction.TOUCHPAD_OFF -> {
+                keyboardSwitcher.mainKeyboardView?.alpha = 1f
+                true
+            }
+            KeyboardActionListener.CustomAction.PERFORM_HAPTIC -> {
+                performHapticFeedback(HapticEvent.KEY_LONG_PRESS)
+                true
             }
         }
-        else -> false
+    }
+
+    override fun onHorizontalSpaceSwipe(steps: Int): Boolean {
+        if (latinIME.isInternalInputPanelShowing) return true
+        return when (Settings.getValues().mSpaceSwipeHorizontal) {
+            KeyboardActionListener.SwipeAction.MOVE_CURSOR -> onMoveCursorHorizontally(steps)
+            KeyboardActionListener.SwipeAction.SWITCH_LANGUAGE -> onLanguageSlide(steps)
+            KeyboardActionListener.SwipeAction.TOGGLE_NUMPAD -> {
+                toggleLayout(LayoutDirective.Utility.NUMPAD, latinIME.currentAutoCapsState, latinIME.currentRecapitalizeState)
+                true
+            }
+            KeyboardActionListener.SwipeAction.TOGGLE_DPAD -> {
+                toggleLayout(LayoutDirective.Utility.DPAD, latinIME.currentAutoCapsState, latinIME.currentRecapitalizeState)
+                true
+            }
+            else -> false
+        }
+    }
+
+    override fun onVerticalSpaceSwipe(steps: Int): Boolean {
+        if (latinIME.isInternalInputPanelShowing) return true
+        return when (Settings.getValues().mSpaceSwipeVertical) {
+            KeyboardActionListener.SwipeAction.MOVE_CURSOR -> onMoveCursorVertically(steps)
+            KeyboardActionListener.SwipeAction.SWITCH_LANGUAGE -> onLanguageSlide(steps)
+            KeyboardActionListener.SwipeAction.TOGGLE_NUMPAD -> {
+                toggleLayout(LayoutDirective.Utility.NUMPAD, latinIME.currentAutoCapsState, latinIME.currentRecapitalizeState)
+                true
+            }
+            KeyboardActionListener.SwipeAction.TOGGLE_DPAD -> {
+                toggleLayout(LayoutDirective.Utility.DPAD, latinIME.currentAutoCapsState, latinIME.currentRecapitalizeState)
+                true
+            }
+            KeyboardActionListener.SwipeAction.HIDE_KEYBOARD -> {
+                latinIME.requestHideSelf(0)
+                true
+            }
+            KeyboardActionListener.SwipeAction.TOUCHPAD_MODE -> {
+                // Activate touchpad mode - the actual cursor movement will be handled in PointerTracker
+
+                // Activation and ensure enough room for navigation.
+                val requiredSteps = 8
+
+                if (abs(steps) >= requiredSteps) {
+                    TouchpadHandler.setTouchpadModeActive(true)
+                    true
+                } else {
+                    false
+                }
+            }
+            else -> false
+        }
     }
 
     override fun onEndSpaceSwipe() {
@@ -253,6 +263,7 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
     }
 
     override fun onMoveDeletePointer(steps: Int) {
+        if (latinIME.isInternalInputPanelShowing) return
         inputLogic.finishInput()
         val end = connection.expectedSelectionEnd
         val actualSteps = actualSteps(steps)
@@ -269,6 +280,7 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
     }
 
     override fun onUpWithDeletePointerActive() {
+        if (latinIME.isInternalInputPanelShowing) return
         if (!connection.hasSelection()) return
         inputLogic.finishInput()
         onCodeInput(KeyCode.DELETE, Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE, false)

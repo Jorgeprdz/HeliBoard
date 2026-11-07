@@ -294,13 +294,24 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     /** Reuses a physical rightmost native word slot; view count, weights and colors stay native. */
     fun canShowTextStickerSuggestion(): Boolean = !stripArbiter.active() && !isExternalSuggestionVisible &&
         !toolbarContainer.isVisible && suggestionsStrip.isVisible && !isShowingMoreSuggestionPanel &&
-        (0 until suggestionsStrip.childCount).count { suggestionsStrip.getChildAt(it) is TextView } >= 3
+        textStickerTarget() != null
+
+    private fun textStickerTarget(): TextView? {
+        val words = (0 until suggestionsStrip.childCount)
+            .map { suggestionsStrip.getChildAt(it) }.filterIsInstance<TextView>()
+        if (words.size < 3) return null
+        val target = if (suggestionsStrip.layoutDirection == LAYOUT_DIRECTION_RTL) words.first() else words.last()
+        // Native emoji suggestions occupy this slot. Keep their original text and tap action.
+        val index = target.tag as? Int
+        if (index != null && index in 0 until suggestedWords.size() && suggestedWords.getInfo(index).isEmoji)
+            return null
+        return target
+    }
 
     fun showTextStickerSuggestion(bitmap: android.graphics.Bitmap, send: Runnable, save: Runnable): Boolean {
         if (!canShowTextStickerSuggestion() || bitmap.isRecycled) return false
         clearTextStickerSuggestion()
-        val words = (0 until suggestionsStrip.childCount).map { suggestionsStrip.getChildAt(it) }.filterIsInstance<TextView>()
-        val target = if (suggestionsStrip.layoutDirection == LAYOUT_DIRECTION_RTL) words.first() else words.last()
+        val target = textStickerTarget() ?: return false
         stickerSlot = target
         stickerOriginalText = target.text
         stickerOriginalEnabled = target.isEnabled

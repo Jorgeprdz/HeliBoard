@@ -1,0 +1,9 @@
+# GIF panel usability correction
+
+User rejected the previous GIF panel. Approved replacement preserves the native keyboard appearance and removes the miniature imitation keys and unrelated header actions.
+
+Browsing occupies exactly the existing main keyboard frame height. Header: ABC, compact GIF/Stickers segmented selection, settings. Rounded 44dp search entry, 32dp trends/recent/favorites tabs, deliberate centered setup/empty states, weighted result grid and a compact 20dp GIPHY attribution footer. Missing provider setup is inline; only an explicit settings control opens initial configuration.
+
+Tapping search switches to the original native keyboard. A compact query header covers the suggestion strip at its actual position/height; input stays isolated through InternalInputPanel. Query submission returns to browsing. Switching symbols/shift updates native keyboard state without writing the application draft. Native keyboard and wrapper remain the IME inset sources during typing; browsing uses the full panel. No Activity/dialog/browser handles search. Query is limited to 50 Unicode code points without splitting surrogate pairs or emoji clusters. Stale provider results use generation, InputConnection and logical editor identity.
+
+Density refinement after comparing the supplied screenshots: browsing uses a single 44dp ABC/search/settings row, one horizontally scrollable 32dp navigation strip (GIF, Stickers, Trends, Recent, Favorites), and 18dp attribution footer. Two-column staggered tiles keep 142–166dp preview height, with favorite/link actions overlaid within the tile rather than consuming an extra row. This leaves the native frame's space for media rather than expanding the keyboard or shrinking native keys.

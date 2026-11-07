@@ -38,77 +38,100 @@ public final class GifPanel extends LinearLayout implements InternalInputPanel {
     private final List<GifPreviewView> previews=new ArrayList<>();
     private final GifPolicy.Generation generation=new GifPolicy.Generation();
     private final GifHistory history;
-    private final TextView queryView,status;
-    private final LinearLayout grid,keys;
-    private final Button next;
+    private final TextView queryView,typingQuery,status;
+    private final LinearLayout grid,browse,compact;
+    private final Button next,gifTab,stickerTab;
     private final StringBuilder query=new StringBuilder();
-    private boolean closed,stickers;private int offset;private long lastSearch;private String historyCategory;
-    private int background,foreground;
-    public GifPanel(LatinIME ime){
-        super(ime);this.ime=ime;connection=ime.getCurrentInputConnection();editor=ime.getCurrentInputEditorInfo();history=new GifHistory(ime);
-        setOrientation(VERTICAL);
-        keys=new LinearLayout(ime);keys.setOrientation(VERTICAL);
-        background=Settings.getValues().mColors.get(ColorType.MAIN_BACKGROUND);
-        foreground=Settings.getValues().mColors.get(ColorType.KEY_TEXT);
+    private boolean closed,stickers,typing;private int offset;private long lastSearch;private String historyCategory;
+    private int background,foreground,surface,accent;
+    public GifPanel(LatinIME ime){this(ime,ime);}
+    GifPanel(Context context,LatinIME ime){
+        super(context);this.ime=ime;connection=ime.getCurrentInputConnection();editor=ime.getCurrentInputEditorInfo();history=new GifHistory(context);
+        setOrientation(VERTICAL);setClickable(true);
+        try{background=Settings.getValues().mColors.get(ColorType.MAIN_BACKGROUND);foreground=Settings.getValues().mColors.get(ColorType.KEY_TEXT);}
+        catch(RuntimeException unavailable){background=0xfff4f1f7;foreground=0xff29232d;}
+        // Panel-only contrast surfaces derive from the keyboard palette; native keys are untouched.
+        surface=androidx.core.graphics.ColorUtils.blendARGB(background,foreground,.075f);
+        accent=androidx.core.graphics.ColorUtils.blendARGB(background,foreground,.14f);
         setBackgroundColor(background);
-        LinearLayout header=row();button(header,"ABC",v->ime.closeInternalInputPanel());
-        button(header,"GIF",v->{stickers=false;search(0);});button(header,"Stickers",v->{stickers=true;search(0);});
-        button(header,"Traducir",v->ime.onAiAction("Traducir en vivo"));button(header,"Tinta",v->ime.onAiAction("Escritura a mano"));
-        button(header,"⚙",v->ime.startActivity(new Intent(ime,GiphySettingsActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)));
-        addView(header,new LayoutParams(-1,dp(36)));
-        LinearLayout search=row();queryView=label("Buscar en GIPHY…");queryView.setSingleLine(true);queryView.setOnClickListener(v->keysVisibility());
-        search.addView(queryView,new LayoutParams(0,-1,1));button(search,"Buscar",v->search(0));
-        button(search,"⌨",v->keysVisibility());addView(search,new LayoutParams(-1,dp(36)));
-        LinearLayout tabs=row();button(tabs,"Tendencias",v->{query.setLength(0);updateQuery();search(0);});
-        button(tabs,"Recientes",v->showHistory("recent"));button(tabs,"Favoritos",v->showHistory("favorites"));
-        button(tabs,"Emoji",v->{keys.setVisibility(VISIBLE);showEmojiKeys();});
-        addView(tabs,new LayoutParams(-1,dp(34)));
-        LinearLayout attribution=row();
-        ImageView mark=new ImageView(ime);mark.setContentDescription("Powered By GIPHY");mark.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        try(java.io.InputStream logo=ime.getAssets().open("giphy/powered_by_"+(androidx.core.graphics.ColorUtils.calculateLuminance(background)<.45?"black":"white")+".png")){
+        browse=new LinearLayout(context);browse.setOrientation(VERTICAL);addView(browse,new LayoutParams(-1,-1));
+        LinearLayout header=row();header.setPadding(dp(4),0,dp(4),0);
+        fixedButton(header,"ABC","Volver al teclado",v->ime.closeInternalInputPanel(),44);
+        queryView=label("⌕  Buscar GIF y stickers");queryView.setTag("gif-query");queryView.setTextSize(16);queryView.setSingleLine(true);
+        queryView.setEllipsize(android.text.TextUtils.TruncateAt.END);queryView.setPadding(dp(14),0,dp(10),0);
+        queryView.setBackground(shape(surface,24));queryView.setContentDescription("Buscar GIF y stickers");queryView.setOnClickListener(v->setTyping(true));
+        LayoutParams queryParams=new LayoutParams(0,-1,1);queryParams.setMargins(dp(4),0,dp(4),0);header.addView(queryView,queryParams);
+        fixedButton(header,"⚙","Configurar GIPHY",v->openSettings(),44);browse.addView(header,new LayoutParams(-1,dp(44)));
+        HorizontalScrollView navigation=new HorizontalScrollView(context);navigation.setHorizontalScrollBarEnabled(false);
+        LinearLayout tabs=row();tabs.setPadding(dp(6),dp(2),dp(6),dp(2));
+        gifTab=fixedButton(tabs,"GIF","GIF",v->{stickers=false;updateSegments();search(0);},54);
+        stickerTab=fixedButton(tabs,"Stickers","Stickers",v->{stickers=true;updateSegments();search(0);},80);
+        fixedButton(tabs,"Tendencias","Tendencias",v->{query.setLength(0);updateQuery();search(0);},96);
+        fixedButton(tabs,"Recientes","Recientes",v->showHistory("recent"),86);
+        fixedButton(tabs,"Favoritos","Favoritos",v->showHistory("favorites"),86);
+        navigation.addView(tabs,new HorizontalScrollView.LayoutParams(-2,-1));browse.addView(navigation,new LayoutParams(-1,dp(32)));updateSegments();
+        ScrollView results=new ScrollView(context);results.setFillViewport(true);results.setClipToPadding(false);
+        grid=new LinearLayout(context);grid.setTag("gif-results");grid.setPadding(dp(8),dp(4),dp(8),dp(4));grid.setOrientation(VERTICAL);results.addView(grid,new ScrollView.LayoutParams(-1,-2));
+        browse.addView(results,new LayoutParams(-1,0,1));
+        next=new Button(context);style(next);next.setText("Más resultados");next.setOnClickListener(v->{if(historyCategory!=null)showHistory(historyCategory,offset+12);else search(offset+12);});next.setVisibility(GONE);
+        browse.addView(next,new LayoutParams(-1,dp(36)));
+        LinearLayout footer=row();footer.setPadding(dp(12),0,dp(12),0);footer.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        status=label("");status.setTextSize(10);status.setSingleLine(true);status.setEllipsize(android.text.TextUtils.TruncateAt.END);footer.addView(status,new LayoutParams(0,-1,1));
+        ImageView mark=new ImageView(context);mark.setContentDescription("Powered By GIPHY");mark.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        try(java.io.InputStream logo=context.getAssets().open("giphy/powered_by_"+(androidx.core.graphics.ColorUtils.calculateLuminance(background)<.45?"black":"white")+".png")){
             mark.setImageDrawable(android.graphics.drawable.Drawable.createFromStream(logo,"GIPHY attribution"));
         }catch(java.io.IOException ignored){}
-        attribution.addView(mark,new LayoutParams(dp(100),dp(30)));
-        status=label("GIPHY");status.setTextSize(10);attribution.addView(status,new LayoutParams(0,dp(30),1));addView(attribution,new LayoutParams(-1,dp(30)));
-        ScrollView results=new ScrollView(ime);grid=new LinearLayout(ime);grid.setOrientation(VERTICAL);results.addView(grid);
-        addView(results,new LayoutParams(-1,0,1));
-        next=new Button(ime);style(next);next.setText("Más resultados");next.setOnClickListener(v->{if(historyCategory!=null)showHistory(historyCategory,offset+12);else search(offset+12);});next.setVisibility(GONE);
-        addView(next,new LayoutParams(-1,dp(28)));
-        addView(keys,new LayoutParams(-1,-2));showLetterKeys();keys.setVisibility(VISIBLE);
+        footer.addView(mark,new LayoutParams(dp(82),dp(14)));browse.addView(footer,new LayoutParams(-1,dp(18)));
+        compact=row();compact.setTag("gif-native-search");compact.setBackgroundColor(background);compact.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        fixedButton(compact,"‹","Volver a resultados GIF",v->setTyping(false),40);
+        typingQuery=label("Buscar GIF…");typingQuery.setTextSize(16);typingQuery.setSingleLine(true);typingQuery.setEllipsize(android.text.TextUtils.TruncateAt.START);typingQuery.setPadding(dp(12),0,dp(4),0);
+        typingQuery.setBackground(shape(surface,20));compact.addView(typingQuery,new LayoutParams(0,-1,1));
+        fixedButton(compact,"×","Borrar consulta",v->{query.setLength(0);updateQuery();invalidateResults();},36);
+        fixedButton(compact,"⌕","Buscar GIF",v->search(0),44);compact.setVisibility(GONE);addView(compact,new LayoutParams(-1,-1));
         main.post(()->search(0));
     }
     private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
     private LinearLayout row(){LinearLayout row=new LinearLayout(getContext());row.setOrientation(HORIZONTAL);return row;}
-    private TextView label(String text){TextView view=new TextView(getContext());view.setTextColor(foreground);view.setText(text);view.setGravity(android.view.Gravity.CENTER_VERTICAL);view.setPadding(dp(4),0,dp(4),0);return view;}
-    private void style(Button button){button.setTextColor(foreground);button.setTextSize(12);button.setMinWidth(0);button.setMinimumWidth(0);button.setMinHeight(0);button.setMinimumHeight(0);button.setPadding(dp(3),0,dp(3),0);button.setBackgroundTintList(android.content.res.ColorStateList.valueOf(background));}
+    private android.graphics.drawable.GradientDrawable shape(int color,int radius){android.graphics.drawable.GradientDrawable shape=new android.graphics.drawable.GradientDrawable();shape.setColor(color);shape.setCornerRadius(dp(radius));return shape;}
+    private TextView label(String text){TextView view=new TextView(getContext());view.setTextColor(foreground);view.setText(text);view.setGravity(android.view.Gravity.CENTER_VERTICAL);return view;}
+    private void style(Button button){button.setTextColor(foreground);button.setTextSize(13);button.setAllCaps(false);button.setMinWidth(0);button.setMinimumWidth(0);button.setMinHeight(0);button.setMinimumHeight(0);button.setPadding(dp(6),0,dp(6),0);
+        button.setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(accent),shape(background,18),null));}
     private Button button(LinearLayout parent,String text,OnClickListener click){Button button=new Button(getContext());style(button);button.setText(text);button.setContentDescription(text);button.setOnClickListener(click);parent.addView(button,new LayoutParams(0,-1,1));return button;}
-    private void keysVisibility(){keys.setVisibility(keys.getVisibility()==VISIBLE?GONE:VISIBLE);}
-    private void showLetterKeys(){
-        keys.removeAllViews();for(String letters:new String[]{"qwertyuiop","asdfghjklñ","zxcvbnm"}){
-            LinearLayout line=row();for(int i=0;i<letters.length();i++){final int cp=letters.charAt(i);button(line,String.valueOf((char)cp),v->onCodeInput(cp));}keys.addView(line,new LayoutParams(-1,dp(28)));
-        }
-        LinearLayout line=row();button(line,"😊",v->showEmojiKeys());button(line,"espacio",v->onTextInput(" "));button(line,"⌫",v->onCodeInput(KeyCode.DELETE));
-        button(line,"123",v->showSymbolKeys());button(line,"Buscar",v->search(0));keys.addView(line,new LayoutParams(-1,dp(28)));
+    private Button fixedButton(LinearLayout parent,String text,String description,OnClickListener click,int width){Button button=button(parent,text,click);button.setContentDescription(description);button.setLayoutParams(new LayoutParams(dp(width),-1));return button;}
+    private void updateSegments(){gifTab.setBackground(shape(stickers?surface:accent,18));stickerTab.setBackground(shape(stickers?accent:surface,18));gifTab.setSelected(!stickers);stickerTab.setSelected(stickers);}
+    private void openSettings(){ime.startActivity(new Intent(ime,GiphySettingsActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));}
+    public boolean isSearchTyping(){return typing;}
+    private void setTyping(boolean enabled){if(closed)return;typing=enabled;browse.setVisibility(typing?GONE:VISIBLE);compact.setVisibility(typing?VISIBLE:GONE);ime.setGifSearchTyping(this,typing);updateQuery();}
+    @Override public void onTextInput(String text){
+        if(closed||text==null)return;
+        String value=TextStickerText.appendWithinLimit(query.toString(),text,50);
+        query.setLength(0);query.append(value);updateQuery();invalidateResults();
     }
-    private void showSymbolKeys(){keys.removeAllViews();for(String letters:new String[]{"1234567890","áéíóúü¿?¡!","@#.,-+&()"}){
-        LinearLayout line=row();for(int i=0;i<letters.length();i++){final int cp=letters.charAt(i);button(line,String.valueOf((char)cp),v->onCodeInput(cp));}keys.addView(line,new LayoutParams(-1,dp(28)));}
-        LinearLayout line=row();button(line,"abc",v->showLetterKeys());button(line,"⌫",v->onCodeInput(KeyCode.DELETE));button(line,"Buscar",v->search(0));keys.addView(line,new LayoutParams(-1,dp(28)));
+    @Override public void onCodeInput(int code){
+        if(code==KeyCode.DELETE){String value=TextStickerText.deleteLast(query.toString());query.setLength(0);query.append(value);updateQuery();invalidateResults();}
+        else if(code==10)search(0);else if(code>0&&Character.isValidCodePoint(code)&&!Character.isISOControl(code))onTextInput(new String(Character.toChars(code)));
     }
-    private void showEmojiKeys(){keys.removeAllViews();for(String[] emoji:new String[][]{{"😊","😂","❤️","😭","🥰","😍","😎","😡"},{"🔥","✨","🎉","👍","🙏","🐱","🐶","💀"}}){
-        LinearLayout line=row();for(String item:emoji)button(line,item,v->onTextInput(item));keys.addView(line,new LayoutParams(-1,dp(36)));}
-        TextView info=label("Combina emoji para buscar stickers de GIPHY");info.setTextSize(11);keys.addView(info);
-        LinearLayout line=row();button(line,"abc",v->showLetterKeys());button(line,"⌫",v->onCodeInput(KeyCode.DELETE));button(line,"Buscar stickers",v->{stickers=true;search(0);});keys.addView(line,new LayoutParams(-1,dp(36)));
+    private void updateQuery(){queryView.setText(query.length()==0?"⌕  Buscar GIF y stickers":query.toString());typingQuery.setText(query.length()==0?"Buscar GIF…":query.toString()+" ▏");}
+    private void emptyState(String title,String detail,String action,OnClickListener click){
+        grid.removeAllViews();grid.setGravity(android.view.Gravity.CENTER_VERTICAL);LinearLayout state=new LinearLayout(getContext());state.setTag("gif-empty-state");state.setOrientation(VERTICAL);state.setGravity(android.view.Gravity.CENTER);state.setPadding(dp(20),dp(12),dp(20),dp(12));
+        TextView illustration=label("GIF");illustration.setTextSize(24);illustration.setTypeface(null,android.graphics.Typeface.BOLD);illustration.setGravity(android.view.Gravity.CENTER);illustration.setBackground(shape(accent,18));state.addView(illustration,new LayoutParams(dp(72),dp(48)));
+        TextView headline=label(title);headline.setTextSize(16);headline.setTypeface(null,android.graphics.Typeface.BOLD);headline.setGravity(android.view.Gravity.CENTER);headline.setPadding(0,dp(10),0,dp(4));state.addView(headline,new LayoutParams(-1,-2));
+        TextView explanation=label(detail);explanation.setTextSize(12);explanation.setGravity(android.view.Gravity.CENTER);state.addView(explanation,new LayoutParams(-1,-2));
+        if(action!=null){Button cta=new Button(getContext());style(cta);cta.setText(action);cta.setBackground(shape(accent,22));cta.setOnClickListener(click);LayoutParams params=new LayoutParams(-2,dp(44));params.topMargin=dp(10);state.addView(cta,params);}
+        grid.addView(state,new LayoutParams(-1,-2));
     }
-    @Override public void onTextInput(String text){if(closed||text==null)return;int available=50-query.length();if(available<=0)return;query.append(text,0,Math.min(available,text.length()));updateQuery();invalidateResults();}
-    @Override public void onCodeInput(int code){if(code==KeyCode.DELETE){if(query.length()>0)query.delete(query.offsetByCodePoints(query.length(),-1),query.length());updateQuery();invalidateResults();}
-        else if(code==10||code==10)search(0);else if(code>0&&Character.isValidCodePoint(code))onTextInput(new String(Character.toChars(code)));}
-    private void updateQuery(){queryView.setText(query.length()==0?"Buscar en GIPHY…":query.toString()+" ▏");}
     private void stopWork(){generation.next();for(Future<?> future:work)future.cancel(true);work.clear();synchronized(clients){for(GiphyClient client:clients)client.cancel();clients.clear();}worker.getQueue().clear();for(GifPreviewView preview:previews)preview.stop();previews.clear();}
-    private void invalidateResults(){stopWork();grid.removeAllViews();next.setVisibility(GONE);status.setText("Pulsa Buscar · Powered By GIPHY");}
-    private boolean current(int token){return !closed&&generation.current(token)&&ime.getCurrentInputConnection()==connection&&ime.getCurrentInputEditorInfo()==editor&&ime.isInternalInputPanelShowing();}
+    private void invalidateResults(){stopWork();grid.removeAllViews();next.setVisibility(GONE);status.setText("Pulsa Buscar para ver resultados");}
+    private boolean current(int token){
+        EditorInfo active=ime.getCurrentInputEditorInfo();
+        return !closed&&generation.current(token)&&ime.getCurrentInputConnection()==connection&&editor!=null&&active!=null
+            &&Objects.equals(editor.packageName,active.packageName)&&editor.fieldId==active.fieldId&&editor.inputType==active.inputType
+            &&editor.imeOptions==active.imeOptions&&ime.isInternalInputPanelShowing();
+    }
     private void search(int start){
         if(closed)return;
-        String key=GiphySettings.readKey(ime);if(key.isEmpty()){invalidateResults();status.setText("Configura tu clave GIPHY en ⚙ · Powered By GIPHY");return;}
+        setTyping(false);
+        String key=GiphySettings.readKey(ime);if(key.isEmpty()){invalidateResults();emptyState("GIF para cada momento","Configura GIPHY una sola vez para explorar y buscar.","Conectar GIPHY",v->openSettings());status.setText("Sin configurar");return;}
         long now=android.os.SystemClock.elapsedRealtime();if(now-lastSearch<1200){status.setText("Espera un momento antes de buscar · Powered By GIPHY");return;}lastSearch=now;
         historyCategory=null;stopWork();grid.removeAllViews();next.setVisibility(GONE);offset=start;int token=generation.next();String text=query.toString();boolean mode=stickers;
         status.setText("Buscando… · Powered By GIPHY");
@@ -121,23 +144,26 @@ public final class GifPanel extends LinearLayout implements InternalInputPanel {
     }
     private void showHistory(String category){showHistory(category,0);}
     private void showHistory(String category,int start){
-        stopWork();grid.removeAllViews();historyCategory=category;offset=start;int token=generation.next();
+        setTyping(false);stopWork();grid.removeAllViews();historyCategory=category;offset=start;int token=generation.next();
         List<GifItem> items=history.read(category);int end=Math.min(start+12,items.size());
         render(items.subList(Math.min(start,items.size()),end),token);next.setVisibility(end<items.size()?VISIBLE:GONE);
-        status.setText(items.isEmpty()?"Aún no hay elementos · Powered By GIPHY":"Metadatos locales · Powered By GIPHY");
+        if(items.isEmpty())emptyState("favorites".equals(category)?"Tus favoritos, aquí":"Tus últimos GIF, aquí","favorites".equals(category)?"Guarda un GIF con la estrella para encontrarlo después.":"Los GIF que la app acepte aparecerán aquí.",null,null);
+        status.setText(items.isEmpty()?"":"Guardados localmente");
     }
     private void render(List<GifItem> items,int token){
-        boolean allowNetwork=!GiphySettings.readKey(ime).isEmpty();
-        for(int index=0;index<items.size();index+=3){LinearLayout line=row();
-            for(GifItem item:items.subList(index,Math.min(index+3,items.size()))){
-                LinearLayout cell=new LinearLayout(ime);cell.setOrientation(VERTICAL);
-                GifPreviewView preview=new GifPreviewView(ime);previews.add(preview);preview.setContentDescription(item.title+" · enviar GIF");preview.setOnClickListener(v->send(item));
-                cell.addView(preview,new LayoutParams(-1,dp(60)));
-                LinearLayout actions=row();Button favorite=button(actions,history.contains("favorites",item)?"★":"☆",v->{history.put("favorites",item,true);((Button)v).setText(history.contains("favorites",item)?"★":"☆");});favorite.setContentDescription("Favorito: "+item.title);
-                button(actions,"Enlace",v->{ClipboardManager clipboard=(ClipboardManager)ime.getSystemService(Context.CLIPBOARD_SERVICE);if(clipboard!=null){clipboard.setPrimaryClip(ClipData.newPlainText("GIPHY",item.link));status.setText("Enlace copiado · Powered By GIPHY");}});
-                cell.addView(actions,new LayoutParams(-1,dp(26)));line.addView(cell,new LayoutParams(0,-2,1));
-                if(allowNetwork)work.add(worker.submit(()->{GiphyClient client=new GiphyClient();clients.add(client);try{byte[] bytes=client.media(item.preview,true);main.post(()->{if(current(token))preview.load(bytes);});}catch(Exception ignored){}finally{clients.remove(client);}}));
-            }grid.addView(line,new LayoutParams(-1,-2));
+        grid.setGravity(android.view.Gravity.TOP);boolean allowNetwork=!GiphySettings.readKey(ime).isEmpty();
+        if(items.isEmpty()){emptyState("No encontramos resultados","Prueba otra palabra o combinación de emoji.","Cambiar búsqueda",v->setTyping(true));return;}
+        LinearLayout columns=row();LinearLayout[] column={new LinearLayout(getContext()),new LinearLayout(getContext())};
+        for(LinearLayout list:column){list.setOrientation(VERTICAL);columns.addView(list,new LayoutParams(0,-2,1));}grid.addView(columns,new LayoutParams(-1,-2));
+        for(int index=0;index<items.size();index++){
+            GifItem item=items.get(index);LinearLayout cell=new LinearLayout(getContext());cell.setOrientation(VERTICAL);cell.setBackground(shape(surface,12));cell.setClipToOutline(true);
+            GifPreviewView preview=new GifPreviewView(getContext());previews.add(preview);preview.setContentDescription(item.title+" · enviar GIF");preview.setOnClickListener(v->send(item));
+            FrameLayout tile=new FrameLayout(getContext());tile.addView(preview,new FrameLayout.LayoutParams(-1,-1));
+            cell.addView(tile,new LayoutParams(-1,dp(index%3==0?142:166)));
+            LinearLayout actions=row();actions.setBackgroundColor(androidx.core.graphics.ColorUtils.setAlphaComponent(background,225));Button favorite=button(actions,history.contains("favorites",item)?"★":"☆",v->{history.put("favorites",item,true);((Button)v).setText(history.contains("favorites",item)?"★":"☆");});favorite.setContentDescription("Favorito: "+item.title);
+            button(actions,"Enlace",v->{ClipboardManager clipboard=(ClipboardManager)ime.getSystemService(Context.CLIPBOARD_SERVICE);if(clipboard!=null){clipboard.setPrimaryClip(ClipData.newPlainText("GIPHY",item.link));status.setText("Enlace copiado");}});
+            tile.addView(actions,new FrameLayout.LayoutParams(-1,dp(32),android.view.Gravity.BOTTOM));LayoutParams cellParams=new LayoutParams(-1,-2);cellParams.setMargins(dp(4),0,dp(4),dp(8));column[index%2].addView(cell,cellParams);
+            if(allowNetwork)work.add(worker.submit(()->{GiphyClient client=new GiphyClient();clients.add(client);try{byte[] bytes=client.media(item.preview,true);main.post(()->{if(current(token))preview.load(bytes);});}catch(Exception ignored){}finally{clients.remove(client);}}));
         }
     }
     private void send(GifItem item){

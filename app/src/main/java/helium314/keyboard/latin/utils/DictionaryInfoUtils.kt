@@ -9,6 +9,7 @@ import android.content.Context
 import android.text.TextUtils
 import com.android.inputmethod.latin.utils.BinaryDictionaryUtils
 import helium314.keyboard.latin.dictionary.Dictionary
+import helium314.keyboard.latin.dictionary.DictionaryFactory
 import helium314.keyboard.latin.common.FileUtils
 import helium314.keyboard.latin.common.LocaleUtils.constructLocale
 import helium314.keyboard.latin.common.loopOverCodePoints
@@ -106,7 +107,11 @@ object DictionaryInfoUtils {
     @JvmStatic
     fun getLocalesWithEmojiDicts(context: Context): List<Locale> =
         SubtypeSettings.getEnabledSubtypes(true)
-            .map { it.locale() }.filter { getCachedDictForLocaleAndType(it, Dictionary.TYPE_EMOJI, context) != null }
+            .map { it.locale() }.filter { locale ->
+                val (cached, bundled) = DictionaryFactory.getAvailableDictsForLocale(locale, context, true)
+                cached.any { it.name.substringBefore("_").substringBefore(".") == Dictionary.TYPE_EMOJI } ||
+                    bundled.any { it.startsWith("${Dictionary.TYPE_EMOJI}_") }
+            }
 
     @JvmStatic
     fun getCachedDictForLocaleAndType(locale: Locale, type: String, context: Context): File? =

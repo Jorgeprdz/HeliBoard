@@ -21,8 +21,8 @@ public class HandwritingRuntimeProviderTest {
  @Test public void missingContextDoesNotCrashKeyboard(){assertFalse(HandwritingRuntimeProvider.ensureInitialized(null));}
  @Test public void asynchronousDatabaseFailureDisablesOptionalRuntimeWithoutThrowing(){
   try {
-   assertNotNull(HandwritingRuntimeProvider.configuration().getExceptionHandler());
-   HandwritingRuntimeProvider.configuration().getExceptionHandler().handleException(new IllegalStateException("test database unavailable"));
+   assertNotNull(HandwritingRuntimeProvider.configuration().getInitializationExceptionHandler());
+   HandwritingRuntimeProvider.configuration().getInitializationExceptionHandler().accept(new IllegalStateException("test database unavailable"));
    assertFalse(HandwritingRuntimeProvider.ensureInitialized(ApplicationProvider.getApplicationContext()));
   } finally {
    try {java.lang.reflect.Field flag=HandwritingRuntimeProvider.class.getDeclaredField("initializationFailed");flag.setAccessible(true);flag.setBoolean(null,false);}

@@ -47,13 +47,14 @@ public final class HandwritingRuntimeProvider extends ContentProvider {
         }
     }
     static Configuration configuration() {
-        return new Configuration.Builder().setInitializationExceptionHandler(error -> {
+        androidx.core.util.Consumer<Throwable> handler = error -> {
             // WorkManager opens its database asynchronously; the provider's catch
             // cannot contain that executor failure. Keep the keyboard available.
             initializationFailed = true;
             initialized = false;
             Log.w("HandwritingRuntime", "Optional handwriting database unavailable");
-        }).build();
+        };
+        return new Configuration.Builder().setInitializationExceptionHandler(handler).build();
     }
     @Override public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) { return null; }
     @Override public String getType(Uri uri) { return null; }

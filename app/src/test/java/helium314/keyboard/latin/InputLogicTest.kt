@@ -305,6 +305,10 @@ class InputLogicTest {
 
     @Test fun R241SegmentationUsesAtomicUndoAndPersistentPairVeto() {
         r22Enable("🙂 nincuidando")
+        // Verify the edit/undo/veto transaction independently of CI worker scheduling.
+        // R26ExpiredLocalReviewBudgetConservesTextInsteadOfBlockingTyping covers expiry.
+        val assistant = helium314.keyboard.latin.ai.AiKeyboardAssistant(latinIME) { 0L }
+        LatinIME::class.java.getDeclaredField("mAiKeyboardAssistant").apply { isAccessible = true }.set(latinIME,assistant)
         r241Observe("ni")
         r241Observe("cuidando")
         r241Observe("nincuidando", false)
@@ -786,6 +790,44 @@ class InputLogicTest {
         latinIME.switchToSubtype(ko)
         input(0x1F970)
         assertEquals("\uD83E\uDD70", text)
+    }
+
+    @Test fun R262PickingEmojiReplacesOnlyCurrentWordAndPreservesSurroundingText() {
+        setText("hola  después")
+        setCursorPosition(5)
+        chainInput("gato")
+        assertEquals("hola gato después", text)
+        assertEquals("gato", composingText)
+
+        pickSuggestion("🐈")
+
+        assertEquals("hola 🐈 después", text)
+        assertEquals("hola 🐈", textBeforeCursor)
+        assertEquals(" después", textAfterCursor)
+        assertEquals(7, cursor)
+        checkConnectionConsistency()
+    }
+
+    @Test fun R262GifSearchGesturesNeverMoveOrDeleteTheHostDraft() {
+        setText("borrador intacto")
+        val host = Mockito.mock(LatinIME::class.java)
+        Mockito.`when`(host.isInternalInputPanelShowing).thenReturn(true)
+        val listener = helium314.keyboard.keyboard.KeyboardActionListenerImpl(host, inputLogic)
+        val originalCursor = cursor
+
+        kotlin.test.assertTrue(listener.onHorizontalSpaceSwipe(-3))
+        kotlin.test.assertTrue(listener.onVerticalSpaceSwipe(3))
+        listener.onMoveDeletePointer(-3)
+        assertEquals(originalCursor, cursor)
+        assertEquals(originalCursor, selectionStart)
+        assertEquals("borrador intacto", text)
+
+        setCursorPosition(2, 6)
+        listener.onUpWithDeletePointerActive()
+        assertEquals(2, selectionStart)
+        assertEquals(6, selectionEnd)
+        assertEquals("borrador intacto", text)
+        checkConnectionConsistency()
     }
 
     // todo: make it work, but it might not be that simple because adding is done in combiner

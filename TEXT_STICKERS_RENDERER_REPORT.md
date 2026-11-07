@@ -38,3 +38,9 @@ java -cp /tmp/text-sticker-tests helium314.keyboard.latin.gifs.TextStickerChecks
 Required CI targets include `TextStickerStoreTest`, `TextStickerRendererTest`, then full JVM/lint/signed build and physical receiver checks owned by the primary agent.
 
 Ruling: latest user steering replaces the old Creator/Gallery panel UI plan. Only reusable renderer/store APIs were implemented here; automatic suggestion-strip integration is owned by the integration agent. No existing letter keyboard geometry/resources/style was edited.
+
+## Deferred-reader attachment retention fix
+
+Reviewer found that sharing an ordinary `text-preview-*.png` allowed later typing/preview churn to prune the attached URI before a recipient finished reading. Added `retainForSharing(File)`: validates the canonical `gif-share` parent and owned preview/shared filename; renames to a separate `text-shared-*.png` before URI creation; renews retention on repeat send. Only shared files older than 24h expire, and expiry runs only when sending. There is no count pruning of younger retained attachments. Controller's `Preview.file` is mutable and updated before FileProvider URI lookup; no PNG copy or full read occurs on that send path. GIF panel pruning now selects only its own `giphy-*.gif` files, so it cannot remove PNG attachments.
+
+New regression failed first at `attached PNG survives twenty new previews`, then passed after the change. Final host result: `TextStickerChecks: 23 assertions passed`, covering twenty-preview survival, protected filename, repeated sends, expired retention, young attachments beyond count limits and invalid outside paths. `git diff --check` passes. Primary agent owns the required incremental rebuild and device deferred-reader validation.
