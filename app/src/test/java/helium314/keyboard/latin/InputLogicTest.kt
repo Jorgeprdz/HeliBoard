@@ -158,23 +158,20 @@ class InputLogicTest {
         kotlin.test.assertFalse(latinIME.hasAiComposition())
     }
 
-    @Test fun R23TemporaryThemeFollowsKeyboardBackgroundInsteadOfTransparentKeyColor() {
+    @Test fun R28SecondaryMenusUseOneUiWithoutMutatingKeyboardPalette() {
         r22Enable("")
         val field = settingsValues.javaClass.getField("mColors").apply { isAccessible = true }
         val original = field.get(settingsValues)
-        val palette = Mockito.mock(helium314.keyboard.latin.common.Colors::class.java)
-        field.set(settingsValues, palette)
+        val keyboardPalette = Mockito.mock(helium314.keyboard.latin.common.Colors::class.java)
+        field.set(settingsValues, keyboardPalette)
         try {
-            Mockito.`when`(palette.get(helium314.keyboard.latin.common.ColorType.MAIN_BACKGROUND)).thenReturn(android.graphics.Color.WHITE)
-            Mockito.`when`(palette.get(helium314.keyboard.latin.common.ColorType.KEY_BACKGROUND)).thenReturn(0x18000000)
-            Mockito.`when`(palette.get(helium314.keyboard.latin.common.ColorType.KEY_TEXT)).thenReturn(android.graphics.Color.BLACK)
-            assertEquals(android.graphics.Color.WHITE,
-                helium314.keyboard.latin.ai.AiMenuTheme.resolveKeyboard(latinIME).surface)
-            Mockito.`when`(palette.get(helium314.keyboard.latin.common.ColorType.MAIN_BACKGROUND)).thenReturn(android.graphics.Color.BLACK)
-            Mockito.`when`(palette.get(helium314.keyboard.latin.common.ColorType.KEY_BACKGROUND)).thenReturn(0x18ffffff)
-            Mockito.`when`(palette.get(helium314.keyboard.latin.common.ColorType.KEY_TEXT)).thenReturn(android.graphics.Color.WHITE)
-            assertEquals(android.graphics.Color.BLACK,
-                helium314.keyboard.latin.ai.AiMenuTheme.resolveKeyboard(latinIME).surface)
+            val expected = helium314.keyboard.settings.OneUiMenuStyle.palette(latinIME)
+            val menu = helium314.keyboard.latin.ai.AiMenuTheme.resolveKeyboard(latinIME)
+            assertEquals(expected.surface, menu.surface)
+            assertEquals(expected.background, menu.background)
+            assertEquals(255, android.graphics.Color.alpha(menu.surface))
+            kotlin.test.assertSame(keyboardPalette, field.get(settingsValues))
+            Mockito.verifyNoInteractions(keyboardPalette)
         } finally { field.set(settingsValues, original) }
     }
 

@@ -21,11 +21,11 @@ public class TranslationPanelTest {
   panel.onTextInput("hola");assertEquals("hola",((TextView)((android.widget.LinearLayout)((android.widget.ScrollView)panel.getChildAt(1)).getChildAt(0)).getChildAt(0)).getText().toString());assertEquals(0,h.commits);
   panel.close();panel.onTextInput("secreto");assertEquals("",((TextView)((android.widget.LinearLayout)((android.widget.ScrollView)panel.getChildAt(1)).getChildAt(0)).getChildAt(0)).getText().toString());assertEquals(0,h.commits);
  }
- @Test public void allControlsFit250DpPanelAndUseKeyboardPalette(){
+ @Test public void allControlsFit250DpPanelAndUseOneUiBackground(){
   Context c=ApplicationProvider.getApplicationContext();TranslationPanel panel=new TranslationPanel(c,new Host());
   int w=PanelViews.dp(c,360),h=PanelViews.dp(c,250);
   panel.measure(View.MeasureSpec.makeMeasureSpec(w,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(h,View.MeasureSpec.EXACTLY));panel.layout(0,0,w,h);
   assertTrue(panel.getChildAt(panel.getChildCount()-1).getBottom()<=h);
-  assertEquals(AiMenuTheme.resolveKeyboard(c).surface,((ColorDrawable)panel.getBackground()).getColor());panel.close();
+  assertEquals(helium314.keyboard.settings.OneUiMenuStyle.palette(c).background,((ColorDrawable)panel.getBackground()).getColor());panel.close();
  }
 }
