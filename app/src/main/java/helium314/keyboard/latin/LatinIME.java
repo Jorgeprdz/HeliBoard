@@ -448,6 +448,7 @@ public class LatinIME extends InputMethodService implements
         public void showGesturePreviewAndSetSuggestions(final SuggestedWords suggestedWords,
                 final boolean dismissGestureFloatingPreviewText,
                 final java.util.function.BooleanSupplier current) {
+            removeMessages(MSG_SHOW_GESTURE_PREVIEW_AND_SET_SUGGESTIONS);
             final int arg1 = dismissGestureFloatingPreviewText
                     ? ARG1_DISMISS_GESTURE_FLOATING_PREVIEW_TEXT
                     : ARG1_SHOW_GESTURE_FLOATING_PREVIEW_TEXT;
@@ -1424,11 +1425,11 @@ public class LatinIME extends InputMethodService implements
             // without NO_FULLSCREEN doesn't work as expected. Because of this we need this
             // hack for now.  Let's get rid of this once the framework gets fixed.
             final EditorInfo ei = getCurrentInputEditorInfo();
-            if (ei == null) return false;
+            if (ei == null) { return false; }
             final boolean noExtractUi = (ei.imeOptions & EditorInfo.IME_FLAG_NO_EXTRACT_UI) != 0;
             final boolean noFullscreen = (ei.imeOptions & EditorInfo.IME_FLAG_NO_FULLSCREEN) != 0;
-            if (noExtractUi || noFullscreen) return false;
-            if (mKeyboardSwitcher.getVisibleKeyboardView() == null || mSuggestionStripView == null) return false;
+            if (noExtractUi || noFullscreen) { return false; }
+            if (mKeyboardSwitcher.getVisibleKeyboardView() == null || mSuggestionStripView == null) { return false; }
             final int usedHeight = mKeyboardSwitcher.getVisibleKeyboardView().getHeight() + mSuggestionStripView.getHeight();
             final int availableHeight = getResources().getDisplayMetrics().heightPixels;
             return usedHeight > availableHeight * 0.6; // if we have less than 40% available, use fullscreen mode
@@ -1503,7 +1504,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     public boolean showInputPickerDialog() {
-        if (isShowingOptionDialog()) return false;
+        if (isShowingOptionDialog()) { return false; }
         if (mRichImm.hasMultipleEnabledIMEsOrSubtypes(true)) {
             mOptionsDialog = InputMethodPickerKt.createInputMethodPickerDialog(this, mRichImm, mKeyboardSwitcher.getMainKeyboardView().getWindowToken());
             mOptionsDialog.show();
@@ -1522,8 +1523,7 @@ public class LatinIME extends InputMethodService implements
         final boolean switchIme = mSettings.getCurrent().mLanguageSwitchKeyToOtherImes;
 
         // switch IME if wanted and possible
-        if (switchIme && !switchSubtype && ImeCompat.INSTANCE.switchInputMethod(this))
-            return;
+        if (switchIme && !switchSubtype && ImeCompat.INSTANCE.switchInputMethod(this)) { return; }
         final boolean hasMoreThanOneSubtype = mRichImm.hasMultipleEnabledSubtypesInThisIme(true);
         // switch subtype if wanted, do nothing if no other subtype is available
         if (switchSubtype && !switchIme) {
@@ -1560,7 +1560,7 @@ public class LatinIME extends InputMethodService implements
     }
     public void onAiInputSubmitted(){if(mAiKeyboardAssistant!=null)mAiKeyboardAssistant.onInputSubmitted();}
     public void onLocalWordBoundary() {
-        if (!helium314.keyboard.latin.ai.AiSettingsActivity.typingEnabled(this)) return;
+        if (!helium314.keyboard.latin.ai.AiSettingsActivity.typingEnabled(this)) { return; }
         if (mAiKeyboardAssistant == null) mAiKeyboardAssistant = new AiKeyboardAssistant(this);
         mAiKeyboardAssistant.onWordBoundary();
     }
@@ -1569,8 +1569,8 @@ public class LatinIME extends InputMethodService implements
     }
 
     public void onNativeCorrectionReverted(String typed,String replacement){
-        if(!helium314.keyboard.latin.ai.AiSettingsActivity.typingEnabled(this))return;
-        if(mAiKeyboardAssistant==null)mAiKeyboardAssistant=new AiKeyboardAssistant(this);
+        if (!helium314.keyboard.latin.ai.AiSettingsActivity.typingEnabled(this)) { return; }
+        if(mAiKeyboardAssistant==null) { mAiKeyboardAssistant=new AiKeyboardAssistant(this); }
         mAiKeyboardAssistant.onNativeCorrectionReverted(typed,replacement);
     }
     public RichInputConnection getAiInputConnection() { return mInputLogic.mConnection; }
@@ -1582,7 +1582,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onAiAction(final String action) {
-        if (mSuggestionStripView == null) return;
+        if (mSuggestionStripView == null) { return; }
         if (mAiKeyboardAssistant == null) mAiKeyboardAssistant = new AiKeyboardAssistant(this);
         mAiKeyboardAssistant.onAction(action, mSuggestionStripView);
     }
@@ -1604,7 +1604,7 @@ public class LatinIME extends InputMethodService implements
             return;
         }
         if(KeyCode.VOICE_INPUT==event.getKeyCode()&&helium314.keyboard.latin.ai.AiSettingsActivity.dictationEnabled(this)) {
-            if(mAiKeyboardAssistant==null)mAiKeyboardAssistant=new AiKeyboardAssistant(this);
+            if(mAiKeyboardAssistant==null) { mAiKeyboardAssistant=new AiKeyboardAssistant(this); }
             if(mSuggestionStripView!=null)mAiKeyboardAssistant.onAction("Dictado",mSuggestionStripView);
             return;
         }
@@ -1629,7 +1629,7 @@ public class LatinIME extends InputMethodService implements
             return;
         }
         if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onUserInput();
-        if (rawText == null) return;
+        if (rawText == null) { return; }
         // TODO: have the keyboard pass the correct key code when we need it.
         Event event = Event.createSoftwareTextEvent(rawText, KeyCode.MULTIPLE_CODE_POINTS, null);
         InputTransaction completeInputTransaction = mInputLogic.onTextInput(mSettings.getCurrent(),
@@ -1640,19 +1640,19 @@ public class LatinIME extends InputMethodService implements
     }
 
     public void onStartBatchInput() {
-        if (isInternalInputPanelShowing()) return;
+        if (isInternalInputPanelShowing()) { return; }
         if(mAiKeyboardAssistant!=null)mAiKeyboardAssistant.onUserInput();
         mInputLogic.onStartBatchInput(mSettings.getCurrent(), mKeyboardSwitcher, mHandler);
         mGestureConsumer.onGestureStarted(mRichImm.getCurrentSubtypeLocale(), mKeyboardSwitcher.getKeyboard());
     }
 
     public void onUpdateBatchInput(final InputPointers batchPointers) {
-        if (isInternalInputPanelShowing()) return;
+        if (isInternalInputPanelShowing()) { return; }
         mInputLogic.onUpdateBatchInput(batchPointers);
     }
 
     public void onEndBatchInput(final InputPointers batchPointers) {
-        if (isInternalInputPanelShowing()) return;
+        if (isInternalInputPanelShowing()) { return; }
         mInputLogic.onEndBatchInput(batchPointers);
         mGestureConsumer.onGestureCompleted(batchPointers);
     }
@@ -1690,17 +1690,17 @@ public class LatinIME extends InputMethodService implements
 
     private void setSuggestedWords(SuggestedWords suggestedWords) {
         if(helium314.keyboard.latin.ai.AiSettingsActivity.typingEnabled(this)) {
-            if(mAiKeyboardAssistant==null)mAiKeyboardAssistant=new AiKeyboardAssistant(this);
+            if(mAiKeyboardAssistant==null) { mAiKeyboardAssistant=new AiKeyboardAssistant(this); }
             suggestedWords=mAiKeyboardAssistant.protectNativeSuggestions(suggestedWords);
         }
         if(helium314.keyboard.latin.ai.AiSettingsActivity.styleEnabled(this)) {
-            if(mAiKeyboardAssistant==null)mAiKeyboardAssistant=new AiKeyboardAssistant(this);
+            if(mAiKeyboardAssistant==null) { mAiKeyboardAssistant=new AiKeyboardAssistant(this); }
             suggestedWords=mAiKeyboardAssistant.rankStylePredictions(suggestedWords);
         }
         final SettingsValues currentSettingsValues = mSettings.getCurrent();
         mInputLogic.setSuggestedWords(suggestedWords);
         if(helium314.keyboard.latin.ai.AiSettingsActivity.typingEnabled(this)) {
-            if(mAiKeyboardAssistant==null)mAiKeyboardAssistant=new AiKeyboardAssistant(this);
+            if(mAiKeyboardAssistant==null) { mAiKeyboardAssistant=new AiKeyboardAssistant(this); }
             mAiKeyboardAssistant.onPredictions(suggestedWords,mSuggestionStripView);
         }
         // TODO: Modify this when we support suggestions with hard keyboard
@@ -1778,7 +1778,7 @@ public class LatinIME extends InputMethodService implements
      *  returns whether a clipboard suggestion has been set.
      */
     public boolean tryShowClipboardSuggestion() {
-        if (!hasSuggestionStripView()) return false;
+        if (!hasSuggestionStripView()) { return false; }
         View clipboardView = mClipboardHistoryManager.getClipboardSuggestionView(getCurrentInputEditorInfo(), mSuggestionStripView);
         if (clipboardView != null) {
             mSuggestionStripView.setExternalSuggestionView(clipboardView, false);
@@ -1882,12 +1882,10 @@ public class LatinIME extends InputMethodService implements
             // No need to feedback when repeat delete/cursor keys will have no effect.
             switch (code) {
             case KeyCode.DELETE, KeyCode.ARROW_LEFT, KeyCode.ARROW_UP, KeyCode.WORD_LEFT, KeyCode.PAGE_UP:
-                if (!mInputLogic.mConnection.canDeleteCharacters())
-                    return;
+                if (!mInputLogic.mConnection.canDeleteCharacters()) { return; }
                 break;
             case KeyCode.ARROW_RIGHT, KeyCode.ARROW_DOWN, KeyCode.WORD_RIGHT, KeyCode.PAGE_DOWN:
-                if (!mInputLogic.mConnection.hasTextAfterCursor())
-                    return;
+                if (!mInputLogic.mConnection.hasTextAfterCursor()) { return; }
                 break;
             }
             // TODO: Use event time that the last feedback has been generated instead of relying on
@@ -1922,8 +1920,7 @@ public class LatinIME extends InputMethodService implements
             if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();
             return true;
         }
-        if (mKeyboardActionListener.onKeyDown(keyCode, keyEvent))
-            return true;
+        if (mKeyboardActionListener.onKeyDown(keyCode, keyEvent)) { return true; }
         return super.onKeyDown(keyCode, keyEvent);
     }
 
@@ -1933,9 +1930,8 @@ public class LatinIME extends InputMethodService implements
             mConsumeInternalPanelBack = false;
             return true;
         }
-        if (isInternalInputPanelShowing()) return true;
-        if (mKeyboardActionListener.onKeyUp(keyCode, keyEvent))
-            return true;
+        if (isInternalInputPanelShowing()) { return true; }
+        if (mKeyboardActionListener.onKeyUp(keyCode, keyEvent)) { return true; }
         return super.onKeyUp(keyCode, keyEvent);
     }
 
@@ -2072,9 +2068,7 @@ public class LatinIME extends InputMethodService implements
     @SuppressWarnings("deprecation")
     private void setNavigationBarColor() {
         final Window window = getWindow().getWindow();
-        if (window == null)
-            return;
-
+        if (window == null) { return; }
         // Jorge personal build: keep the IME navigation bar visually transparent so the host app
         // continues behind the keyboard instead of showing an opaque gray/white strip.
         mOriginalNavBarColor = window.getNavigationBarColor();
@@ -2089,9 +2083,7 @@ public class LatinIME extends InputMethodService implements
             window.setNavigationBarContrastEnforced(false);
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
-            return;
-
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) { return; }
         final View view = window.getDecorView();
         mOriginalNavBarFlags = view.getSystemUiVisibility();
 
@@ -2121,8 +2113,7 @@ public class LatinIME extends InputMethodService implements
             window.setNavigationBarContrastEnforced(mOriginalNavBarContrastEnforced);
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
-            return;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) { return; }
         final View view = window.getDecorView();
         view.setSystemUiVisibility(mOriginalNavBarFlags);
     }

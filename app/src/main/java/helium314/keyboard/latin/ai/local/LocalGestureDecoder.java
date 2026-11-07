@@ -70,7 +70,7 @@ public final class LocalGestureDecoder {
         for(int i=0;i<inputSize;i++){int index=(int)((long)i*(size-1)/(inputSize-1));px[i]=x[index];py[i]=y[index];}
         double traceLength=length(px,py);if(traceLength<scale*.55)return Collections.emptyList();
         float[][] trace=resample(px,py,traceLength);
-        PriorityQueue<Ranked> shortlist=new PriorityQueue<>(Comparator.comparingDouble((Ranked ranked)->ranked.cost).reversed());
+        PriorityQueue<Ranked> shortlist=new PriorityQueue<>(128,Comparator.comparingDouble((Ranked ranked)->ranked.cost).reversed());
         for(Template template:templates){
             double start=distance(trace[0][0],trace[1][0],template.x[0],template.y[0])/scale;
             double end=distance(trace[0][SAMPLES-1],trace[1][SAMPLES-1],template.x[SAMPLES-1],template.y[SAMPLES-1])/scale;

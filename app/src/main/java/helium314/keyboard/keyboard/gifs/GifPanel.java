@@ -85,13 +85,13 @@ public final class GifPanel extends LinearLayout implements InternalInputPanel {
     private void keysVisibility(){keys.setVisibility(keys.getVisibility()==VISIBLE?GONE:VISIBLE);}
     private void showLetterKeys(){
         keys.removeAllViews();for(String letters:new String[]{"qwertyuiop","asdfghjklñ","zxcvbnm"}){
-            LinearLayout line=row();letters.codePoints().forEach(cp->button(line,new String(Character.toChars(cp)),v->onCodeInput(cp)));keys.addView(line,new LayoutParams(-1,dp(28)));
+            LinearLayout line=row();for(int i=0;i<letters.length();i++){final int cp=letters.charAt(i);button(line,String.valueOf((char)cp),v->onCodeInput(cp));}keys.addView(line,new LayoutParams(-1,dp(28)));
         }
         LinearLayout line=row();button(line,"😊",v->showEmojiKeys());button(line,"espacio",v->onTextInput(" "));button(line,"⌫",v->onCodeInput(KeyCode.DELETE));
         button(line,"123",v->showSymbolKeys());button(line,"Buscar",v->search(0));keys.addView(line,new LayoutParams(-1,dp(28)));
     }
     private void showSymbolKeys(){keys.removeAllViews();for(String letters:new String[]{"1234567890","áéíóúü¿?¡!","@#.,-+&()"}){
-        LinearLayout line=row();letters.codePoints().forEach(cp->button(line,new String(Character.toChars(cp)),v->onCodeInput(cp)));keys.addView(line,new LayoutParams(-1,dp(28)));}
+        LinearLayout line=row();for(int i=0;i<letters.length();i++){final int cp=letters.charAt(i);button(line,String.valueOf((char)cp),v->onCodeInput(cp));}keys.addView(line,new LayoutParams(-1,dp(28)));}
         LinearLayout line=row();button(line,"abc",v->showLetterKeys());button(line,"⌫",v->onCodeInput(KeyCode.DELETE));button(line,"Buscar",v->search(0));keys.addView(line,new LayoutParams(-1,dp(28)));
     }
     private void showEmojiKeys(){keys.removeAllViews();for(String[] emoji:new String[][]{{"😊","😂","❤️","😭","🥰","😍","😎","😡"},{"🔥","✨","🎉","👍","🙏","🐱","🐶","💀"}}){

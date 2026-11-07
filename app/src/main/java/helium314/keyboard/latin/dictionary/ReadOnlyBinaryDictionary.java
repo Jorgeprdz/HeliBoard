@@ -46,7 +46,7 @@ public final class ReadOnlyBinaryDictionary extends Dictionary {
         final int limit=Math.min(15000,Math.max(0,requestedLimit));
         if(limit==0||TYPE_EMOJI.equals(mDictType))return java.util.Collections.emptyList();
         java.util.PriorityQueue<helium314.keyboard.latin.ai.local.LocalGestureDecoder.Word> best=
-                new java.util.PriorityQueue<>(java.util.Comparator.comparingInt(word->word.frequency));
+                new java.util.PriorityQueue<>(128,java.util.Comparator.comparingInt(word->word.frequency));
         int token=0,visited=0;
         long deadline=android.os.SystemClock.elapsedRealtime()+10000;
         do {
