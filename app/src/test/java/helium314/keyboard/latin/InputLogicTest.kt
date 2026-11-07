@@ -55,7 +55,14 @@ import kotlin.test.assertEquals
     ShadowFacilitator2::class,
 ])
 class InputLogicTest {
-    private val latinIME = Robolectric.setupService(LatinIME::class.java)
+    private val latinIME = run {
+        if (org.robolectric.RuntimeEnvironment.getApiLevel() < 33) {
+            val app = org.robolectric.RuntimeEnvironment.getApplication()
+            org.robolectric.Shadows.shadowOf(app).grantPermissions(
+                "${app.packageName}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION")
+        }
+        Robolectric.setupService(LatinIME::class.java)
+    }
     private val settingsValues get() = Settings.getValues()
     private val inputLogic get() = latinIME.mInputLogic
     private val connection: RichInputConnection get() = inputLogic.mConnection
@@ -156,6 +163,19 @@ class InputLogicTest {
         latinIME.finishCompositionForVoice()
         assertEquals("hola", text)
         kotlin.test.assertFalse(latinIME.hasAiComposition())
+    }
+
+    @Test
+    @org.robolectric.annotation.Config(sdk = [28])
+    @org.robolectric.annotation.ConscryptMode(org.robolectric.annotation.ConscryptMode.Mode.OFF)
+    fun R28InternalSettingsFieldsArePrivateForAi() {
+        r22Enable("technical")
+        val assistant = r23Assistant()
+        val gate = assistant.javaClass.getDeclaredMethod("privateField").apply { isAccessible = true }
+        kotlin.test.assertFalse(gate.invoke(assistant) as Boolean)
+        ShadowInputMethodService.editorPackage = latinIME.packageName
+        kotlin.test.assertTrue(gate.invoke(assistant) as Boolean)
+        assertEquals("technical", text)
     }
 
     @Test fun R28SecondaryMenusUseOneUiWithoutMutatingKeyboardPalette() {

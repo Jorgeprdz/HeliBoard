@@ -19,7 +19,7 @@ import androidx.core.view.inputmethod.InputConnectionCompat;
 import androidx.core.view.inputmethod.InputContentInfoCompat;
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode;
 import helium314.keyboard.latin.LatinIME;
-import helium314.keyboard.latin.common.ColorType;
+import helium314.keyboard.settings.OneUiMenuStyle;
 import helium314.keyboard.latin.gifs.*;
 import helium314.keyboard.latin.settings.Settings;
 import java.io.File;
@@ -47,7 +47,7 @@ public final class GifPanel extends LinearLayout implements InternalInputPanel {
     private boolean closed,stickers,typing;private int offset;private long lastSearch;private String historyCategory;
     private int background,foreground,surface,accent;
     private androidx.core.view.WindowInsetsCompat browseInsets;
-    private static final int CONTROL_HEIGHT=40, CONTROL_RADIUS=12;
+    private static final int CONTROL_HEIGHT=40, CONTROL_RADIUS=OneUiMenuStyle.CONTROL_RADIUS;
     public GifPanel(LatinIME ime){this(ime,ime);}
     GifPanel(Context context,LatinIME ime){
         super(context);this.ime=ime;connection=ime.getCurrentInputConnection();editor=ime.getCurrentInputEditorInfo();history=new GifHistory(context);
@@ -56,12 +56,12 @@ public final class GifPanel extends LinearLayout implements InternalInputPanel {
         background=palette.background;foreground=palette.foreground;
         // Panel-only contrast surfaces derive from the keyboard palette; native keys are untouched.
         surface=palette.surface;
-        accent=androidx.core.graphics.ColorUtils.blendARGB(background,foreground,.14f);
+        accent=androidx.core.graphics.ColorUtils.blendARGB(surface,palette.accent,.12f);
         setBackgroundColor(background);
         browse=new LinearLayout(context);browse.setOrientation(VERTICAL);addView(browse,new LayoutParams(-1,-1));
         LinearLayout header=row();header.setPadding(dp(4),0,dp(4),0);
         fixedButton(header,"ABC","Volver al teclado",v->ime.closeInternalInputPanel(),44);
-        queryView=label("⌕  Buscar GIF y stickers");queryView.setTag("gif-query");queryView.setTextSize(16);queryView.setSingleLine(true);
+        queryView=label("⌕  Buscar GIF y stickers");queryView.setTag("gif-query");queryView.setTextSize(OneUiMenuStyle.BODY_TEXT_SP);queryView.setSingleLine(true);
         queryView.setEllipsize(android.text.TextUtils.TruncateAt.END);queryView.setPadding(dp(14),0,dp(10),0);
         queryView.setBackground(shape(surface,CONTROL_RADIUS));queryView.setContentDescription("Buscar GIF y stickers");queryView.setOnClickListener(v->setTyping(true));
         LayoutParams queryParams=new LayoutParams(0,controlHeight(),1);queryParams.setMargins(dp(4),0,dp(4),0);header.addView(queryView,queryParams);
@@ -80,7 +80,7 @@ public final class GifPanel extends LinearLayout implements InternalInputPanel {
         next=new Button(context);style(next);next.setText("Más resultados");next.setOnClickListener(v->{if(historyCategory!=null)showHistory(historyCategory,offset+12);else search(offset+12);});next.setVisibility(GONE);
         LayoutParams moreParams=new LayoutParams(-1,controlHeight());moreParams.setMargins(dp(2),dp(2),dp(2),dp(2));grid.addView(next,moreParams);
         LinearLayout footer=row();footer.setPadding(dp(12),0,dp(12),0);footer.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        status=label("");status.setTextSize(10);status.setMaxLines(3);footer.addView(status,new LayoutParams(0,-2,1));
+        status=label("");status.setTextSize(OneUiMenuStyle.DETAIL_TEXT_SP);status.setMaxLines(3);footer.addView(status,new LayoutParams(0,-2,1));
         ImageView mark=new ImageView(context);mark.setContentDescription("Powered By GIPHY");mark.setScaleType(ImageView.ScaleType.FIT_CENTER);
         try(java.io.InputStream logo=context.getAssets().open("giphy/powered_by_"+(androidx.core.graphics.ColorUtils.calculateLuminance(background)<.45?"black":"white")+".png")){
             mark.setImageDrawable(android.graphics.drawable.Drawable.createFromStream(logo,"GIPHY attribution"));
@@ -88,7 +88,7 @@ public final class GifPanel extends LinearLayout implements InternalInputPanel {
         footer.addView(mark,new LayoutParams(dp(82),dp(14)));browse.addView(footer,new LayoutParams(-1,-2));
         compact=row();compact.setTag("gif-native-search");compact.setBackgroundColor(background);compact.setGravity(android.view.Gravity.CENTER_VERTICAL);
         fixedButton(compact,"‹","Volver a resultados GIF",v->setTyping(false),40);
-        typingQuery=label("Buscar GIF…");typingQuery.setTextSize(16);typingQuery.setSingleLine(true);typingQuery.setEllipsize(android.text.TextUtils.TruncateAt.START);typingQuery.setPadding(dp(12),0,dp(4),0);
+        typingQuery=label("Buscar GIF…");typingQuery.setTextSize(OneUiMenuStyle.BODY_TEXT_SP);typingQuery.setSingleLine(true);typingQuery.setEllipsize(android.text.TextUtils.TruncateAt.START);typingQuery.setPadding(dp(12),0,dp(4),0);
         typingQuery.setBackground(shape(surface,CONTROL_RADIUS));compact.addView(typingQuery,new LayoutParams(0,controlHeight(),1));
         fixedButton(compact,"×","Borrar consulta",v->{query.setLength(0);updateQuery();invalidateResults();},CONTROL_HEIGHT);
         fixedButton(compact,"⌕","Buscar GIF",v->search(0),CONTROL_HEIGHT);compact.setVisibility(GONE);addView(compact,new LayoutParams(-1,-1));
@@ -131,12 +131,12 @@ public final class GifPanel extends LinearLayout implements InternalInputPanel {
             if(insets!=null)applyBrowseInsets(insets);
         }});
     }
-    private int controlHeight(){return Math.max(dp(CONTROL_HEIGHT),(int)Math.ceil(13*getResources().getDisplayMetrics().scaledDensity*1.35)+dp(8));}
+    private int controlHeight(){return Math.max(dp(CONTROL_HEIGHT),(int)Math.ceil(OneUiMenuStyle.COMPACT_TEXT_SP*getResources().getDisplayMetrics().scaledDensity*1.35)+dp(8));}
     private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
     private LinearLayout row(){LinearLayout row=new LinearLayout(getContext());row.setOrientation(HORIZONTAL);row.setGravity(android.view.Gravity.CENTER_VERTICAL);return row;}
     private android.graphics.drawable.GradientDrawable shape(int color,int radius){android.graphics.drawable.GradientDrawable shape=new android.graphics.drawable.GradientDrawable();shape.setColor(color);shape.setCornerRadius(dp(radius));return shape;}
     private TextView label(String text){TextView view=new TextView(getContext());view.setTextColor(foreground);view.setText(text);view.setGravity(android.view.Gravity.CENTER_VERTICAL);return view;}
-    private void style(Button button){button.setTextColor(foreground);button.setTextSize(13);button.setAllCaps(false);button.setMinWidth(0);button.setMinimumWidth(0);button.setMinHeight(0);button.setMinimumHeight(0);button.setPadding(dp(8),0,dp(8),0);button.setGravity(android.view.Gravity.CENTER);button.setStateListAnimator(null);
+    private void style(Button button){button.setTextColor(foreground);button.setTextSize(OneUiMenuStyle.COMPACT_TEXT_SP);button.setTypeface(android.graphics.Typeface.create("sans-serif-medium",android.graphics.Typeface.NORMAL));button.setAllCaps(false);button.setMinWidth(0);button.setMinimumWidth(0);button.setMinHeight(0);button.setMinimumHeight(0);button.setPadding(dp(8),0,dp(8),0);button.setGravity(android.view.Gravity.CENTER);button.setStateListAnimator(null);
         button.setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(accent),shape(surface,CONTROL_RADIUS),null));}
     private Button button(LinearLayout parent,String text,OnClickListener click){Button button=new Button(getContext());style(button);button.setText(text);button.setContentDescription(text);button.setOnClickListener(click);parent.addView(button,new LayoutParams(0,controlHeight(),1));return button;}
     private Button fixedButton(LinearLayout parent,String text,String description,OnClickListener click,int width){Button button=button(parent,text,click);button.setContentDescription(description);button.setLayoutParams(new LayoutParams(Math.max(dp(width),(int)Math.ceil(button.getPaint().measureText(text))+dp(16)),controlHeight()));return button;}
@@ -159,8 +159,8 @@ public final class GifPanel extends LinearLayout implements InternalInputPanel {
     private void emptyState(String title,String detail,String action,OnClickListener click){
         clearResults();grid.setGravity(android.view.Gravity.CENTER_VERTICAL);LinearLayout state=new LinearLayout(getContext());state.setTag("gif-empty-state");state.setOrientation(VERTICAL);state.setGravity(android.view.Gravity.CENTER);state.setPadding(dp(20),dp(12),dp(20),dp(12));
         TextView illustration=label("GIF");illustration.setTextSize(24);illustration.setTypeface(null,android.graphics.Typeface.BOLD);illustration.setGravity(android.view.Gravity.CENTER);illustration.setBackground(shape(accent,18));state.addView(illustration,new LayoutParams(dp(72),dp(48)));
-        TextView headline=label(title);headline.setTextSize(16);headline.setTypeface(null,android.graphics.Typeface.BOLD);headline.setGravity(android.view.Gravity.CENTER);headline.setPadding(0,dp(10),0,dp(4));state.addView(headline,new LayoutParams(-1,-2));
-        TextView explanation=label(detail);explanation.setTextSize(12);explanation.setGravity(android.view.Gravity.CENTER);state.addView(explanation,new LayoutParams(-1,-2));
+        TextView headline=label(title);headline.setTextSize(OneUiMenuStyle.BODY_TEXT_SP);headline.setTypeface(null,android.graphics.Typeface.BOLD);headline.setGravity(android.view.Gravity.CENTER);headline.setPadding(0,dp(10),0,dp(4));state.addView(headline,new LayoutParams(-1,-2));
+        TextView explanation=label(detail);explanation.setTextSize(OneUiMenuStyle.DETAIL_TEXT_SP);explanation.setGravity(android.view.Gravity.CENTER);state.addView(explanation,new LayoutParams(-1,-2));
         if(action!=null){Button cta=new Button(getContext());style(cta);cta.setText(action);cta.setBackground(shape(accent,CONTROL_RADIUS));cta.setOnClickListener(click);LayoutParams params=new LayoutParams(-2,controlHeight());params.topMargin=dp(10);state.addView(cta,params);}
         grid.addView(state,new LayoutParams(-1,-2));
     }
@@ -200,7 +200,7 @@ public final class GifPanel extends LinearLayout implements InternalInputPanel {
         LinearLayout columns=row();LinearLayout[] column={new LinearLayout(getContext()),new LinearLayout(getContext())};
         for(LinearLayout list:column){list.setOrientation(VERTICAL);columns.addView(list,new LayoutParams(0,-2,1));}grid.addView(columns,new LayoutParams(-1,-2));
         for(int index=0;index<items.size();index++){
-            GifItem item=items.get(index);LinearLayout cell=new LinearLayout(getContext());cell.setOrientation(VERTICAL);cell.setBackground(shape(surface,12));cell.setClipToOutline(true);
+            GifItem item=items.get(index);LinearLayout cell=new LinearLayout(getContext());cell.setOrientation(VERTICAL);cell.setBackground(shape(surface,OneUiMenuStyle.MEDIA_RADIUS));cell.setClipToOutline(true);
             GifPreviewView preview=new GifPreviewView(getContext());previews.add(preview);preview.setContentDescription(item.title+" · enviar GIF");preview.setOnClickListener(v->send(item));
             preview.dimensions(item.width,item.height,dp(240));
             cell.addView(preview,new LayoutParams(-1,-2));

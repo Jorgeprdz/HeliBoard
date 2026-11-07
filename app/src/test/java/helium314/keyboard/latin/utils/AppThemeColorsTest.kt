@@ -12,6 +12,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.ConscryptMode(org.robolectric.annotation.ConscryptMode.Mode.OFF)
 class AppThemeColorsTest {
     @Test
     @Config(sdk = [30])
@@ -28,13 +29,20 @@ class AppThemeColorsTest {
 
     @Test
     @Config(sdk = [31])
-    fun api31AndAboveUseSystemDynamicColors() {
+    fun api31MenusKeepTacticAccentAndReadableNeutralOneUiSurfaces() {
         val context = ApplicationProvider.getApplicationContext<Context>()
 
         val light = resolveAppColorScheme(context, dark = false)
         val dark = resolveAppColorScheme(context, dark = true)
 
-        assertEquals(context.getColor(android.R.color.system_accent1_600), light.primary.toArgb())
-        assertEquals(context.getColor(android.R.color.system_accent1_200), dark.primary.toArgb())
+        for (scheme in listOf(light, dark)) {
+            assertEquals(context.getColor(R.color.accent), scheme.primary.toArgb())
+            assertEquals(scheme.primary, scheme.secondary)
+            assertEquals(scheme.surface, scheme.surfaceContainerHigh)
+            org.junit.Assert.assertTrue(androidx.core.graphics.ColorUtils.calculateContrast(
+                scheme.onSurface.toArgb(), scheme.surface.toArgb()) >= 4.5)
+        }
+        assertEquals(0xfff2f2f2.toInt(), light.background.toArgb())
+        assertEquals(0xff010101.toInt(), dark.background.toArgb())
     }
 }

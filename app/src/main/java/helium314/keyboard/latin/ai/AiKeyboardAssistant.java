@@ -663,7 +663,9 @@ public final class AiKeyboardAssistant {
     private boolean privateField() {
         EditorInfo editor = ime.getCurrentInputEditorInfo();
         android.app.KeyguardManager lock=(android.app.KeyguardManager)ime.getSystemService(android.content.Context.KEYGUARD_SERVICE);
-        return (lock!=null&&lock.isKeyguardLocked()) || editor == null || SensitiveInputPolicy.protectedEditor(editor.inputType, editor.imeOptions,
+        return (lock!=null&&lock.isKeyguardLocked()) || editor == null
+            || ime.getPackageName().equals(editor.packageName)
+            || SensitiveInputPolicy.protectedEditor(editor.inputType, editor.imeOptions,
             helium314.keyboard.latin.settings.Settings.getValues().mIncognitoModeEnabled,
             AiSettingsActivity.excludedApp(ime, editor.packageName));
     }

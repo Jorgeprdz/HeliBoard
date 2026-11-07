@@ -25,6 +25,8 @@ import helium314.keyboard.latin.R;
  * Reference: github.com/tribalfs/oneui-design (SESL8), independently rendered for API21/Compose.
  */
 public final class OneUiMenuStyle {
+    public static final int CONTROL_RADIUS=20, MEDIA_RADIUS=16;
+    public static final int BODY_TEXT_SP=17, DETAIL_TEXT_SP=13, COMPACT_TEXT_SP=14;
     private OneUiMenuStyle() {}
     public static final class Palette {
         public final int background,surface,foreground,secondary,divider,accent;
