@@ -22,8 +22,10 @@ class InputLogicHandler implements Handler.Callback {
     final LatinIME.UIHandler mLatinIMEHandler;
     final InputLogic mInputLogic;
     private final Object mLock = new Object();
-    private boolean mInBatchInput; // synchronized using {@link #mLock}.
+    private volatile boolean mInBatchInput; // synchronized using {@link #mLock}.
 
+    private long mGestureGeneration;
+    private Runnable mPendingJavaGesture;
     private static final int MSG_GET_SUGGESTED_WORDS = 1;
 
     public InputLogicHandler(final LatinIME.UIHandler latinIMEHandler, final InputLogic inputLogic) {
@@ -36,6 +38,7 @@ class InputLogicHandler implements Handler.Callback {
     }
 
     public void reset() {
+        synchronized(mLock){mInBatchInput=false;++mGestureGeneration;mPendingJavaGesture=null;}
         mNonUIThreadHandler.removeCallbacksAndMessages(null);
     }
 
@@ -55,6 +58,7 @@ class InputLogicHandler implements Handler.Callback {
     public void onStartBatchInput() {
         synchronized (mLock) {
             mInBatchInput = true;
+            ++mGestureGeneration;
         }
     }
 
@@ -76,6 +80,9 @@ class InputLogicHandler implements Handler.Callback {
     // the UI thread.
     private void updateBatchInput(final InputPointers batchPointers,
             final int sequenceNumber, final boolean isTailBatchInput) {
+        if(!helium314.keyboard.latin.utils.JniUtils.sHaveGestureLib){
+            updateJavaBatchInput(batchPointers,sequenceNumber,isTailBatchInput);return;
+        }
         synchronized (mLock) {
             if (!mInBatchInput) {
                 // Batch input has ended or canceled while the message was being delivered.
@@ -86,6 +93,65 @@ class InputLogicHandler implements Handler.Callback {
                 isTailBatchInput ? SuggestedWords.INPUT_STYLE_TAIL_BATCH : SuggestedWords.INPUT_STYLE_UPDATE_BATCH, sequenceNumber,
                 suggestedWords -> showGestureSuggestionsWithPreviewVisuals(suggestedWords, isTailBatchInput))
             );
+        }
+    }
+
+    /** Copy traces at the producer boundary and replace queued updates; tail results are never starved. */
+    private void updateJavaBatchInput(final InputPointers pointers,final int sequence,final boolean tail){
+        final helium314.keyboard.keyboard.Keyboard keyboard=helium314.keyboard.keyboard.KeyboardSwitcher.getInstance().getKeyboard();
+        final helium314.keyboard.latin.DictionaryFacilitator facilitator=mInputLogic.mDictionaryFacilitator;
+        final Object dictionary=facilitator.getGestureDictionaryIdentity();
+        final int size=pointers.getPointerSize();
+        if(size>8192){onCancelBatchInput();return;}
+        mInputLogic.mWordComposer.setBatchInputPointers(pointers);
+        final int selectionStart=mInputLogic.mConnection.getExpectedSelectionStart();
+        final int selectionEnd=mInputLogic.mConnection.getExpectedSelectionEnd();
+        final String composing=mInputLogic.mWordComposer.getTypedWord();
+        final int[] x=java.util.Arrays.copyOf(pointers.getXCoordinates(),size);
+        final int[] y=java.util.Arrays.copyOf(pointers.getYCoordinates(),size);
+        final boolean allCaps=mInputLogic.mWordComposer.isAllUpperCase();
+        final boolean firstCapital=mInputLogic.mWordComposer.isOrWillBeOnlyFirstCharCapitalized();
+        synchronized(mLock){
+            if(!mInBatchInput)return;
+            final long generation=mGestureGeneration;
+            if(mPendingJavaGesture!=null)mNonUIThreadHandler.removeCallbacks(mPendingJavaGesture);
+            mPendingJavaGesture=()->{
+                synchronized(mLock){if(!mInBatchInput||generation!=mGestureGeneration)return;}
+                SuggestedWords result;
+                try{result=helium314.keyboard.latin.ai.local.LocalGestureEngine.suggest(
+                        facilitator,keyboard,x,y,size,sequence,tail,allCaps,firstCapital);}
+                catch(RuntimeException|LinkageError unavailable){result=new SuggestedWords(new java.util.ArrayList<>(),null,null,false,false,false,
+                        tail?SuggestedWords.INPUT_STYLE_TAIL_BATCH:SuggestedWords.INPUT_STYLE_UPDATE_BATCH,sequence);}
+                final SuggestedWords ready=result;
+                mLatinIMEHandler.post(()->{
+                    synchronized(mLock){
+                        if(!mInBatchInput||generation!=mGestureGeneration)return;
+                        if(mInputLogic.mDictionaryFacilitator!=facilitator||facilitator.getGestureDictionaryIdentity()!=dictionary
+                                ||mInputLogic.mConnection.getExpectedSelectionStart()!=selectionStart
+                                ||mInputLogic.mConnection.getExpectedSelectionEnd()!=selectionEnd
+                                ||!composing.equals(mInputLogic.mWordComposer.getTypedWord())
+                                ||helium314.keyboard.keyboard.KeyboardSwitcher.getInstance().getKeyboard()!=keyboard){
+                            mInBatchInput=false;++mGestureGeneration;return;
+                        }
+                        // Abstention must not recycle an unrelated previous typing suggestion.
+                        mLatinIMEHandler.showGesturePreviewAndSetSuggestions(ready,tail);
+                        if(tail){
+                            mInBatchInput=false;mPendingJavaGesture=null;
+                            mLatinIMEHandler.showTailBatchInputResult(ready,()->{
+                                synchronized(mLock){
+                                    return generation==mGestureGeneration&&mInputLogic.mDictionaryFacilitator==facilitator
+                                            &&facilitator.getGestureDictionaryIdentity()==dictionary
+                                            &&mInputLogic.mConnection.getExpectedSelectionStart()==selectionStart
+                                            &&mInputLogic.mConnection.getExpectedSelectionEnd()==selectionEnd
+                                            &&composing.equals(mInputLogic.mWordComposer.getTypedWord())
+                                            &&helium314.keyboard.keyboard.KeyboardSwitcher.getInstance().getKeyboard()==keyboard;
+                                }
+                            });
+                        }
+                    }
+                });
+            };
+            mNonUIThreadHandler.post(mPendingJavaGesture);
         }
     }
 
@@ -137,6 +203,9 @@ class InputLogicHandler implements Handler.Callback {
     public void onCancelBatchInput() {
         synchronized (mLock) {
             mInBatchInput = false;
+            ++mGestureGeneration;
+            if(mPendingJavaGesture!=null)mNonUIThreadHandler.removeCallbacks(mPendingJavaGesture);
+            mPendingJavaGesture=null;
         }
     }
 

@@ -10,6 +10,11 @@ public final class DictationSession {
   editor=snapshot;text="";state=State.RECORDING;return ++generation;
  }
  public synchronized boolean stop(long ticket){if(ticket!=generation||state!=State.RECORDING)return false;state=State.TRANSCRIBING;return true;}
+ /** Preview only: never writes provisional text to the editor or advances final state. */
+ public synchronized boolean partial(long ticket,EditorSnapshot current,String transcript){
+  if(ticket!=generation||(state!=State.RECORDING&&state!=State.TRANSCRIBING)||editor==null||!editor.matches(current)||transcript==null||transcript.length()>16384)return false;
+  text=transcript;return true;
+ }
  public synchronized boolean result(long ticket,EditorSnapshot current,String transcript){
   if(ticket!=generation||state!=State.TRANSCRIBING||editor==null||!editor.matches(current)||transcript==null||transcript.trim().isEmpty()||transcript.length()>16384)return false;
   text=transcript;state=State.REVIEW;return true;

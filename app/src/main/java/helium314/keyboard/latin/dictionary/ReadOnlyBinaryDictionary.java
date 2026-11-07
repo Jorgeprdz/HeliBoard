@@ -39,6 +39,40 @@ public final class ReadOnlyBinaryDictionary extends Dictionary {
                 locale, dictType, false /* isUpdatable */);
     }
 
+    /** Enumerate only public dictionary entries, under the same close/read lock as suggestions.
+     * Worker-only; maximum 15k retained words, 250k visited entries and ten seconds per source. */
+    @Override
+    public java.util.List<helium314.keyboard.latin.ai.local.LocalGestureDecoder.Word> getGestureWords(int requestedLimit) {
+        final int limit=Math.min(15000,Math.max(0,requestedLimit));
+        if(limit==0||TYPE_EMOJI.equals(mDictType))return java.util.Collections.emptyList();
+        java.util.PriorityQueue<helium314.keyboard.latin.ai.local.LocalGestureDecoder.Word> best=
+                new java.util.PriorityQueue<>(java.util.Comparator.comparingInt(word->word.frequency));
+        int token=0,visited=0;
+        long deadline=android.os.SystemClock.elapsedRealtime()+10000;
+        do {
+            if(Thread.currentThread().isInterrupted()||android.os.SystemClock.elapsedRealtime()>deadline||mLock.hasQueuedThreads())break;
+            // Never retain a read lock across enumeration: close/language switches must stay fast.
+            if(!mLock.readLock().tryLock())break;
+            BinaryDictionary.GetNextWordPropertyResult next;
+            try {
+                if(!mBinaryDictionary.isValidDictionary())break;
+                next=mBinaryDictionary.getNextWordProperty(token);
+            } finally {mLock.readLock().unlock();}
+            WordProperty property=next.mWordProperty;
+            if(property==null)break;
+            String text=property.mWord;
+            if(!property.mIsNotAWord&&!property.mIsPossiblyOffensive&&property.getProbability()>2
+                    &&text!=null&&text.matches("[\\p{L}\\p{M}]{2,32}")) {
+                helium314.keyboard.latin.ai.local.LocalGestureDecoder.Word candidate=
+                        new helium314.keyboard.latin.ai.local.LocalGestureDecoder.Word(text,property.getProbability());
+                if(best.size()<limit)best.add(candidate);
+                else if(candidate.frequency>best.peek().frequency){best.poll();best.add(candidate);}
+            }
+            token=next.mNextToken;
+        }while(token!=0&&++visited<250000);
+        return new java.util.ArrayList<>(best);
+    }
+
     public boolean isValidDictionary() {
         return mBinaryDictionary.isValidDictionary();
     }

@@ -71,6 +71,8 @@ public final class KeyboardSwitcher {
     private View mMainKeyboardFrame;
     private MainKeyboardView mKeyboardView;
     private EmojiPalettesView mEmojiPalettesView;
+    private View mInternalInputPanel;
+    private int mMainFrameVisibilityBeforePanel = View.VISIBLE;
     private View mEmojiTabStripView;
     private LinearLayout mClipboardStripView;
     private HorizontalScrollView mClipboardStripScrollView;
@@ -213,6 +215,7 @@ public final class KeyboardSwitcher {
     }
 
     public void onHideWindow() {
+        closeInternalInputPanel();
         if (mKeyboardView != null) {
             mKeyboardView.onHideWindow();
         }
@@ -245,6 +248,33 @@ public final class KeyboardSwitcher {
             @Nullable final RecapitalizeMode currentRecapitalizeState) {
         mState.onFinishSlidingInput(currentAutoCapsState, currentRecapitalizeState);
     }
+
+    /** Mount a temporary panel without changing any letter layout/theme resources. */
+    public void showInternalInputPanel(final View panel) {
+        closeInternalInputPanel();
+        mInternalInputPanel = panel;
+        mMainFrameVisibilityBeforePanel = mMainKeyboardFrame.getVisibility();
+        mKeyboardView.cancelAllOngoingEvents();
+        mSuggestionStripView.dismissMoreSuggestionsPanel();
+        int height = Math.max(mMainKeyboardFrame.getHeight(), (int)(360 * panel.getResources().getDisplayMetrics().density));
+        android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT, height, android.view.Gravity.BOTTOM);
+        mCurrentInputView.addView(panel, params);
+        mMainKeyboardFrame.setVisibility(View.INVISIBLE);
+    }
+
+    public void closeInternalInputPanel() {
+        if (mInternalInputPanel == null) return;
+        View panel = mInternalInputPanel;
+        mInternalInputPanel = null;
+        if (panel instanceof helium314.keyboard.keyboard.gifs.InternalInputPanel)
+            ((helium314.keyboard.keyboard.gifs.InternalInputPanel) panel).close();
+        if (panel.getParent() instanceof android.view.ViewGroup)
+            ((android.view.ViewGroup) panel.getParent()).removeView(panel);
+        if (mMainKeyboardFrame != null) mMainKeyboardFrame.setVisibility(mMainFrameVisibilityBeforePanel);
+    }
+
+    public View getInternalInputPanel() { return mInternalInputPanel; }
 
     public void setEmojiKeyboard() {
         mState.setLayout(LayoutDirective.Utility.EMOJI);
@@ -308,6 +338,7 @@ public final class KeyboardSwitcher {
     }
 
     public KeyboardSwitchState getKeyboardSwitchState() {
+        if (mInternalInputPanel != null) return KeyboardSwitchState.OTHER;
         boolean hidden = !isShowingEmojiPalettes() && !isShowingClipboardHistory()
                 && (mKeyboardLayoutSet == null
                 || mKeyboardView == null
@@ -504,6 +535,7 @@ public final class KeyboardSwitcher {
     }
 
     public boolean isShowingPopupKeysPanel() {
+        if (mInternalInputPanel != null) return false;
         if (isShowingEmojiPalettes() || isShowingClipboardHistory()) {
             return false;
         }
@@ -519,6 +551,7 @@ public final class KeyboardSwitcher {
     }
 
     public View getVisibleKeyboardView() {
+        if (mInternalInputPanel != null) return mInternalInputPanel;
         if (isShowingEmojiPalettes()) {
             return mEmojiPalettesView;
         } else if (isShowingClipboardHistory()) {
@@ -528,6 +561,7 @@ public final class KeyboardSwitcher {
     }
 
     public View getWrapperView() {
+        if (mInternalInputPanel != null) return mInternalInputPanel;
         return mKeyboardViewWrapper;
     }
 
@@ -573,6 +607,7 @@ public final class KeyboardSwitcher {
         if (mKeyboardView != null) {
             mKeyboardView.closing();
         }
+        closeInternalInputPanel();
         PointerTracker.clearOldViewData();
         SharedPreferences prefs = KtxKt.prefs(displayContext);
         if (mSuggestionStripView != null)

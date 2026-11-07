@@ -70,6 +70,28 @@ public final class DictionaryCollection extends Dictionary {
     }
 
     @Override
+    public java.util.List<helium314.keyboard.latin.ai.local.LocalGestureDecoder.Word> getGestureWords(int requestedLimit) {
+        int limit=Math.min(15000,Math.max(0,requestedLimit));
+        if(limit==0)return java.util.Collections.emptyList();
+        java.util.Map<String,helium314.keyboard.latin.ai.local.LocalGestureDecoder.Word> distinct=new java.util.HashMap<>();
+        for(Dictionary dictionary:mDictionaries) {
+            if(TYPE_EMOJI.equals(dictionary.mDictType))continue;
+            for(helium314.keyboard.latin.ai.local.LocalGestureDecoder.Word word:dictionary.getGestureWords(limit)) {
+                String key=word.text.toLowerCase(java.util.Locale.ROOT);
+                helium314.keyboard.latin.ai.local.LocalGestureDecoder.Word old=distinct.get(key);
+                if(old==null||old.frequency<word.frequency)distinct.put(key,word);
+            }
+            // Keep the snapshot bounded even when multiple language add-ons exist.
+            if(distinct.size()>limit){
+                java.util.List<helium314.keyboard.latin.ai.local.LocalGestureDecoder.Word> sorted=new java.util.ArrayList<>(distinct.values());
+                sorted.sort(java.util.Comparator.comparingInt((helium314.keyboard.latin.ai.local.LocalGestureDecoder.Word word)->word.frequency).reversed());
+                distinct.clear();for(int i=0;i<limit;i++){helium314.keyboard.latin.ai.local.LocalGestureDecoder.Word word=sorted.get(i);distinct.put(word.text.toLowerCase(java.util.Locale.ROOT),word);}
+            }
+        }
+        return new java.util.ArrayList<>(distinct.values());
+    }
+
+    @Override
     public int getFrequency(final String word) {
         int maxFreq = -1;
         for (int i = mDictionaries.size() - 1; i >= 0; --i) {

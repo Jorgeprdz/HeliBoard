@@ -138,6 +138,14 @@ public interface DictionaryFacilitator {
             final SettingsValuesForSuggestion settingsValuesForSuggestion, final int sessionId,
             final int inputStyle);
 
+    /** Immutable identity changes when active locale/main dictionary is replaced. */
+    default Object getGestureDictionaryIdentity() { return this; }
+
+    /** Worker-only, public main dictionary words; never contacts, apps or user history. */
+    default java.util.List<helium314.keyboard.latin.ai.local.LocalGestureDecoder.Word> getGestureWords(int limit) {
+        return java.util.Collections.emptyList();
+    }
+
     boolean isValidSpellingWord(final String word);
 
     boolean isValidSuggestionWord(final String word);

@@ -143,6 +143,7 @@ public class LatinIME extends InputMethodService implements
 
     // TODO: Move these {@link View}s to {@link KeyboardSwitcher}.
     private View mInputView;
+    private boolean mConsumeInternalPanelBack;
     private InsetsOutlineProvider mInsetsUpdater;
     private SuggestionStripView mSuggestionStripView;
     private AiKeyboardAssistant mAiKeyboardAssistant;
@@ -298,7 +299,16 @@ public class LatinIME extends InputMethodService implements
                     latinIme.resetDictionaryFacilitatorIfNecessary();
                     break;
                 case MSG_UPDATE_TAIL_BATCH_INPUT_COMPLETED:
-                    final SuggestedWords suggestedWords = (SuggestedWords) msg.obj;
+                    final SuggestedWords suggestedWords;
+                    if (msg.obj instanceof GuardedTailBatchResult) {
+                        final GuardedTailBatchResult result = (GuardedTailBatchResult) msg.obj;
+                        // Last asynchronous boundary: cancel/editor replacement must win even
+                        // after the worker's validated UI runnable enqueued this message.
+                        if (!result.current.getAsBoolean()) break;
+                        suggestedWords = result.words;
+                    } else {
+                        suggestedWords = (SuggestedWords) msg.obj;
+                    }
                     latinIme.mInputLogic.onUpdateTailBatchInputCompleted(
                             latinIme.mSettings.getCurrent(),
                             suggestedWords, latinIme.mKeyboardSwitcher);
@@ -435,6 +445,21 @@ public class LatinIME extends InputMethodService implements
 
         public void showTailBatchInputResult(final SuggestedWords suggestedWords) {
             obtainMessage(MSG_UPDATE_TAIL_BATCH_INPUT_COMPLETED, suggestedWords).sendToTarget();
+        }
+
+        private static final class GuardedTailBatchResult {
+            final SuggestedWords words;
+            final java.util.function.BooleanSupplier current;
+            GuardedTailBatchResult(SuggestedWords words, java.util.function.BooleanSupplier current) {
+                this.words = words; this.current = java.util.Objects.requireNonNull(current);
+            }
+        }
+
+        /** Validate the gesture lease when the final message is consumed, immediately before commit. */
+        public void showTailBatchInputResult(final SuggestedWords suggestedWords,
+                final java.util.function.BooleanSupplier current) {
+            obtainMessage(MSG_UPDATE_TAIL_BATCH_INPUT_COMPLETED,
+                    new GuardedTailBatchResult(suggestedWords, current)).sendToTarget();
         }
 
         public void postSwitchLanguage(final InputMethodSubtype subtype) {
@@ -733,6 +758,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onDestroy() {
+        closeInternalInputPanel();
         if (sR252bActiveInstance == this) sR252bActiveInstance = null;
         sR252bHarnessObserver = null;
         if (mR252ColorLifecycle != null) mR252ColorLifecycle.close();
@@ -837,6 +863,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onStartInput(final EditorInfo editorInfo, final boolean restarting) {
+        closeInternalInputPanel();
         if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();
         mHandler.onStartInput(editorInfo, restarting);
     }
@@ -849,6 +876,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onFinishInputView(final boolean finishingInput) {
+        closeInternalInputPanel();
         if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();
         StatsUtils.onFinishInputView();
         mHandler.onFinishInputView(finishingInput);
@@ -859,6 +887,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onFinishInput() {
+        closeInternalInputPanel();
         if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();
         mHandler.onFinishInput();
         BackgroundGatheringCache.saveOrClear(this);
@@ -1150,6 +1179,8 @@ public class LatinIME extends InputMethodService implements
     public void onUpdateSelection(final int oldSelStart, final int oldSelEnd,
                                   final int newSelStart, final int newSelEnd,
                                   final int composingSpanStart, final int composingSpanEnd) {
+        if (isInternalInputPanelShowing() && (oldSelStart != newSelStart || oldSelEnd != newSelEnd))
+            closeInternalInputPanel();
         super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd,
                 composingSpanStart, composingSpanEnd);
         if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onSelectionChanged(newSelStart, newSelEnd, composingSpanStart, composingSpanEnd);
@@ -1547,6 +1578,13 @@ public class LatinIME extends InputMethodService implements
     // This method is public for testability of LatinIME, but also in the future it should
     // completely replace #onCodeInput.
     public void onEvent(@NonNull final Event event) {
+        View panel = mKeyboardSwitcher.getInternalInputPanel();
+        if (panel instanceof helium314.keyboard.keyboard.gifs.InternalInputPanel) {
+            helium314.keyboard.keyboard.gifs.InternalInputPanel input = (helium314.keyboard.keyboard.gifs.InternalInputPanel)panel;
+            if (event.getText() != null) input.onTextInput(event.getText().toString());
+            else input.onCodeInput(event.getCodePoint() > 0 ? event.getCodePoint() : event.getKeyCode());
+            return;
+        }
         if(KeyCode.VOICE_INPUT==event.getKeyCode()&&helium314.keyboard.latin.ai.AiSettingsActivity.dictationEnabled(this)) {
             if(mAiKeyboardAssistant==null)mAiKeyboardAssistant=new AiKeyboardAssistant(this);
             if(mSuggestionStripView!=null)mAiKeyboardAssistant.onAction("Dictado",mSuggestionStripView);
@@ -1567,6 +1605,11 @@ public class LatinIME extends InputMethodService implements
     }
 
     public void onTextInput(@Nullable String rawText) {
+        View panel = mKeyboardSwitcher.getInternalInputPanel();
+        if (panel instanceof helium314.keyboard.keyboard.gifs.InternalInputPanel) {
+            ((helium314.keyboard.keyboard.gifs.InternalInputPanel)panel).onTextInput(rawText);
+            return;
+        }
         if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onUserInput();
         if (rawText == null) return;
         // TODO: have the keyboard pass the correct key code when we need it.
@@ -1579,16 +1622,19 @@ public class LatinIME extends InputMethodService implements
     }
 
     public void onStartBatchInput() {
+        if (isInternalInputPanelShowing()) return;
         if(mAiKeyboardAssistant!=null)mAiKeyboardAssistant.onUserInput();
         mInputLogic.onStartBatchInput(mSettings.getCurrent(), mKeyboardSwitcher, mHandler);
         mGestureConsumer.onGestureStarted(mRichImm.getCurrentSubtypeLocale(), mKeyboardSwitcher.getKeyboard());
     }
 
     public void onUpdateBatchInput(final InputPointers batchPointers) {
+        if (isInternalInputPanelShowing()) return;
         mInputLogic.onUpdateBatchInput(batchPointers);
     }
 
     public void onEndBatchInput(final InputPointers batchPointers) {
+        if (isInternalInputPanelShowing()) return;
         mInputLogic.onEndBatchInput(batchPointers);
         mGestureConsumer.onGestureCompleted(batchPointers);
     }
@@ -1842,6 +1888,18 @@ public class LatinIME extends InputMethodService implements
     // Hooks for hardware keyboard
     @Override
     public boolean onKeyDown(final int keyCode, final KeyEvent keyEvent) {
+        View panel = mKeyboardSwitcher.getInternalInputPanel();
+        if (panel instanceof helium314.keyboard.keyboard.gifs.InternalInputPanel) {
+            if (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_ESCAPE) {
+                mConsumeInternalPanelBack = true;
+                closeInternalInputPanel();
+            } else {
+                int code = keyCode == KeyEvent.KEYCODE_DEL ? KeyCode.DELETE :
+                    keyCode == KeyEvent.KEYCODE_ENTER ? 10 : keyEvent.getUnicodeChar();
+                ((helium314.keyboard.keyboard.gifs.InternalInputPanel)panel).onCodeInput(code);
+            }
+            return true;
+        }
         if ((keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_ESCAPE) && mSuggestionStripView != null && mSuggestionStripView.isAiActive()) {
             if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();
             return true;
@@ -1853,6 +1911,11 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public boolean onKeyUp(final int keyCode, final KeyEvent keyEvent) {
+        if (mConsumeInternalPanelBack && (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_ESCAPE)) {
+            mConsumeInternalPanelBack = false;
+            return true;
+        }
+        if (isInternalInputPanelShowing()) return true;
         if (mKeyboardActionListener.onKeyUp(keyCode, keyEvent))
             return true;
         return super.onKeyUp(keyCode, keyEvent);
@@ -1899,6 +1962,25 @@ public class LatinIME extends InputMethodService implements
                 | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
                 | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
+    }
+
+    public void showGifPanel() {
+        showInternalInputPanel(new helium314.keyboard.keyboard.gifs.GifPanel(this));
+    }
+
+    public void showInternalInputPanel(final View panel) {
+        if (!(panel instanceof helium314.keyboard.keyboard.gifs.InternalInputPanel))
+            throw new IllegalArgumentException("Internal panel must own its input lifecycle");
+        if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();
+        mKeyboardSwitcher.showInternalInputPanel(panel);
+    }
+
+    public void closeInternalInputPanel() {
+        if (mKeyboardSwitcher != null) mKeyboardSwitcher.closeInternalInputPanel();
+    }
+
+    public boolean isInternalInputPanelShowing() {
+        return mKeyboardSwitcher != null && mKeyboardSwitcher.getInternalInputPanel() != null;
     }
 
     public void launchEmojiSearch() {

@@ -14,4 +14,24 @@ public class DictationSessionTest {
  @Test public void cancelledRecordingCannotDeliver(){Object s=session();long t=begin(s,true,false);call(s,"cancel",new Class[]{});assertFalse(result(s,t,1));}
  @Test public void editorChangeRejectsTranscript(){Object s=session();long t=begin(s,true,false);call(s,"stop",new Class[]{long.class},t);assertFalse(result(s,t,2));}
  @Test public void olderRecordingCannotPublishIntoNewRecording(){Object s=session();long old=begin(s,true,false);call(s,"cancel",new Class[]{});long fresh=begin(s,true,false);call(s,"stop",new Class[]{long.class},fresh);assertFalse(result(s,old,1));assertTrue(result(s,fresh,1));}
+ @Test public void partialsReplacePreviewAndFinalNeverAppendsProvisionalText(){
+  Object s=session();long t=begin(s,true,false);
+  Class<?>[] signature={long.class,EditorSnapshot.class,String.class};
+  assertTrue((boolean)call(s,"partial",signature,t,snapshot(1),"Hola"));
+  assertEquals("Hola",call(s,"text",new Class[]{}));
+  assertTrue((boolean)call(s,"partial",signature,t,snapshot(1),"Hola, Juan"));
+  assertEquals("Hola, Juan",call(s,"text",new Class[]{}));
+  assertEquals("RECORDING",call(s,"state",new Class[]{}).toString());
+  call(s,"stop",new Class[]{long.class},t);assertTrue(result(s,t,1));
+  assertEquals("Hola, Juan.",call(s,"text",new Class[]{}));
+  assertFalse((boolean)call(s,"partial",signature,t,snapshot(1),"late"));
+ }
+ @Test public void partialsRejectChangedEditorCancelledLeaseAndOversizedText(){
+  Object s=session();long t=begin(s,true,false);Class<?>[] signature={long.class,EditorSnapshot.class,String.class};
+  assertFalse((boolean)call(s,"partial",signature,t,snapshot(2),"Hola"));
+  assertFalse((boolean)call(s,"partial",signature,t,snapshot(1),"a".repeat(16385)));
+  call(s,"cancel",new Class[]{});
+  assertFalse((boolean)call(s,"partial",signature,t,snapshot(1),"Hola"));
+  assertEquals("",call(s,"text",new Class[]{}));
+ }
 }

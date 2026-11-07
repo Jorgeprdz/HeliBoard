@@ -4,7 +4,10 @@ import android.content.Context;import android.content.Intent;import android.os.B
 import android.speech.*;import java.util.*;
 /** Strict on-device recognition. Never falls back to a recognition service that may use cloud. */
 public final class LocalSpeechRecognizer implements AutoCloseable,RecognitionListener {
- public interface Callback {void transcript(String text);void failed(int code);}
+ public interface Callback {void transcript(String text);void failed(int code);
+  /** Replaces the keyboard-only provisional preview; never commit this to the editor. */
+  default void partial(String text){}
+ }
  private SpeechRecognizer recognizer;private final Callback callback;private final Handler main=new Handler(Looper.getMainLooper());
  private final Runnable deadline=()->failed(SpeechRecognizer.ERROR_SPEECH_TIMEOUT);
  public LocalSpeechRecognizer(Context context,Callback callback){this.callback=callback;
@@ -19,6 +22,7 @@ public final class LocalSpeechRecognizer implements AutoCloseable,RecognitionLis
   intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
   intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"auto".equals(language)?"es-MX":language);
   intent.putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE,true);
+  intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,true);
   if(sdk>=33&&!vocabulary.isEmpty())intent.putStringArrayListExtra(RecognizerIntent.EXTRA_BIASING_STRINGS,new ArrayList<>(vocabulary));
   if(sdk>=33)intent.putExtra(RecognizerIntent.EXTRA_ENABLE_FORMATTING,RecognizerIntent.FORMATTING_OPTIMIZE_QUALITY);
   if(sdk>=34&&"auto".equals(language)){
@@ -36,5 +40,11 @@ public final class LocalSpeechRecognizer implements AutoCloseable,RecognitionLis
  public void onReadyForSpeech(Bundle params){}public void onBeginningOfSpeech(){}public void onRmsChanged(float rms){}public void onBufferReceived(byte[] buffer){}public void onEndOfSpeech(){}
  public void onError(int error){if(recognizer!=null)failed(error);}
  public void onResults(Bundle results){if(recognizer==null)return;ArrayList<String> values=results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);close();if(values==null||values.isEmpty())callback.failed(SpeechRecognizer.ERROR_NO_MATCH);else callback.transcript(values.get(0));}
- public void onPartialResults(Bundle results){}public void onEvent(int type,Bundle params){}
+ public void onPartialResults(Bundle results){
+  if(recognizer==null||results==null)return;
+  ArrayList<String> values=results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+  if(values==null||values.isEmpty())return;
+  String text=values.get(0);if(text!=null&&text.length()<=16384)callback.partial(text);
+ }
+ public void onEvent(int type,Bundle params){}
 }

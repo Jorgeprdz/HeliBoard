@@ -103,10 +103,13 @@ android {
         compose = true
     }
 
-    externalNativeBuild {
-        ndkBuild {
-            path = File("src/main/jni/Android.mk")
-        }
+    // Local ARM build may reuse verified unchanged native libraries from the owner-signed
+    // installed APK. CI/default builds always compile the complete corresponding sources.
+    val verifiedNativeDirectory = providers.environmentVariable("HELIBOARD_VERIFIED_NATIVE_DIR").orNull
+    if (verifiedNativeDirectory == null) {
+        externalNativeBuild { ndkBuild { path = File("src/main/jni/Android.mk") } }
+    } else {
+        sourceSets.getByName("main").jniLibs.srcDir(verifiedNativeDirectory)
     }
     ndkVersion = "28.0.13004108"
 
@@ -146,6 +149,8 @@ dependencies {
 
     // Expressive Views scoped to temporary AI surfaces; alpha04 preserves API 21 support.
     implementation("com.google.android.material:material:1.14.0-alpha04")
+
+    implementation("com.google.mlkit:digital-ink-recognition:18.1.0")
 
     // androidx
     implementation("androidx.core:core-ktx:1.17.0") // 1.18.0 requires minSdk 23

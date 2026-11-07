@@ -38,6 +38,12 @@ public class AiSettingsActivity extends Activity {
     public enum KeyState { NO_KEY, AVAILABLE, LOCKED, INVALIDATED }
     public static boolean isEnabled(Context ctx) { return ctx.getSharedPreferences(PREF, MODE_PRIVATE).getBoolean("enabled", false); }
     public static boolean networkAllowed(Context ctx) { return isEnabled(ctx) && ctx.getSharedPreferences(PREF, MODE_PRIVATE).getBoolean("network_consent", false); }
+    /** Separate opt-in: manual tool permission never authorizes background text upload. */
+    public static boolean automaticNetworkAllowed(Context ctx) {
+        return typingEnabled(ctx) && ctx.getSharedPreferences(PREF, MODE_PRIVATE).getBoolean("automatic_gemini", false) && userUnlocked(ctx);
+    }
+    public static String automaticStatus(Context ctx) { return ctx.getSharedPreferences(PREF,MODE_PRIVATE).getString("automatic_status", "Sin revisar todavía"); }
+    public static void setAutomaticStatus(Context ctx,String state) { ctx.getSharedPreferences(PREF,MODE_PRIVATE).edit().putString("automatic_status",state).apply(); }
     /** Balanced local typing is independent of optional Gemini/network consent. */
     public static boolean typingEnabled(Context ctx){return ctx.getSharedPreferences(PREF,MODE_PRIVATE).getBoolean("intelligent_typing",true);}
     public static boolean styleEnabled(Context ctx){return typingEnabled(ctx)&&ctx.getSharedPreferences(PREF,MODE_PRIVATE).getBoolean("personal_style_consent",false);}
@@ -46,7 +52,7 @@ public class AiSettingsActivity extends Activity {
         return "casual".equals(value)||"professional".equals(value)?value:"auto";
     }
     public static boolean contextualEnabled(Context ctx) { return isEnabled(ctx) && ctx.getSharedPreferences(PREF, MODE_PRIVATE).getBoolean("local_context", false); }
-    public static boolean dictationEnabled(Context ctx) { return isEnabled(ctx) && ctx.getSharedPreferences(PREF, MODE_PRIVATE).getBoolean("dictation", false); }
+    public static boolean dictationEnabled(Context ctx) { return ctx.getSharedPreferences(PREF, MODE_PRIVATE).getBoolean("dictation", true); }
     public static boolean excludedApp(Context ctx, String name) {
         if (name == null) return true;
         for (String value : ctx.getSharedPreferences(PREF, MODE_PRIVATE).getString("excluded_apps", "").split("[,;\\s]+"))
@@ -129,7 +135,7 @@ public class AiSettingsActivity extends Activity {
     }
     private void addToggle(LinearLayout stack, String label, String pref) {
         CheckBox box = new CheckBox(this); box.setText(label);
-        box.setChecked(getSharedPreferences(PREF, MODE_PRIVATE).getBoolean(pref, false));
+        box.setChecked(getSharedPreferences(PREF, MODE_PRIVATE).getBoolean(pref, "dictation".equals(pref)));
         box.setOnCheckedChangeListener((button, enabled) -> getSharedPreferences(PREF, MODE_PRIVATE).edit().putBoolean(pref, enabled).apply());
         stack.addView(box);
     }
@@ -210,7 +216,17 @@ public class AiSettingsActivity extends Activity {
         title.setText("✨ HeliBoard AI · Gemini");
         title.setTextSize(22);
         stack.addView(title);
-        addToggle(stack, "AI Keyboard (desactivado por defecto)", "enabled");
+        CheckBox automatic = new CheckBox(this);
+        automatic.setText("Corrector inteligente automático con Gemini");
+        automatic.setChecked(getSharedPreferences(PREF,MODE_PRIVATE).getBoolean("automatic_gemini",false));
+        automatic.setOnCheckedChangeListener((v,on)->{
+            getSharedPreferences(PREF,MODE_PRIVATE).edit().putBoolean("automatic_gemini",on).putBoolean("enabled",true).apply();
+            if(!on)setAutomaticStatus(this,"Desactivado");
+        });stack.addView(automatic);
+        TextView automaticInfo=new TextView(this);
+        automaticInfo.setText("Configura la clave una vez y activa este corrector. Durante pausas enviará fragmentos del campo actual a Google para corregir ortografía y contexto automáticamente. No cambia tu tono ni completa mensajes. Retroceso deshace la corrección. Contraseñas, incógnito y apps excluidas quedan protegidos. Puede consumir cuota. Sin conexión se mantiene el corrector local.");stack.addView(automaticInfo);
+        TextView automaticState=new TextView(this);automaticState.setText("Corrector: "+automaticStatus(this));stack.addView(automaticState);
+        addToggle(stack, "Herramientas manuales de IA", "enabled");
         addToggle(stack, "Permitir Google solo al elegir una acción", "network_consent");
         addTypingSettings(stack);
         addLocalModelSettings(stack);
@@ -231,7 +247,7 @@ public class AiSettingsActivity extends Activity {
         modelLabel.setText("Modelo Gemini (configurable):");
         stack.addView(modelLabel);
         EditText model = new com.google.android.material.textfield.TextInputEditText(this);
-        model.setSingleLine(true);model.setHint("Consultar modelos disponibles y elegir uno");
+        model.setSingleLine(true);model.setHint("Automático al guardar; modelo avanzado opcional");
         model.setText(readModel(this));
         stack.addView(model);
         TextView status = new TextView(this);
@@ -252,7 +268,7 @@ public class AiSettingsActivity extends Activity {
             },35000);
         });stack.addView(refresh);
         Button save = new com.google.android.material.button.MaterialButton(this);
-        save.setText("Guardar configuración");
+        save.setText("Guardar y conectar una vez");
         save.setOnClickListener(v -> {
             String token = key.getText().toString().trim();
             if (!token.isEmpty() && !saveKey(this, token)) {
@@ -260,11 +276,30 @@ public class AiSettingsActivity extends Activity {
                 return;
             }
             String selectedModel = model.getText().toString().trim();
-            if (selectedModel.matches("[A-Za-z0-9._-]{3,60}")) {
-                getSharedPreferences(PREF, MODE_PRIVATE).edit().putString("model", selectedModel).apply();
-                status.setText("Guardado. Vuelve a tu teclado y selecciona texto.");
-                key.setText("");
-            } else status.setText("Modelo inválido.");
+            if (!selectedModel.isEmpty() && !selectedModel.matches("[A-Za-z0-9._-]{3,128}")) { status.setText("Modelo inválido.");return; }
+            key.setText("");
+            if (!selectedModel.isEmpty()) getSharedPreferences(PREF,MODE_PRIVATE).edit().putString("model",selectedModel).apply();
+            if (!automaticNetworkAllowed(this) && !networkAllowed(this)) { status.setText("Clave guardada. Activa el corrector automático para comprobar la conexión."); return; }
+            final String savedToken=readKey(this);
+            if(savedToken.isEmpty()){status.setText("Guarda una clave válida para conectar Gemini.");return;}
+            status.setText("Comprobando Gemini y eligiendo un modelo disponible…");
+            discovery.submit(cancel->{
+                String chosen=selectedModel;
+                helium314.keyboard.latin.ai.provider.GeminiProvider provider=new helium314.keyboard.latin.ai.provider.GeminiProvider();
+                helium314.keyboard.latin.ai.provider.GeminiProvider.Cancellation scope=new helium314.keyboard.latin.ai.provider.GeminiProvider.Cancellation(){public boolean cancelled(){return cancel.cancelled();}public void onCancel(Runnable action){cancel.onCancel(action);}};
+                if(chosen.isEmpty())chosen=GeminiModelChoice.choose(provider.listModels(savedToken,scope));
+                if(chosen.isEmpty())throw new IllegalStateException("No text model available");
+                // A fixed, non-personal phrase tests generation as well as model discovery.
+                helium314.keyboard.latin.ai.provider.GeminiProvider.Result checked=provider.generate(savedToken,chosen,helium314.keyboard.latin.ai.provider.GeminiOperation.SPELLING,"",null,"hola",scope);
+                if(!checked.complete)throw new IllegalStateException("Incomplete check");return chosen;
+            },(chosen,error)->{
+                if(isFinishing()||isDestroyed())return;
+                if(error!=null){String reason=error instanceof helium314.keyboard.latin.ai.provider.GeminiProvider.ProviderException?((helium314.keyboard.latin.ai.provider.GeminiProvider.ProviderException)error).error.name():"CONNECTION_CHECK";
+                    setAutomaticStatus(this,"Conexión pendiente: "+reason);status.setText("Clave guardada. No se pudo conectar: "+reason+". La escritura local sigue disponible.");return;}
+                getSharedPreferences(PREF,MODE_PRIVATE).edit().putString("model",chosen).apply();model.setText(chosen);
+                setAutomaticStatus(this,"Listo");automaticState.setText("Corrector: listo");
+                status.setText(automaticNetworkAllowed(this)?"Listo. Vuelve a escribir: Gemini corregirá durante las pausas, sin abrir menús.":"Gemini conectado. Puedes usar las herramientas habilitadas.");
+            },60000);
         });
         stack.addView(save);
         Button forget = new com.google.android.material.button.MaterialButton(this);

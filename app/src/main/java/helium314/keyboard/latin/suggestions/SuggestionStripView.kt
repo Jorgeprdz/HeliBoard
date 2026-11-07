@@ -15,6 +15,7 @@ import android.graphics.drawable.GradientDrawable
 import android.text.TextUtils
 import android.util.AttributeSet
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.LayoutInflater
@@ -173,6 +174,19 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             setupKey(button, colors)
             toolbar.addView(button)
         }
+        // Dedicated media entry; it does not depend on the AI enable switch or alter letter keys.
+        val gifButton = TextView(context, null, R.attr.suggestionWordStyle).apply {
+            text = "GIF"
+            contentDescription = "GIF y stickers"
+            gravity = Gravity.CENTER
+            textSize = 13f
+            setTextColor(colors.get(ColorType.TOOL_BAR_KEY))
+            colors.setBackground(this, ColorType.STRIP_BACKGROUND)
+            layoutParams = LinearLayout.LayoutParams(toolbarKeyLayoutParams.width,
+                LinearLayout.LayoutParams.MATCH_PARENT).apply { weight = 1f }
+            setOnClickListener { listener.onAiAction("GIF") }
+        }
+        toolbar.addView(gifButton)
         for (pinnedKey in getPinnedToolbarKeys(context.prefs())) {
             val button = createToolbarKey(context, pinnedKey)
             button.layoutParams = toolbarKeyLayoutParams

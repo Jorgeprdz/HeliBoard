@@ -295,6 +295,7 @@ public final class GeminiProvider {
     private static String instruction(GeminiOperation operation, String tone, String language) throws ProviderException {
         String action;
         switch (operation) {
+            case AUTOMATIC_CORRECTION: action = "Correct only clear spelling, accents, spacing and grammar/context errors in this short message. Make the fewest edits possible. Keep every correct word, the language mix, all whitespace at the beginning/end, and the user's style. Never complete the sentence, translate, explain, add information, or paraphrase. If ambiguous, return the input unchanged."; break;
             case SPELLING: action = "Correct spelling and punctuation only."; break;
             case GRAMMAR: action = "Correct grammar."; break;
             case REWRITE: action = "Rewrite naturally."; break;

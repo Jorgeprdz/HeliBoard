@@ -1,0 +1,5 @@
+Unmodified GIPHY official attribution marks.
+Source: https://media.giphy.com/giphy-attribution-marks.zip
+Referenced by https://developers.giphy.com/docs/api/ (Attribution).
+Downloaded 2026-11-07. These brand marks belong to GIPHY.
+Use only to attribute the GIPHY API, following GIPHY brand guidelines.

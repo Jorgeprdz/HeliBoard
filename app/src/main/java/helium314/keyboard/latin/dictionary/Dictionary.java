@@ -102,6 +102,11 @@ public abstract class Dictionary {
      * Get the frequency of the word.
      * @param word the word to get the frequency of.
      */
+    /** Worker-only public main-lexicon snapshot for the original Java gesture decoder. */
+    public java.util.List<helium314.keyboard.latin.ai.local.LocalGestureDecoder.Word> getGestureWords(int limit) {
+        return java.util.Collections.emptyList();
+    }
+
     public int getFrequency(final String word) {
         return NOT_A_PROBABILITY;
     }

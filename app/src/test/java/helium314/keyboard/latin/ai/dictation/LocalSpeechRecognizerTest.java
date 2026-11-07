@@ -13,6 +13,28 @@ import static org.junit.Assert.*;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk=36)
 public class LocalSpeechRecognizerTest {
+ @Test public void partialCallbackPublishesPreviewAndStopsAfterFinal(){
+  org.robolectric.shadows.ShadowSpeechRecognizer.setIsOnDeviceRecognitionAvailable(true);
+  java.util.List<String> partials=new java.util.ArrayList<>();
+  java.util.List<String> finals=new java.util.ArrayList<>();
+  LocalSpeechRecognizer recognizer=new LocalSpeechRecognizer(androidx.test.core.app.ApplicationProvider.getApplicationContext(),new LocalSpeechRecognizer.Callback(){
+   public void partial(String text){partials.add(text);}
+   public void transcript(String text){finals.add(text);}
+   public void failed(int code){fail("Unexpected speech error "+code);}
+  });
+  android.os.Bundle result=new android.os.Bundle();
+  result.putStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION,new java.util.ArrayList<>(Arrays.asList("Hola")));
+  recognizer.onPartialResults(result);assertEquals(Arrays.asList("Hola"),partials);
+  result.putStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION,new java.util.ArrayList<>(Arrays.asList("Hola, Juan.")));
+  recognizer.onResults(result);assertEquals(Arrays.asList("Hola, Juan."),finals);
+  recognizer.onPartialResults(result);assertEquals(Arrays.asList("Hola"),partials);
+ }
+
+ @Test public void requestsPartialResultsForLiveKeyboardPreview(){
+  Intent intent=LocalSpeechRecognizer.buildIntent("es-MX",java.util.Collections.emptyList(),36);
+  assertTrue(intent.getBooleanExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,false));
+ }
+
  @Test public void autoLanguageRequestsOfflineBilingualSwitchingAndVocabulary(){
   Intent intent=LocalSpeechRecognizer.buildIntent("auto",Arrays.asList("HeliBoard","Carlos"),36);
   assertTrue(intent.getBooleanExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE,false));

@@ -57,6 +57,14 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
                     android:resource="@xml/spellchecker" />
         </service>
 
+        <provider android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.gifcontent" android:exported="false"
+            android:grantUriPermissions="true" android:directBootAware="false">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/gif_provider_paths" />
+        </provider>
+        <activity android:name="helium314.keyboard.latin.gifs.GiphySettingsActivity"
+            android:exported="false" android:directBootAware="false" android:theme="@style/platformActivityTheme" />
+
         <!-- Activities -->
         <activity android:name="helium314.keyboard.latin.ai.cloud.TypingCloudActivity" android:exported="false" android:theme="@style/platformActivityTheme" />
         <activity android:name="helium314.keyboard.latin.ai.AiSharedTextActivity" android:exported="true" android:excludeFromRecents="true" android:label="@string/ai_keyboard_settings" android:theme="@style/platformActivityTheme" android:windowSoftInputMode="stateAlwaysHidden">

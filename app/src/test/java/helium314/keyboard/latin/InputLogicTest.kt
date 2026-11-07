@@ -109,6 +109,41 @@ class InputLogicTest {
         return field.get(latinIME) as helium314.keyboard.latin.ai.AiKeyboardAssistant
     }
 
+    @Test fun R26AutomaticSpellingEditNeedsNoSelectionAndBackspaceRestoresOriginal() {
+        r22Enable("quiero poryectos ")
+        val assistant = helium314.keyboard.latin.ai.AiKeyboardAssistant(latinIME)
+        LatinIME::class.java.getDeclaredField("mAiKeyboardAssistant").apply { isAccessible = true }.set(latinIME, assistant)
+        val capture = assistant.javaClass.getDeclaredMethod("capture").apply { isAccessible = true }
+        val snapshot = capture.invoke(assistant) as helium314.keyboard.latin.ai.EditorSnapshot
+        kotlin.test.assertFalse(snapshot.hasSelection())
+        val correction = helium314.keyboard.latin.ai.AutomaticCorrectionPolicy.choose(text,"quiero proyectos ",
+            helium314.keyboard.latin.ai.local.R241WritingTest.Vocabulary(), emptySet())
+        kotlin.test.assertNotNull(correction)
+        val apply = assistant.javaClass.getDeclaredMethod("applyBoundary", helium314.keyboard.latin.ai.EditorSnapshot::class.java,
+            String::class.java, helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction::class.java).apply { isAccessible = true }
+        kotlin.test.assertTrue(apply.invoke(assistant,snapshot,text,correction) as Boolean)
+        assertEquals("quiero proyectos ",text)
+        checkConnectionConsistency()
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("quiero poryectos ",text)
+        checkConnectionConsistency()
+    }
+
+    @Test fun R26PanelTokenSurvivesMountResetAndRejectsEditorMutation() {
+        r22Enable("Antes ")
+        val assistant = helium314.keyboard.latin.ai.AiKeyboardAssistant(latinIME)
+        val method = assistant.javaClass.getDeclaredMethod("panelHost").apply { isAccessible = true }
+        val host = method.invoke(assistant) as helium314.keyboard.latin.ai.panels.PanelHost
+        val token = host.editorToken()
+        kotlin.test.assertNotNull(token)
+        assistant.onNewEditor()
+        kotlin.test.assertSame(token,host.editorToken())
+        setText("Otro ")
+        kotlin.test.assertNull(host.editorToken())
+        kotlin.test.assertFalse(host.commitText("traducción"))
+        assertEquals("Otro ",text)
+    }
+
     @Test fun R23TemporaryThemeFollowsKeyboardBackgroundInsteadOfTransparentKeyColor() {
         r22Enable("")
         val field = settingsValues.javaClass.getField("mColors").apply { isAccessible = true }

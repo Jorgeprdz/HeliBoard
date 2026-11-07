@@ -161,6 +161,7 @@ class DictionaryFacilitatorImpl : DictionaryFacilitator {
         }
 
         listener?.onUpdateMainDictionaryAvailability(hasAtLeastOneInitializedMainDictionary())
+        helium314.keyboard.latin.ai.local.LocalGestureEngine.prepare(this)
 
         // Clean up old dictionaries.
         existingDictsToCleanup.forEach { (locale, dictTypes) ->
@@ -253,6 +254,7 @@ class DictionaryFacilitatorImpl : DictionaryFacilitator {
                     }
                 }
 
+                helium314.keyboard.latin.ai.local.LocalGestureEngine.prepare(this@DictionaryFacilitatorImpl)
                 listener?.onUpdateMainDictionaryAvailability(hasAtLeastOneInitializedMainDictionary())
                 latchForWaitingLoadingMainDictionary.countDown()
             } catch (e: Throwable) {
@@ -276,6 +278,15 @@ class DictionaryFacilitatorImpl : DictionaryFacilitator {
     }
 
     // The main dictionaries are loaded asynchronously. Don't cache the return value of these methods.
+    override fun getGestureDictionaryIdentity(): Any = synchronized(this) {
+        currentlyPreferredDictionaryGroup.getDict(Dictionary.TYPE_MAIN) ?: this
+    }
+
+    override fun getGestureWords(limit: Int): List<helium314.keyboard.latin.ai.local.LocalGestureDecoder.Word> {
+        val dictionary = synchronized(this) { currentlyPreferredDictionaryGroup.getDict(Dictionary.TYPE_MAIN) }
+        return dictionary?.getGestureWords(limit) ?: emptyList()
+    }
+
     override fun hasAtLeastOneInitializedMainDictionary(): Boolean =
         dictionaryGroups.any { it.getDict(Dictionary.TYPE_MAIN)?.isInitialized == true }
 

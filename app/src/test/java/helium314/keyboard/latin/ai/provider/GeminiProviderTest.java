@@ -179,9 +179,13 @@ public abstract class GeminiProviderTest {
             JSONObject body = new JSONObject(t.opened.get(0).request.toString("UTF-8"));
             String instruction = body.getJSONObject("systemInstruction").getJSONArray("parts").getJSONObject(0).getString("text");
             assertTrue(instruction.contains("consultative")); if (operation == GeminiOperation.TRANSLATE) assertTrue(instruction.contains("English"));
+            if (operation == GeminiOperation.AUTOMATIC_CORRECTION) {
+                assertTrue(instruction.contains("fewest edits"));
+                assertTrue(instruction.contains("Never complete"));
+            }
             instructions.add(instruction);
         }
-        assertEquals(9, instructions.size());
+        assertEquals(10, instructions.size());
         Transport t = new Transport(); expect(GeminiProvider.Error.INVALID_REQUEST, () -> new GeminiProvider(t, 2000).generate(KEY, "gemini-test", GeminiOperation.TRANSLATE, null, null, "Hola", new Token())); assertTrue(t.opened.isEmpty());
     }
     @Test public void allTonesAreRepresentedInRequest() throws Exception {
