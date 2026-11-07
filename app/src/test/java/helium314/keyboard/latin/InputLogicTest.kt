@@ -270,6 +270,10 @@ class InputLogicTest {
 
     @Test fun R24DictionaryReadinessRejectsMissingAndPartialDictionaries() {
         r22Enable("voy haber si puedo")
+        // This test asserts dictionary readiness, not whether this CI worker was preempted
+        // within the real 8ms work budget. Budget expiration has its own regression below.
+        val assistant = helium314.keyboard.latin.ai.AiKeyboardAssistant(latinIME) { 0L }
+        LatinIME::class.java.getDeclaredField("mAiKeyboardAssistant").apply { isAccessible = true }.set(latinIME,assistant)
         ShadowFacilitator2.initializedMain = false
         ShadowFacilitator2.uninitializedMain = false
         r22Key(' '.code)
@@ -286,6 +290,16 @@ class InputLogicTest {
         ShadowFacilitator2.uninitializedMain = false
         r22Key(' '.code)
         assertEquals("voy a ver si puedo ", text)
+        checkConnectionConsistency()
+    }
+
+    @Test fun R26ExpiredLocalReviewBudgetConservesTextInsteadOfBlockingTyping() {
+        r22Enable("voy haber si puedo")
+        var elapsed = 0L
+        val assistant = helium314.keyboard.latin.ai.AiKeyboardAssistant(latinIME) { elapsed += 9_000_000L; elapsed }
+        LatinIME::class.java.getDeclaredField("mAiKeyboardAssistant").apply { isAccessible = true }.set(latinIME,assistant)
+        r22Key(' '.code)
+        assertEquals("voy haber si puedo ",text)
         checkConnectionConsistency()
     }
 

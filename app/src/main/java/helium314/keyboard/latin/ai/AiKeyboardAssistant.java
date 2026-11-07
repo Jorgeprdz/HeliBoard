@@ -27,6 +27,7 @@ import java.util.*;
 /** Manual tools and separately opted-in bounded current-editor correction. Never reads global clipboard. */
 public final class AiKeyboardAssistant {
     private final LatinIME ime;
+    private final java.util.function.LongSupplier localReviewTime;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final AiSessionCoordinator automaticGemini = new AiSessionCoordinator(action -> main.post(action));
     private final AutomaticReviewGate automaticGate = new AutomaticReviewGate();
@@ -625,12 +626,12 @@ public final class AiKeyboardAssistant {
         observePersonalTransition(context,base.start);
         observeCompletedStyle(context,base.start);
         queueContinuous(base,context);
-        final long deadline=System.nanoTime()+8_000_000L;
+        final long deadline=localReviewTime.getAsLong()+8_000_000L;
         java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction> corrections=
             boundaryReviewer.review(
                 context,personalLexicon(),AiSettingsActivity.rejectedCorrections(ime),
-                ()->System.nanoTime()>deadline);
-        if(System.nanoTime()>deadline)return;
+                ()->localReviewTime.getAsLong()>deadline);
+        if(localReviewTime.getAsLong()>deadline)return;
         java.util.regex.Matcher last=java.util.regex.Pattern.compile("([\\p{Ll}\\p{M}]{2,48})[ \\t.,!?;:]+$").matcher(context);
         if(last.find()&&(last.start()==0||Character.isWhitespace(context.charAt(last.start()-1)))){
             String typed=last.group(1);
@@ -642,7 +643,7 @@ public final class AiKeyboardAssistant {
                 all.addAll(corrections);corrections=all;
             }
         }
-        if(System.nanoTime()>deadline)return;
+        if(localReviewTime.getAsLong()>deadline)return;
         final helium314.keyboard.latin.ai.local.LocalContextReviewer.Lexicon observed=personalLexicon();
         for(helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction correction:corrections) {
             if(!correction.automaticAllowed)continue;
@@ -733,7 +734,12 @@ public final class AiKeyboardAssistant {
         try {dialog.show();dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(review.complete());aiTheme.styleDialog(dialog);}catch(WindowManager.BadTokenException e){reviewDialog=null;show("No se pudo abrir la revisión","Cancelar");}
     }
 
-    public AiKeyboardAssistant(LatinIME ime) { this.ime = ime; personal=helium314.keyboard.latin.ai.local.PersonalTypingStore.get(ime); }
+    public AiKeyboardAssistant(LatinIME ime) { this(ime,System::nanoTime); }
+    /** Injectable monotonic work clock keeps dictionary/transaction tests independent of CI scheduling. */
+    public AiKeyboardAssistant(LatinIME ime,java.util.function.LongSupplier workClock) {
+        this.ime=ime;localReviewTime=Objects.requireNonNull(workClock);
+        personal=helium314.keyboard.latin.ai.local.PersonalTypingStore.get(ime);
+    }
 
     private void show(String... choices) {
         if (strip != null) strip.setAiChoices(choices);
