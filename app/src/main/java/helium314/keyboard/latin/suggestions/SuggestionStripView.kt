@@ -100,6 +100,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private var normalExternalClose = false
     private var stickerSlot: TextView? = null
     private var stickerOriginalText: CharSequence? = null
+    private var stickerOriginalEnabled = true
     private var stickerOriginalDescription: CharSequence? = null
     private var pendingRtl = false
     val isAiActive get() = stripArbiter.active()
@@ -302,6 +303,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         val target = if (suggestionsStrip.layoutDirection == LAYOUT_DIRECTION_RTL) words.first() else words.last()
         stickerSlot = target
         stickerOriginalText = target.text
+        stickerOriginalEnabled = target.isEnabled
+        target.isEnabled = true
         stickerOriginalDescription = target.contentDescription
         val side = min(28.dpToPx(resources), resources.getDimensionPixelSize(R.dimen.config_suggestions_strip_height) - 4.dpToPx(resources))
         val drawable = android.graphics.drawable.BitmapDrawable(resources, bitmap)
@@ -318,6 +321,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     fun clearTextStickerSuggestion() {
         stickerSlot?.let { target ->
             target.text = stickerOriginalText
+            target.isEnabled = stickerOriginalEnabled
             target.contentDescription = stickerOriginalDescription
             target.setOnClickListener(this)
             target.setOnLongClickListener(this)

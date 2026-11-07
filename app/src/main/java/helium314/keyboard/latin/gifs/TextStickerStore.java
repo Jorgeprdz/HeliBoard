@@ -17,6 +17,23 @@ public final class TextStickerStore {
         validatePng(png);ensure(sharing);prunePreviews();
         File file=File.createTempFile("text-preview-",".png",sharing);write(file,png);return file;
     }
+    /** Promote before creating its URI. Ordinary preview churn never removes a shared attachment. */
+    public synchronized File retainForSharing(File file)throws IOException {
+        if(file==null||!file.isFile()||!file.getCanonicalFile().getParentFile().equals(sharing.getCanonicalFile())
+            ||!file.getName().matches("text-(preview|shared)-[a-zA-Z0-9_-]+\\.png")||file.length()>MAX_BYTES)
+            throw new IOException("Vista previa no válida para compartir");
+        long now=System.currentTimeMillis();
+        File[] sharedFiles=sharing.listFiles(candidate->candidate.isFile()&&candidate.getName().matches("text-shared-[a-zA-Z0-9_-]+\\.png"));
+        if(sharedFiles!=null)for(File candidate:sharedFiles)
+            if(!candidate.equals(file)&&now-candidate.lastModified()>86400000L)candidate.delete();
+        File retained=file;
+        if(file.getName().startsWith("text-preview-")){
+            retained=new File(sharing,"text-shared-"+UUID.randomUUID()+".png");
+            if(!file.renameTo(retained))throw new IOException("No se pudo conservar el adjunto");
+        }
+        if(!retained.setLastModified(now))throw new IOException("No se pudo renovar el adjunto");
+        return retained;
+    }
     public synchronized File save(byte[] png)throws IOException {
         validatePng(png);ensure(saved);
         File target=new File(saved,digest(png)+".png");

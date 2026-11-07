@@ -40,7 +40,7 @@ public final class TextStickerSuggestionController implements AutoCloseable {
  private static final class Preview {
   final TextStickerSuggestionPolicy.Target target;
   final byte[] png;
-  final File file;
+  File file;
   final Bitmap bitmap;
   Preview(TextStickerSuggestionPolicy.Target target,byte[] png,File file,Bitmap bitmap){this.target=target;this.png=png;this.file=file;this.bitmap=bitmap;}
  }
@@ -110,6 +110,7 @@ public final class TextStickerSuggestionController implements AutoCloseable {
   if(!supported){toast("Esta app no admite stickers PNG");return;}
   try{
    if(!current(preview.target))return;
+   preview.file=store.retainForSharing(preview.file);
    Uri uri=FileProvider.getUriForFile(ime,ime.getPackageName()+".gifcontent",preview.file);
    InputContentInfoCompat content=new InputContentInfoCompat(uri,new ClipDescription("Sticker de texto",new String[]{"image/png"}),null);
    ime.grantUriPermission(editor.packageName,uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -117,7 +118,7 @@ public final class TextStickerSuggestionController implements AutoCloseable {
            InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION,null);
    if(!accepted)ime.revokeUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);
    toast(accepted?"La app aceptó el sticker":"La app rechazó el sticker");
-  }catch(RuntimeException unavailable){toast("No se pudo compartir el sticker");}
+  }catch(java.io.IOException|RuntimeException unavailable){toast("No se pudo compartir el sticker");}
  }
  private void save(Preview preview){
   if(!current(preview.target))return;

@@ -7,12 +7,10 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.GraphicsMode;
-import org.robolectric.annotation.GraphicsMode;
 import static org.junit.Assert.*;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk=28)
-@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 public final class TextStickerRendererTest {
     @Test public void transparent512PngContainsVisibleSpanishEmojiRtlAndLongWord() throws Exception {

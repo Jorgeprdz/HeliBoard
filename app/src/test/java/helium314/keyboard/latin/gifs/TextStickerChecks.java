@@ -21,6 +21,16 @@ public final class TextStickerChecks {
         TextStickerStore store=new TextStickerStore(new File(base,"cache"),new File(base,"files"));
         byte[] png=fixturePng(1);
         File preview=store.preview(png);check(preview.isFile()&&store.saved().isEmpty(),"preview is transient");
+        File attached=store.retainForSharing(preview);
+        for(int i=0;i<20;i++)store.preview(png);
+        check(attached.isFile(),"attached PNG survives twenty new previews");
+        check(attached.getName().startsWith("text-shared-"),"shared file has protected prefix");
+        check(store.retainForSharing(attached).equals(attached),"repeat send accepts retained path");
+        File expired=store.retainForSharing(store.preview(png));
+        expired.setLastModified(System.currentTimeMillis()-25*60*60*1000L);
+        for(int i=0;i<12;i++)store.retainForSharing(store.preview(png));
+        check(!expired.exists()&&attached.exists(),"send expires old shared files without pruning young retained by count");
+        reject(()->store.retainForSharing(new File(base,"outside.png")),"outside retention refused");
         for(int i=0;i<45;i++)store.save(fixturePng(i));
         check(store.saved().size()==40,"saved cap40");
         for(File existing:store.saved())existing.setLastModified(System.currentTimeMillis()+60000);
@@ -33,7 +43,7 @@ public final class TextStickerChecks {
         reject(()->store.save(new byte[]{1,2,3}),"non PNG refused");
         reject(()->store.shareCopy(new File(base,"outside.png")),"arbitrary file sharing refused");
         check(store.saved().size()==40,"failed operation preserves collection");
-        System.out.println("TextStickerChecks: 18 assertions passed");
+        System.out.println("TextStickerChecks: 23 assertions passed");
     }
     static byte[] fixturePng(int seed) throws Exception {
         java.io.ByteArrayOutputStream out=new java.io.ByteArrayOutputStream();

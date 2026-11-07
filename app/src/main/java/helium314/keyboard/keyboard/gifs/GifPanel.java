@@ -165,6 +165,6 @@ public final class GifPanel extends LinearLayout implements InternalInputPanel {
             finally{clients.remove(client);}
         }));
     }
-    private static void prune(File directory){File[] files=directory.listFiles();if(files==null)return;Arrays.sort(files,Comparator.comparingLong(File::lastModified).reversed());for(int i=0;i<files.length;i++)if(i>=8||System.currentTimeMillis()-files[i].lastModified()>86400000L)files[i].delete();}
+    private static void prune(File directory){File[] files=directory.listFiles(file->file.isFile()&&file.getName().startsWith("giphy-")&&file.getName().endsWith(".gif"));if(files==null)return;Arrays.sort(files,Comparator.comparingLong(File::lastModified).reversed());for(int i=0;i<files.length;i++)if(i>=8||System.currentTimeMillis()-files[i].lastModified()>86400000L)files[i].delete();}
     @Override public void close(){if(closed)return;closed=true;stopWork();worker.shutdownNow();main.removeCallbacksAndMessages(null);grid.removeAllViews();}
 }
