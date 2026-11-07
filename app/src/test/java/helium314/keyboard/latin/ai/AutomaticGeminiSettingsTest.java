@@ -19,4 +19,14 @@ public class AutomaticGeminiSettingsTest {
         assertTrue(allowed());
         app.getSharedPreferences("keyboard_ai_private",0).edit().putBoolean("intelligent_typing",false).commit();assertFalse(allowed());
     }
+    @Test public void manualAndAutomaticConsentNeverAuthorizesVoiceUploads(){
+        app.getSharedPreferences("keyboard_ai_private",0).edit().putBoolean("enabled",true).putBoolean("network_consent",true).putBoolean("automatic_gemini",true).putString("dictation_mode","intelligent").commit();
+        assertFalse(AiSettingsActivity.voiceNetworkAllowed(app));
+        app.getSharedPreferences("keyboard_ai_private",0).edit().putBoolean("voice_network_consent",true).commit();
+        assertTrue(AiSettingsActivity.voiceNetworkAllowed(app));
+    }
+    @Test public void voiceConsentDoesNotEnableBackgroundTypingReview()throws Exception{
+        app.getSharedPreferences("keyboard_ai_private",0).edit().putString("dictation_mode","intelligent").putBoolean("voice_network_consent",true).commit();
+        assertTrue(AiSettingsActivity.voiceNetworkAllowed(app));assertFalse(allowed());
+    }
 }

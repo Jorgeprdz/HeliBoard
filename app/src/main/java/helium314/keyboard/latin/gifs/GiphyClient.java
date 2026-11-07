@@ -34,7 +34,8 @@ public final class GiphyClient {
             if(send==null || send.optInt("width",1000)>640 || send.optInt("height",1000)>640)send=images.optJSONObject("fixed_height");
             if(small==null||send==null)continue;
             GifItem parsed=GifItem.fromMetadata(new JSONObject().put("id",item.optString("id"))
-                .put("title",item.optString("title")).put("url",send.optString("url")).put("preview",small.optString("url")));
+                .put("title",item.optString("title")).put("url",send.optString("url")).put("preview",small.optString("url"))
+                .put("width",small.optInt("width")).put("height",small.optInt("height")));
             if(parsed!=null)items.add(parsed);
         }
         JSONObject pagination=root.optJSONObject("pagination");

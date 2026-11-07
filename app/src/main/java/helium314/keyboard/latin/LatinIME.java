@@ -1565,6 +1565,8 @@ public class LatinIME extends InputMethodService implements
     public boolean isComposingForPalette() { return mInputLogic.isComposingForPalette(); }
 
     public boolean hasAiComposition(){return !mInputLogic.getAiComposingWord().isEmpty();}
+    /** An explicit mic action ends composition without autocorrecting or deleting the draft. */
+    public void finishCompositionForVoice(){if(hasAiComposition())mInputLogic.finishInput();}
     public void showAiContextSuggestions(SuggestedWords words){
         if(mSuggestionStripView!=null&&!mSuggestionStripView.isAiActive())
             mSuggestionStripView.setSuggestions(words,mRichImm.getCurrentSubtype().isRtlSubtype());

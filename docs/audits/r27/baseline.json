@@ -1,0 +1,16 @@
+{
+  "source_head": "64af9ce39c17d7f84a3597b0a89cd6c108c57616",
+  "gboard_version": "18.5.4.993608717-beta-arm64-v8a",
+  "gboard_version_code": 176049710,
+  "tactic_version": "4.1-tactic-r26.2-gif-panel-emojis",
+  "tactic_version_code": 20261109,
+  "device": "SM_S931B",
+  "reference_languages": [
+    "es-MX",
+    "en-US"
+  ],
+  "gboard_settings_capture": "/workspace/heliboard-verification/r27-baseline/gboard-settings.png",
+  "earlier_reference_dir": "/workspace/heliboard-verification/gboard-reference",
+  "settings_inventory_rows": 158,
+  "verification_note": "Código existente no equivale a paridad comprobada; no se extrajeron credenciales."
+}

@@ -59,7 +59,7 @@ fun SettingsNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = startDestination ?: SettingsDestination.Settings,
+        startDestination = if (!helium314.keyboard.latin.BuildConfig.DEBUG && startDestination in listOf(SettingsDestination.DataGathering, SettingsDestination.DataReview)) SettingsDestination.Advanced else startDestination ?: SettingsDestination.Settings,
         enterTransition = { slideInHorizontally(initialOffsetX = { +it * dir }, animationSpec = animation) },
         exitTransition = { slideOutHorizontally(targetOffsetX = { -it * dir }, animationSpec = animation) },
         popEnterTransition = { slideInHorizontally(initialOffsetX = { -it * dir }, animationSpec = animation) },
@@ -79,7 +79,17 @@ fun SettingsNavHost(
                 onClickLayouts = { navController.navigate(SettingsDestination.Layouts) },
                 onClickDictionaries = { navController.navigate(SettingsDestination.Dictionaries) },
                 onClickBack = ::goBack,
+                onClickWriting = { navController.navigate("tactic/writing") },
+                onClickLook = { navController.navigate("tactic/look") },
+                onClickTools = { navController.navigate("tactic/tools") },
+                onClickPrivacy = { navController.navigate("tactic/privacy") },
+                onClickMore = { navController.navigate("tactic/more") },
             )
+        }
+        for (group in listOf("writing", "look", "tools", "privacy", "more")) {
+            composable("tactic/$group") {
+                helium314.keyboard.settings.screens.TacticSettingsScreen(group, ::goBack) { destination -> navController.navigate(destination) }
+            }
         }
         composable(SettingsDestination.About) {
             AboutScreen(onClickBack = ::goBack)
@@ -96,10 +106,10 @@ fun SettingsNavHost(
         composable(SettingsDestination.GestureTyping) {
             GestureTypingScreen(onClickBack = ::goBack)
         }
-        composable(SettingsDestination.DataGathering) {
+        if (helium314.keyboard.latin.BuildConfig.DEBUG) composable(SettingsDestination.DataGathering) {
             GestureDataScreen(onClickBack = ::goBack)
         }
-        composable(SettingsDestination.DataReview) {
+        if (helium314.keyboard.latin.BuildConfig.DEBUG) composable(SettingsDestination.DataReview) {
             ReviewScreen(onClickBack = ::goBack)
         }
         composable(SettingsDestination.Advanced) {
@@ -141,7 +151,7 @@ fun SettingsNavHost(
         }
     }
     if (target.value != SettingsDestination.Settings/* && target.value != navController.currentBackStackEntry?.destination?.route*/)
-        navController.navigate(route = target.value)
+        navController.navigate(route = if (!helium314.keyboard.latin.BuildConfig.DEBUG && target.value in listOf(SettingsDestination.DataGathering, SettingsDestination.DataReview)) SettingsDestination.Advanced else target.value)
 }
 
 object SettingsDestination {

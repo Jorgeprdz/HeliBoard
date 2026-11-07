@@ -30,6 +30,8 @@ public final class AiMenuTheme {
                 dark=androidx.core.graphics.ColorUtils.calculateLuminance(background)<.45;
             }catch(RuntimeException notInitialized){ /* Configuration remains the fallback before settings load. */ }
         }
+        if(context instanceof helium314.keyboard.latin.LatinIME || context instanceof AiSettingsActivity)
+            return resolveKeyboard(context);
         return resolve(context,dark);
     }
     public static AiMenuTheme resolve(Context context,boolean dark){
@@ -47,8 +49,12 @@ public final class AiMenuTheme {
         try{
             int background=helium314.keyboard.latin.settings.Settings.getValues().mColors.get(
                 helium314.keyboard.latin.common.ColorType.MAIN_BACKGROUND);
-            return resolve(context,androidx.core.graphics.ColorUtils.calculateLuminance(background)<.45);
-        }catch(RuntimeException notInitialized){return resolve(context);}
+            int foreground=helium314.keyboard.latin.settings.Settings.getValues().mColors.get(
+                helium314.keyboard.latin.common.ColorType.KEY_TEXT);
+            return new AiMenuTheme(background,foreground,
+                androidx.core.graphics.ColorUtils.blendARGB(background,foreground,.075f),
+                androidx.core.graphics.ColorUtils.blendARGB(background,foreground,.14f));
+        }catch(RuntimeException notInitialized){return resolve(context,(context.getResources().getConfiguration().uiMode&Configuration.UI_MODE_NIGHT_MASK)==Configuration.UI_MODE_NIGHT_YES);}
     }
     public static Context expressiveContext(Context context){
         AiMenuTheme colors=resolveKeyboard(context);

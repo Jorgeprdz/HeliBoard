@@ -148,6 +148,16 @@ class InputLogicTest {
         assertEquals("Otro ",text)
     }
 
+    @Test fun R27ExplicitVoiceBoundaryPreservesTypedDraft() {
+        r22Enable("")
+        input("hola")
+        assertEquals("hola", text)
+        kotlin.test.assertTrue(latinIME.hasAiComposition())
+        latinIME.finishCompositionForVoice()
+        assertEquals("hola", text)
+        kotlin.test.assertFalse(latinIME.hasAiComposition())
+    }
+
     @Test fun R23TemporaryThemeFollowsKeyboardBackgroundInsteadOfTransparentKeyColor() {
         r22Enable("")
         val field = settingsValues.javaClass.getField("mColors").apply { isAccessible = true }
@@ -157,11 +167,13 @@ class InputLogicTest {
         try {
             Mockito.`when`(palette.get(helium314.keyboard.latin.common.ColorType.MAIN_BACKGROUND)).thenReturn(android.graphics.Color.WHITE)
             Mockito.`when`(palette.get(helium314.keyboard.latin.common.ColorType.KEY_BACKGROUND)).thenReturn(0x18000000)
-            assertEquals(helium314.keyboard.latin.ai.AiMenuTheme.resolve(latinIME, false).surface,
+            Mockito.`when`(palette.get(helium314.keyboard.latin.common.ColorType.KEY_TEXT)).thenReturn(android.graphics.Color.BLACK)
+            assertEquals(android.graphics.Color.WHITE,
                 helium314.keyboard.latin.ai.AiMenuTheme.resolveKeyboard(latinIME).surface)
             Mockito.`when`(palette.get(helium314.keyboard.latin.common.ColorType.MAIN_BACKGROUND)).thenReturn(android.graphics.Color.BLACK)
             Mockito.`when`(palette.get(helium314.keyboard.latin.common.ColorType.KEY_BACKGROUND)).thenReturn(0x18ffffff)
-            assertEquals(helium314.keyboard.latin.ai.AiMenuTheme.resolve(latinIME, true).surface,
+            Mockito.`when`(palette.get(helium314.keyboard.latin.common.ColorType.KEY_TEXT)).thenReturn(android.graphics.Color.WHITE)
+            assertEquals(android.graphics.Color.BLACK,
                 helium314.keyboard.latin.ai.AiMenuTheme.resolveKeyboard(latinIME).surface)
         } finally { field.set(settingsValues, original) }
     }

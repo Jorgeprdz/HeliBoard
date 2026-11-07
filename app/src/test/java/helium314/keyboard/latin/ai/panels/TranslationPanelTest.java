@@ -26,6 +26,6 @@ public class TranslationPanelTest {
   int w=PanelViews.dp(c,360),h=PanelViews.dp(c,250);
   panel.measure(View.MeasureSpec.makeMeasureSpec(w,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(h,View.MeasureSpec.EXACTLY));panel.layout(0,0,w,h);
   assertTrue(panel.getChildAt(panel.getChildCount()-1).getBottom()<=h);
-  assertEquals(AiMenuTheme.resolve(c).surface,((ColorDrawable)panel.getBackground()).getColor());panel.close();
+  assertEquals(AiMenuTheme.resolveKeyboard(c).surface,((ColorDrawable)panel.getBackground()).getColor());panel.close();
  }
 }

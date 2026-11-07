@@ -75,6 +75,7 @@ public final class KeyboardSwitcher {
     private int mMainFrameVisibilityBeforePanel = View.VISIBLE;
     private int mInternalPanelNormalHeight;
     private boolean mGifSearchTyping;
+    private View.OnLayoutChangeListener mGifNativeLayoutListener;
     private View mEmojiTabStripView;
     private LinearLayout mClipboardStripView;
     private HorizontalScrollView mClipboardStripScrollView;
@@ -268,7 +269,7 @@ public final class KeyboardSwitcher {
                     : ResourceUtils.getDefaultKeyboardHeight(panel.getResources(), false);
         }
         int height = panel instanceof helium314.keyboard.keyboard.gifs.GifPanel
-                ? mInternalPanelNormalHeight
+                ? gifBrowseHeight(panel)
                 : Math.max(mInternalPanelNormalHeight, (int)(360 * panel.getResources().getDisplayMetrics().density));
         android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT, height, android.view.Gravity.BOTTOM);
@@ -276,6 +277,15 @@ public final class KeyboardSwitcher {
             panel.setPadding(0, 0, 0, gifBottomInset());
         mCurrentInputView.addView(panel, params);
         mMainKeyboardFrame.setVisibility(View.INVISIBLE);
+        if (panel instanceof helium314.keyboard.keyboard.gifs.GifPanel) {
+            mGifNativeLayoutListener=(view,left,top,right,bottom,oldLeft,oldTop,oldRight,oldBottom)->{
+                if(mInternalInputPanel!=panel||!mGifSearchTyping)return;
+                android.widget.FrameLayout.LayoutParams compact=(android.widget.FrameLayout.LayoutParams)panel.getLayoutParams();
+                int offset=mMainKeyboardFrame.getTop()+mStripContainer.getTop();
+                if(compact.topMargin!=offset){compact.topMargin=offset;panel.setLayoutParams(compact);}
+            };
+            mMainKeyboardFrame.addOnLayoutChangeListener(mGifNativeLayoutListener);
+        }
         // First opening can precede layout; replace the native-dimension fallback with the measured frame.
         mMainKeyboardFrame.post(() -> {
             if (mInternalInputPanel == panel && panel instanceof helium314.keyboard.keyboard.gifs.GifPanel
@@ -283,7 +293,7 @@ public final class KeyboardSwitcher {
                 mInternalPanelNormalHeight = mMainKeyboardFrame.getHeight();
                 if (!mGifSearchTyping) {
                     android.view.ViewGroup.LayoutParams measured = panel.getLayoutParams();
-                    measured.height = mInternalPanelNormalHeight;
+                    measured.height = gifBrowseHeight(panel);
                     panel.setLayoutParams(measured);
                 }
             }
@@ -299,7 +309,7 @@ public final class KeyboardSwitcher {
         panel.setPadding(0, 0, 0, typing ? 0 : gifBottomInset());
         if (enteringTyping && mState != null) mState.onResetKeyboardStateToAlphabet(0, null);
         android.widget.FrameLayout.LayoutParams params = (android.widget.FrameLayout.LayoutParams) panel.getLayoutParams();
-        params.height = typing ? mStripContainer.getHeight() : mInternalPanelNormalHeight;
+        params.height = typing ? mStripContainer.getHeight() : gifBrowseHeight(panel);
         if (params.height <= 0) params.height = typing
                 ? panel.getResources().getDimensionPixelSize(R.dimen.config_suggestions_strip_height)
                 : mMainKeyboardFrame.getMeasuredHeight();
@@ -310,6 +320,17 @@ public final class KeyboardSwitcher {
         // Keep the overlay last so native toolbar/suggestions cannot receive query touches.
         panel.bringToFront();
         mCurrentInputView.requestLayout();
+        if (typing) panel.post(() -> {
+            if (mInternalInputPanel != panel || !mGifSearchTyping) return;
+            android.widget.FrameLayout.LayoutParams compact = (android.widget.FrameLayout.LayoutParams)panel.getLayoutParams();
+            int top=mMainKeyboardFrame.getTop()+mStripContainer.getTop();
+            if(compact.topMargin!=top){compact.topMargin=top;panel.setLayoutParams(compact);}
+        });
+    }
+
+    private int gifBrowseHeight(View panel) {
+        return helium314.keyboard.latin.gifs.GifPanelGeometry.browseHeight(mInternalPanelNormalHeight,
+                panel.getResources().getDisplayMetrics().heightPixels);
     }
 
     /** Keep media controls above the same bottom space reserved by the native letter keyboard. */
@@ -330,6 +351,7 @@ public final class KeyboardSwitcher {
         View panel = mInternalInputPanel;
         mInternalInputPanel = null;
         mGifSearchTyping = false;
+        if(mGifNativeLayoutListener!=null&&mMainKeyboardFrame!=null){mMainKeyboardFrame.removeOnLayoutChangeListener(mGifNativeLayoutListener);mGifNativeLayoutListener=null;}
         if (panel instanceof helium314.keyboard.keyboard.gifs.InternalInputPanel)
             ((helium314.keyboard.keyboard.gifs.InternalInputPanel) panel).close();
         if (panel.getParent() instanceof android.view.ViewGroup)

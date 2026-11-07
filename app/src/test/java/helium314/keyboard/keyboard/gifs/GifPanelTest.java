@@ -59,6 +59,10 @@ public final class GifPanelTest {
         assertEquals(2,columns.getChildCount());assertTrue(columns.getChildAt(0).getWidth()>=160);
         LinearLayout firstColumn=(LinearLayout)columns.getChildAt(0);assertEquals(3,firstColumn.getChildCount());
         assertTrue("large tile replaces thumbnail strip",firstColumn.getChildAt(0).getHeight()>=140);
+        LinearLayout cell=(LinearLayout)firstColumn.getChildAt(0);
+        assertTrue("actions belong below media, not over it",cell.getChildAt(0) instanceof GifPreviewView);
+        assertTrue(cell.getChildAt(1).getTop()>=cell.getChildAt(0).getBottom());
+        assertSame("pagination scrolls with results",grid,findText(panel,"Más resultados").getParent());
         assertTrue("compact navigation leaves room for a large preview",((View)grid.getParent()).getHeight()>=140);
         panel.close();context.getSharedPreferences("giphy_metadata",Context.MODE_PRIVATE).edit().clear().commit();
     }

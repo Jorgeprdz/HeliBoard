@@ -11,11 +11,17 @@ import helium314.keyboard.latin.gifs.GifPolicy;
 /** Small bounded GIF rendition; Movie supports animation on API21 as well. */
 @SuppressWarnings("deprecation")
 final class GifPreviewView extends View {
-    private Movie movie; private long start;
+    private Movie movie; private long start;private int mediaWidth,mediaHeight,maximum;
     GifPreviewView(Context context){super(context);setLayerType(View.LAYER_TYPE_SOFTWARE,null);}
+    void dimensions(int width,int height,int maxHeight){mediaWidth=width;mediaHeight=height;maximum=maxHeight;requestLayout();}
+    @Override protected void onMeasure(int widthSpec,int heightSpec){
+        int width=MeasureSpec.getSize(widthSpec);
+        int height=helium314.keyboard.latin.gifs.GifPanelGeometry.previewHeight(width,mediaWidth,mediaHeight,maximum);
+        setMeasuredDimension(resolveSize(width,widthSpec),resolveSize(height,heightSpec));
+    }
     void load(byte[] bytes){
         if(!GifPolicy.isGif(bytes))return;
-        try{movie=Movie.decodeByteArray(bytes,0,bytes.length);start=SystemClock.uptimeMillis();invalidate();}
+        try{movie=Movie.decodeByteArray(bytes,0,bytes.length);if(movie!=null&&(mediaWidth<=0||mediaHeight<=0)){mediaWidth=movie.width();mediaHeight=movie.height();requestLayout();}start=SystemClock.uptimeMillis();invalidate();}
         catch(OutOfMemoryError ignored){movie=null;}
     }
     void stop(){movie=null;invalidate();}

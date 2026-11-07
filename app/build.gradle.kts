@@ -117,6 +117,8 @@ android {
         jniLibs {
             // shrinks APK by 3 MB, zipped size unchanged
             useLegacyPackaging = true
+            // Retired Qwen experiment; preserve gesture/dictionary/handwriting native libraries.
+            excludes += "**/libheliboard_writing.so"
         }
     }
 

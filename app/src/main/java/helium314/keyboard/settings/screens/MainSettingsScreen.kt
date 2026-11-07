@@ -44,6 +44,11 @@ fun MainSettingsScreen(
     onClickLayouts: () -> Unit,
     onClickDictionaries: () -> Unit,
     onClickBack: () -> Unit,
+    onClickWriting: () -> Unit = onClickLanguage,
+    onClickLook: () -> Unit = onClickAppearance,
+    onClickTools: () -> Unit = onClickToolbar,
+    onClickPrivacy: () -> Unit = onClickAdvanced,
+    onClickMore: () -> Unit = onClickAdvanced,
 ) {
     SearchSettingsScreen(
         onClickBack = onClickBack,
@@ -55,68 +60,20 @@ fun MainSettingsScreen(
             Column(
                 Modifier.verticalScroll(rememberScrollState()).then(Modifier.padding(innerPadding))
             ) {
-                PreferenceCategory(stringResource(R.string.settings_category_keyboard))
-                Preference(
-                    name = stringResource(R.string.language_and_layouts_title),
-                    description = enabledSubtypes.joinToString(", ") { it.displayName() },
-                    onClick = onClickLanguage,
-                    icon = R.drawable.ic_settings_languages
-                ) { NextScreenIcon() }
-                Preference(
-                    name = stringResource(R.string.settings_screen_preferences),
-                    onClick = onClickPreferences,
-                    icon = R.drawable.ic_settings_preferences
-                ) { NextScreenIcon() }
-                Preference(
-                    name = stringResource(R.string.settings_screen_appearance),
-                    onClick = onClickAppearance,
-                    icon = R.drawable.ic_settings_appearance
-                ) { NextScreenIcon() }
-                Preference(
-                    name = stringResource(R.string.settings_screen_toolbar),
-                    onClick = onClickToolbar,
-                    icon = R.drawable.ic_settings_toolbar
-                ) { NextScreenIcon() }
-                if (JniUtils.sHaveGestureLib || helium314.keyboard.latin.ai.local.LocalGestureEngine.isSupported())
-                    Preference(
-                        name = stringResource(R.string.settings_screen_gesture),
-                        onClick = onClickGestureTyping,
-                        icon = R.drawable.ic_settings_gesture
-                    ) { NextScreenIcon() }
-                // we don't even show the menu if data gathering phase ended more than 2 weeks ago
-                if (JniUtils.sHaveGestureLib && System.currentTimeMillis() < END_DATE_EPOCH_MILLIS + TWO_WEEKS_IN_MILLIS)
-                    Preference(
-                        name = stringResource(R.string.gesture_data_screen),
-                        onClick = onClickDataGathering,
-                        icon = R.drawable.ic_settings_gesture
-                    ) { NextScreenIcon() }
-                PreferenceCategory(stringResource(R.string.settings_category_writing))
-                Preference(
-                    name = stringResource(R.string.settings_screen_correction),
-                    onClick = onClickTextCorrection,
-                    icon = R.drawable.ic_settings_correction
-                ) { NextScreenIcon() }
-                Preference(
-                    name = stringResource(R.string.settings_screen_secondary_layouts),
-                    onClick = onClickLayouts,
-                    icon = R.drawable.ic_settings_layout
-                ) { NextScreenIcon() }
-                Preference(
-                    name = stringResource(R.string.dictionary_settings_category),
-                    onClick = onClickDictionaries,
-                    icon = R.drawable.ic_dictionary
-                ) { NextScreenIcon() }
-                PreferenceCategory(stringResource(R.string.settings_category_app))
-                Preference(
-                    name = stringResource(R.string.settings_screen_advanced),
-                    onClick = onClickAdvanced,
-                    icon = R.drawable.ic_settings_advanced
-                ) { NextScreenIcon() }
-                Preference(
-                    name = stringResource(R.string.settings_screen_about),
-                    onClick = onClickAbout,
-                    icon = R.drawable.ic_settings_about
-                ) { NextScreenIcon() }
+                Preference(name = "Idiomas y escritura", description = enabledSubtypes.joinToString(", ") { it.displayName() },
+                    onClick = onClickWriting, icon = R.drawable.ic_settings_languages) { NextScreenIcon() }
+                Preference(name = "Apariencia y preferencias", description = "Tema, tamaño, sonido y vibración",
+                    onClick = onClickLook, icon = R.drawable.ic_settings_appearance) { NextScreenIcon() }
+                Preference(name = "Herramientas", description = "Portapapeles, emojis, GIF y dictado",
+                    onClick = onClickTools, icon = R.drawable.ic_settings_toolbar) { NextScreenIcon() }
+                val context = LocalContext.current
+                Preference(name = "Gemini", description = "Asistencia y corrección automática opcional", onClick = {
+                    context.startActivity(android.content.Intent(context, helium314.keyboard.latin.ai.AiSettingsActivity::class.java))
+                }, icon = R.drawable.ic_settings_correction) { NextScreenIcon() }
+                Preference(name = "Privacidad y datos", description = "Aprendizaje, exclusiones y respaldos",
+                    onClick = onClickPrivacy, icon = R.drawable.ic_settings_advanced) { NextScreenIcon() }
+                Preference(name = "Avanzado y acerca de", description = "Controles detallados, versión y licencias",
+                    onClick = onClickMore, icon = R.drawable.ic_settings_about) { NextScreenIcon() }
             }
         }
     }
