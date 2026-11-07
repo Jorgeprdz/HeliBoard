@@ -272,6 +272,8 @@ public final class KeyboardSwitcher {
                 : Math.max(mInternalPanelNormalHeight, (int)(360 * panel.getResources().getDisplayMetrics().density));
         android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT, height, android.view.Gravity.BOTTOM);
+        if (panel instanceof helium314.keyboard.keyboard.gifs.GifPanel)
+            panel.setPadding(0, 0, 0, gifBottomInset());
         mCurrentInputView.addView(panel, params);
         mMainKeyboardFrame.setVisibility(View.INVISIBLE);
         // First opening can precede layout; replace the native-dimension fallback with the measured frame.
@@ -294,6 +296,7 @@ public final class KeyboardSwitcher {
         mKeyboardView.cancelAllOngoingEvents();
         boolean enteringTyping = typing && !mGifSearchTyping;
         mGifSearchTyping = typing;
+        panel.setPadding(0, 0, 0, typing ? 0 : gifBottomInset());
         if (enteringTyping && mState != null) mState.onResetKeyboardStateToAlphabet(0, null);
         android.widget.FrameLayout.LayoutParams params = (android.widget.FrameLayout.LayoutParams) panel.getLayoutParams();
         params.height = typing ? mStripContainer.getHeight() : mInternalPanelNormalHeight;
@@ -307,6 +310,19 @@ public final class KeyboardSwitcher {
         // Keep the overlay last so native toolbar/suggestions cannot receive query touches.
         panel.bringToFront();
         mCurrentInputView.requestLayout();
+    }
+
+    /** Keep media controls above the same bottom space reserved by the native letter keyboard. */
+    private int gifBottomInset() {
+        int inset = mKeyboardView == null ? 0 : mKeyboardView.getPaddingBottom();
+        Keyboard keyboard = getKeyboard();
+        if (keyboard != null) {
+            int lastKeyBottom = 0;
+            for (Key key : keyboard.getSortedKeys())
+                lastKeyBottom = Math.max(lastKeyBottom, key.getY() + key.getHeight());
+            if (lastKeyBottom > 0) inset = Math.max(inset, keyboard.mOccupiedHeight - lastKeyBottom);
+        }
+        return Math.max(0, inset);
     }
 
     public void closeInternalInputPanel() {

@@ -27,6 +27,7 @@ public final class GifNativeMountTest {
   InputView root=new InputView(context,null);View frame=new View(context);FrameLayout strip=new FrameLayout(context);
   frame.measure(View.MeasureSpec.makeMeasureSpec(360,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(280,View.MeasureSpec.EXACTLY));frame.layout(0,7,360,287);
   strip.layout(0,0,360,42);MainKeyboardView keyboard=mock(MainKeyboardView.class);KeyboardWrapperView wrapper=mock(KeyboardWrapperView.class);
+  when(keyboard.getPaddingBottom()).thenReturn(24);
   root.addView(frame);
   // Real View is needed for attachment; use a real panel with a harmless service host.
   GifPanel mounted=new GifPanel(context,mock(helium314.keyboard.latin.LatinIME.class));
@@ -35,7 +36,9 @@ public final class GifNativeMountTest {
    put(switcher,originals,"mCurrentInputView",root);put(switcher,originals,"mMainKeyboardFrame",frame);put(switcher,originals,"mStripContainer",strip);
    put(switcher,originals,"mKeyboardView",keyboard);put(switcher,originals,"mKeyboardViewWrapper",wrapper);put(switcher,originals,"mSuggestionStripView",mock(SuggestionStripView.class));
    switcher.showInternalInputPanel(mounted);assertEquals(280,mounted.getLayoutParams().height);assertEquals(View.INVISIBLE,frame.getVisibility());
+   assertEquals("GIF controls reserve the native keyboard's bottom inset",24,mounted.getPaddingBottom());
    switcher.setGifSearchTyping(mounted,true);assertEquals(42,mounted.getLayoutParams().height);assertEquals(View.VISIBLE,frame.getVisibility());
+   assertEquals("compact query does not inherit the navigation inset",0,mounted.getPaddingBottom());
    assertSame(wrapper,switcher.getWrapperView());assertSame(keyboard,switcher.getVisibleKeyboardView());
    helium314.keyboard.keyboard.emoji.EmojiPalettesView emoji=mock(helium314.keyboard.keyboard.emoji.EmojiPalettesView.class);
    put(switcher,originals,"mEmojiPalettesView",emoji);when(emoji.isShown()).thenReturn(true);
@@ -43,6 +46,7 @@ public final class GifNativeMountTest {
    assertSame(wrapper,switcher.getWrapperView());when(emoji.isShown()).thenReturn(false);
    assertEquals(7,((FrameLayout.LayoutParams)mounted.getLayoutParams()).topMargin);
    switcher.setGifSearchTyping(mounted,false);assertEquals(280,mounted.getLayoutParams().height);assertSame(mounted,switcher.getWrapperView());
+   assertEquals(24,mounted.getPaddingBottom());
    switcher.closeInternalInputPanel();assertEquals(View.VISIBLE,frame.getVisibility());assertNull(mounted.getParent());
    frame.measure(View.MeasureSpec.makeMeasureSpec(0,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(0,View.MeasureSpec.EXACTLY));frame.layout(0,0,0,0);
    GifPanel early=new GifPanel(context,mock(helium314.keyboard.latin.LatinIME.class));switcher.showInternalInputPanel(early);
