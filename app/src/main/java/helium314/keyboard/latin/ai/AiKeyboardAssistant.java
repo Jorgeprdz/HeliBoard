@@ -94,15 +94,6 @@ public final class AiKeyboardAssistant {
     private final AiEditTransaction edits = new AiEditTransaction();
     private final helium314.keyboard.latin.ai.dictation.DictationSession dictation=new helium314.keyboard.latin.ai.dictation.DictationSession();
     private helium314.keyboard.latin.ai.dictation.LocalSpeechRecognizer speech;
-    private void improveDictation(){
-        if(!AiSettingsActivity.networkAllowed(ime)||privateField()||review.snapshot()==null||!review.snapshot().matches(capture())||SensitiveInputPolicy.sensitiveText(review.result())){show("No enviar este dictado; revisa permisos y privacidad","Cancelar");return;}
-        final EditorSnapshot base=review.snapshot();final String text=review.result(),key=AiSettingsActivity.readKey(ime),model=AiSettingsActivity.readModel(ime);
-        if(key.isEmpty()||model.isEmpty()){show("Configurar","Cancelar");return;}
-        final boolean[] complete={false};show("Mejorando dictado con Gemini…","Cancelar");
-        session.submit(cancel->{helium314.keyboard.latin.ai.provider.GeminiProvider.Result response=new helium314.keyboard.latin.ai.provider.GeminiProvider().generate(key,model,helium314.keyboard.latin.ai.provider.GeminiOperation.CLARITY,"casual",null,text,
-            new helium314.keyboard.latin.ai.provider.GeminiProvider.Cancellation(){public boolean cancelled(){return cancel.cancelled();}public void onCancel(Runnable abort){cancel.onCancel(abort);}});complete[0]=response.complete;return response.text;
-        },(value,error)->{if(privateField()||!AiSettingsActivity.networkAllowed(ime)||!base.matches(capture()))return;if(error!=null){show(providerError(error),"Cancelar");return;}review.offer(base,value,complete[0]);fullReview();},35000);
-    }
     private helium314.keyboard.latin.ai.dictation.SmartDictationController smartDictation;
     private long dictationTicket;
     private EditorSnapshot dictationBase;
@@ -162,7 +153,7 @@ public final class AiKeyboardAssistant {
     private boolean ownEdit;
     private String undoText = "";
     private AlertDialog reviewDialog;
-    private String pendingAction = "", tone = "Professional", language = "en-US";
+    private String pendingAction = "", tone = "", language = "en-US";
     private final helium314.keyboard.latin.ai.local.ObservedLexicon lexicon=new helium314.keyboard.latin.ai.local.ObservedLexicon();
     private final AiSessionCoordinator localSession=new AiSessionCoordinator(action->main.post(action));
     private EditorSnapshot localBase;
@@ -693,7 +684,7 @@ public final class AiKeyboardAssistant {
         if(smartDictation!=null)smartDictation.cancel();
         cancelAutomaticGemini();
         clearAutomaticUndo();
-        generation++; revision++;dictation.cancel();dictationBase=null;if(speech!=null){speech.close();speech=null;} session.cancel();localSession.cancel();main.removeCallbacks(localDebounce);localBase=null;localCorrection=null;localOriginal=null;localContext="";if(forgetWords){transitionCursor=-1;transitionPair="";lexicon.clear();rankedKeyboard=null;styleBoundary=-1;nativeSuggestions=null;}review.clear();edits.clear();undoText="";pendingAction="";
+        generation++; revision++;dictation.cancel();dictationBase=null;if(speech!=null){speech.close();speech=null;} session.cancel();localSession.cancel();main.removeCallbacks(localDebounce);localBase=null;localCorrection=null;localOriginal=null;localContext="";if(forgetWords){transitionCursor=-1;transitionPair="";lexicon.clear();rankedKeyboard=null;styleBoundary=-1;nativeSuggestions=null;}review.clear();edits.clear();undoText="";pendingAction="";tone="";
         if(reviewDialog!=null){AlertDialog old=reviewDialog;reviewDialog=null;old.dismiss();}
         selected = ""; proposed = ""; address = ""; phone = ""; clabe = ""; email = "";
         if (strip != null) strip.closeAiChoices();
@@ -769,8 +760,6 @@ public final class AiKeyboardAssistant {
             reset(false);strip=view;if(AiSettingsActivity.intelligentDictation(ime))smartDictation.start(false);else startLocalDictation();return;
         }
         if("Configurar voz local".equals(action)){launch(new Intent(android.provider.Settings.ACTION_VOICE_INPUT_SETTINGS));return;}
-        if("Mejorar dictado".equals(action)){improveDictation();return;}
-        if("Enviar texto dictado a Gemini".equals(action)){improveDictation();return;}
         if("Dictado local".equals(action)){startLocalDictation();return;}
         if("Detener dictado".equals(action)){dictation.stop(dictationTicket);if(speech!=null)speech.stop();return;}
         if ("IA".equals(action)) {

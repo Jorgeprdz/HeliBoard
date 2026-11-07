@@ -71,7 +71,7 @@ public final class TranslationPanel extends LinearLayout implements InternalInpu
   String key=AiSettingsActivity.readKey(getContext());if(key.isEmpty()){status.setText("Configura tu clave de Gemini en ajustes");return;}
   final String text=draft.source(),model=AiSettingsActivity.readModel(getContext()),language=target;
   final long ticket=draft.ticket();final boolean[] complete={false};status.setText("Gemini…");use.setEnabled(false);
-  jobs.submit(cancel->{GeminiProvider.Result r=new GeminiProvider().generate(key,model,GeminiOperation.TRANSLATE,"Professional",language,text,new GeminiProvider.Cancellation(){public boolean cancelled(){return cancel.cancelled();}public void onCancel(Runnable abort){cancel.onCancel(abort);}});complete[0]=r.complete;return r.text;},(value,error)->{
+  jobs.submit(cancel->{GeminiProvider.Result r=new GeminiProvider().generate(key,model,GeminiOperation.TRANSLATE,"",language,text,new GeminiProvider.Cancellation(){public boolean cancelled(){return cancel.cancelled();}public void onCancel(Runnable abort){cancel.onCancel(abort);}});complete[0]=r.complete;return r.text;},(value,error)->{
    if(closed||!draft.current(host.editorToken())||!host.canUseNetwork())return;
    if(error!=null){status.setText("No se pudo traducir. Revisa conexión, clave o cuota y reintenta.");return;}
    if(draft.offer(ticket,host.editorToken(),value,complete[0])){preview.setText(value);status.setText("Revisa y pulsa Usar traducción");use.setEnabled(true);}else status.setText("Traducción incompleta. Reintenta.");

@@ -125,3 +125,8 @@ settings/screens/AdvancedScreen.kt, SettingsNavHost.kt and existing panel classe
 - Final audit found that hiding research routes alone would preserve a previously enabled background collector.
 - Release now rejects active/background research, hides legacy research toolbar entries and suppresses promotion/end notices with BuildConfig.DEBUG gates. Preferences and stored research records are not deleted. Normal gesture typing remains enabled.
 - This release-only change requires a fresh exact-source build/regression run; it is not an excuse to skip the earlier five failures.
+
+### Contextual Android selection surface
+- Audit also found the exported explicit selection/share Activity still exposing retired entity actions and an enum-indexed broad catalogue. Replaced it with explicitly mapped spelling/rewrite/translation actions, same read-only/result contract, secure surface, existing palette and explicit manual consent. No entity extraction or external calendar/map/contact actions remain in the surface.
+- Removed default Professional/Casual instructions from contextual rewrite, transcript cleanup and translation; preserve tone unless explicitly requested. Updated tests assert retirement and retained contextual actions rather than obsolete calendar/navigation behavior.
+- No source/photo/clipboard content is attached to evidence. The attempted baseline full capture contained an unrelated overlay and was discarded; subsequent keyboard baseline is a pixel hash only.

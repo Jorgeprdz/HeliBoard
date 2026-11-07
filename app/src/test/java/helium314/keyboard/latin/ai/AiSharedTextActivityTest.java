@@ -42,23 +42,20 @@ public class AiSharedTextActivityTest {
   AiSharedTextActivity activity=launch(intent);
   assertEquals(View.GONE,button(activity,"Aceptar resultado").getVisibility());
  }
- @Test public void calendarActionPrefillsOnlyResolvedDateTimeAndLocation(){
+ @Test public void selectedDatesAndAddressesDoNotExposeRetiredEntityActions(){
   Intent intent=new Intent(Intent.ACTION_PROCESS_TEXT).setType("text/plain")
       .putExtra(Intent.EXTRA_PROCESS_TEXT,"Nos vemos mañana a las 16:30 en Insurgentes Sur 1200 por 90 minutos")
       .putExtra(Intent.EXTRA_PROCESS_TEXT_READONLY,true);
   AiSharedTextActivity activity=launch(intent);
-  button(activity,"Abrir acción: mañana").performClick();
-  Intent opened=shadowOf(activity).getNextStartedActivity();
-  assertNotNull(opened);assertEquals(Intent.ACTION_INSERT,opened.getAction());
-  assertEquals(CalendarContract.Events.CONTENT_URI,opened.getData());
-  assertEquals("Insurgentes Sur 1200",opened.getStringExtra(CalendarContract.Events.EVENT_LOCATION));
-  assertTrue(opened.hasExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME));
-  assertEquals(90*60*1000L,opened.getLongExtra(CalendarContract.EXTRA_EVENT_END_TIME,0)-opened.getLongExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME,0));
+  for(View view:descendants(activity.findViewById(android.R.id.content)))if(view instanceof Button){
+   String label=((Button)view).getText().toString();assertFalse(label.startsWith("Abrir acción"));assertFalse(label.startsWith("Obtener indicaciones"));assertFalse(label.startsWith("Copiar DATE"));
+  }
+  assertNull(shadowOf(activity).getNextStartedActivity());
  }
- @Test public void addressOffersEditableMapDirections(){
-  Intent intent=new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT,"Insurgentes Sur 1200");
-  AiSharedTextActivity activity=launch(intent);button(activity,"Obtener indicaciones").performClick();
-  Intent opened=shadowOf(activity).getNextStartedActivity();assertNotNull(opened);
-  assertEquals(Intent.ACTION_VIEW,opened.getAction());assertTrue(opened.getDataString().startsWith("google.navigation:q="));
+ @Test public void contextActionsRemainAvailableWithoutAnOverloadedCatalogue(){
+  AiSharedTextActivity activity=launch(new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT,"Hola Carlos"));
+  assertNotNull(button(activity,"Corregir"));assertNotNull(button(activity,"Reformular"));assertNotNull(button(activity,"Traducir"));
+  assertFalse(button(activity,"Copiar resultado").isEnabled());
+  for(View view:descendants(activity.findViewById(android.R.id.content)))if(view instanceof Button)assertFalse(((Button)view).getText().toString().contains("Elegir herramienta"));
  }
 }
