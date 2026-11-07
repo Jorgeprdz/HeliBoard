@@ -97,6 +97,10 @@ class InputLogicTest {
         ShadowInputMethodService.editorPackage = "fixture.editor"
         latinIME.getSharedPreferences("keyboard_ai_private", 0).edit()
             .putBoolean("enabled", true).putBoolean("local_context", true).commit()
+        // Transaction tests use deterministic work time; the explicit expiration
+        // regression installs an advancing clock and still covers the production deadline.
+        val assistant = helium314.keyboard.latin.ai.AiKeyboardAssistant(latinIME) { 0L }
+        LatinIME::class.java.getDeclaredField("mAiKeyboardAssistant").apply { isAccessible = true }.set(latinIME, assistant)
     }
 
     private fun r22Key(code: Int) {

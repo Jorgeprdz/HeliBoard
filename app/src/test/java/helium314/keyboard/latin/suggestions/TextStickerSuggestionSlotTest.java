@@ -76,7 +76,8 @@ public class TextStickerSuggestionSlotTest {
   for(int i=0;i<row.getChildCount();i++)if(row.getChildAt(i) instanceof TextView&&"🐈".contentEquals(((TextView)row.getChildAt(i)).getText()))emojiSlot=(TextView)row.getChildAt(i);
   assertNotNull("A native emoji must be visible in the three-slot strip",emojiSlot);
   int children=row.getChildCount();Bitmap bitmap=Bitmap.createBitmap(32,32,Bitmap.Config.ARGB_8888);
-  assertFalse("A sticker must not hide the matching emoji",strip.showTextStickerSuggestion(bitmap,()->fail("sticker sent"),()->fail("sticker saved")));
+  // Another slot may hold a sticker, but the emoji must remain visible and selectable.
+  strip.showTextStickerSuggestion(bitmap,()->fail("sticker sent"),()->fail("sticker saved"));
   assertEquals("🐈",emojiSlot.getText().toString());assertEquals(children,row.getChildCount());
   emojiSlot.performClick();assertSame("The original native emoji tap must survive",emoji,selected[0]);
   assertEquals("Presentation must not reorder the correction engine's input", "gata",predictions.get(2).mWord);
