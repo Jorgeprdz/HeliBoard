@@ -58,16 +58,20 @@ public class TextStickerSuggestionSlotTest {
   SuggestedWordInfo emoji=new SuggestedWordInfo("🐈","",80,SuggestedWordInfo.KIND_SHORTCUT,Dictionary.DICTIONARY_HARDCODED,-1,-1);
   ArrayList<SuggestedWordInfo> predictions=new ArrayList<>(Arrays.asList(
    new SuggestedWordInfo("gato","",100,SuggestedWordInfo.KIND_TYPED,Dictionary.DICTIONARY_HARDCODED,-1,-1),
-   new SuggestedWordInfo("gatos","",90,SuggestedWordInfo.KIND_CORRECTION,Dictionary.DICTIONARY_HARDCODED,-1,-1),emoji));
+   new SuggestedWordInfo("gatos","",90,SuggestedWordInfo.KIND_CORRECTION,Dictionary.DICTIONARY_HARDCODED,-1,-1),
+   new SuggestedWordInfo("gata","",85,SuggestedWordInfo.KIND_CORRECTION,Dictionary.DICTIONARY_HARDCODED,-1,-1),emoji));
   strip.setSuggestions(new SuggestedWords(predictions,null,null,true,false,false,SuggestedWords.INPUT_STYLE_TYPING,1),false);
   strip.setToolbarVisibility(false);
   SuggestedWordInfo[] selected={null};
+  View nativeInput=org.mockito.Mockito.mock(View.class);
+  org.mockito.Mockito.when(nativeInput.findViewById(R.id.keyboard_view))
+    .thenReturn(org.mockito.Mockito.mock(helium314.keyboard.keyboard.MainKeyboardView.class));
   strip.setListener(new SuggestionStripView.Listener(){
    public void pickSuggestionManually(SuggestedWordInfo word){selected[0]=word;}
    public void onCodeInput(int code,int x,int y,boolean repeat){}
    public void removeSuggestion(String word){} public void removeExternalSuggestions(){}
    public void onSwipeDownOnToolbar(){} public void onAiAction(String action){}
-  },strip);
+  },nativeInput);
   ViewGroup row=strip.findViewById(R.id.suggestions_strip);TextView emojiSlot=null;
   for(int i=0;i<row.getChildCount();i++)if(row.getChildAt(i) instanceof TextView&&"🐈".contentEquals(((TextView)row.getChildAt(i)).getText()))emojiSlot=(TextView)row.getChildAt(i);
   assertNotNull("A native emoji must be visible in the three-slot strip",emojiSlot);
@@ -75,6 +79,7 @@ public class TextStickerSuggestionSlotTest {
   assertFalse("A sticker must not hide the matching emoji",strip.showTextStickerSuggestion(bitmap,()->fail("sticker sent"),()->fail("sticker saved")));
   assertEquals("🐈",emojiSlot.getText().toString());assertEquals(children,row.getChildCount());
   emojiSlot.performClick();assertSame("The original native emoji tap must survive",emoji,selected[0]);
+  assertEquals("Presentation must not reorder the correction engine's input", "gata",predictions.get(2).mWord);
   bitmap.recycle();
  }
 

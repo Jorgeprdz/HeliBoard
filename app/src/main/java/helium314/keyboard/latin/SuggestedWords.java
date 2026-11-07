@@ -93,6 +93,21 @@ public class SuggestedWords {
         return mSuggestedWordInfoList.size();
     }
 
+    /** Display one native emoji without changing the typed/autocorrection candidates or their scores. */
+    public SuggestedWords withVisibleEmoji() {
+        if ((mInputStyle != INPUT_STYLE_TYPING && mInputStyle != INPUT_STYLE_RECORRECTION)
+                || size() < 4 || getInfo(2).isEmoji()) return this;
+        for (int index = 3; index < size(); index++) {
+            if (!getInfo(index).isEmoji()) continue;
+            ArrayList<SuggestedWordInfo> display = new ArrayList<>(mSuggestedWordInfoList);
+            display.add(2, display.remove(index));
+            return new SuggestedWords(display, mRawSuggestions, mTypedWordInfo,
+                    mTypedWordValid, mWillAutoCorrect, mIsObsoleteSuggestions,
+                    mInputStyle, mSequenceNumber);
+        }
+        return this;
+    }
+
     /**
      * Get suggested word to show as suggestions to UI.
      *

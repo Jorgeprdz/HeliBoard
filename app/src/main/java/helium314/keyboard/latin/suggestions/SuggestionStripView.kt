@@ -277,13 +277,14 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     fun setSuggestions(suggestions: SuggestedWords, isRtlLanguage: Boolean) {
-        stripArbiter.rememberPredictions(suggestions)
+        val displaySuggestions = suggestions.withVisibleEmoji()
+        stripArbiter.rememberPredictions(displaySuggestions)
         pendingRtl = isRtlLanguage
         normalExternal = null
         if (stripArbiter.active()) return
         clear()
         setRtl(isRtlLanguage)
-        suggestedWords = suggestions
+        suggestedWords = displaySuggestions
         startIndexOfMoreSuggestions = layoutHelper.layoutAndReturnStartIndexOfMoreSuggestions(
             context, suggestedWords, suggestionsStrip, this
         )
