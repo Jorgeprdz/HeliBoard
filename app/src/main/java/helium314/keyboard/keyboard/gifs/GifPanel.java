@@ -91,7 +91,24 @@ public final class GifPanel extends LinearLayout implements InternalInputPanel {
         typingQuery.setBackground(shape(surface,CONTROL_RADIUS));compact.addView(typingQuery,new LayoutParams(0,controlHeight(),1));
         fixedButton(compact,"×","Borrar consulta",v->{query.setLength(0);updateQuery();invalidateResults();},CONTROL_HEIGHT);
         fixedButton(compact,"⌕","Buscar GIF",v->search(0),CONTROL_HEIGHT);compact.setVisibility(GONE);addView(compact,new LayoutParams(-1,-1));
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(this,(view,insets)->{
+            applyBrowseInsets(insets);return insets;
+        });
         main.post(()->search(0));
+    }
+    private void applyBrowseInsets(androidx.core.view.WindowInsetsCompat insets){
+        androidx.core.graphics.Insets safe=insets.getInsets(
+            androidx.core.view.WindowInsetsCompat.Type.navigationBars()
+                |androidx.core.view.WindowInsetsCompat.Type.displayCutout());
+        // Only browse content moves; the native search keys and toolbar retain their geometry.
+        browse.setPadding(safe.left,0,safe.right,safe.bottom);
+    }
+    @Override protected void onAttachedToWindow(){
+        super.onAttachedToWindow();androidx.core.view.ViewCompat.requestApplyInsets(this);
+        post(()->{if(isAttachedToWindow()){
+            androidx.core.view.WindowInsetsCompat insets=androidx.core.view.ViewCompat.getRootWindowInsets(this);
+            if(insets!=null)applyBrowseInsets(insets);
+        }});
     }
     private int controlHeight(){return Math.max(dp(CONTROL_HEIGHT),(int)Math.ceil(13*getResources().getDisplayMetrics().scaledDensity*1.35)+dp(8));}
     private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}

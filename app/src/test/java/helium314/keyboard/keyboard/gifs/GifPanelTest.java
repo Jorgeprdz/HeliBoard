@@ -20,7 +20,24 @@ import static org.robolectric.Shadows.shadowOf;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk=28)
+@org.robolectric.annotation.ConscryptMode(org.robolectric.annotation.ConscryptMode.Mode.OFF)
 public final class GifPanelTest {
+    @Test public void navigationBarLeavesAttributionInsideSafeArea() {
+        Context context=RuntimeEnvironment.getApplication();
+        GifPanel panel=new GifPanel(context,mock(LatinIME.class));
+        shadowOf(Looper.getMainLooper()).idle();
+        androidx.core.view.ViewCompat.dispatchApplyWindowInsets(panel,
+            new androidx.core.view.WindowInsetsCompat.Builder().setInsets(
+                androidx.core.view.WindowInsetsCompat.Type.navigationBars(),
+                androidx.core.graphics.Insets.of(0,0,0,24)).build());
+        panel.measure(View.MeasureSpec.makeMeasureSpec(640,View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(300,View.MeasureSpec.EXACTLY));
+        panel.layout(0,0,640,300);
+        LinearLayout browse=(LinearLayout)panel.getChildAt(0);
+        View footer=browse.getChildAt(browse.getChildCount()-1);
+        assertTrue("GIPHY attribution must remain above gesture navigation",footer.getBottom()<=276);
+        panel.close();
+    }
     @Test public void queryUsesNativeTypingBridgeAndNeverCommitsToDraft() {
         Context context=RuntimeEnvironment.getApplication();LatinIME ime=mock(LatinIME.class);
         InputConnection connection=mock(InputConnection.class);EditorInfo editor=new EditorInfo();editor.packageName="test.editor";
