@@ -98,6 +98,9 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private val stripArbiter = SuggestionStripArbiter()
     private var normalExternal: View? = null
     private var normalExternalClose = false
+    private var stickerSlot: TextView? = null
+    private var stickerOriginalText: CharSequence? = null
+    private var stickerOriginalDescription: CharSequence? = null
     private var pendingRtl = false
     val isAiActive get() = stripArbiter.active()
 
@@ -287,6 +290,43 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         updateKeys()
     }
 
+    /** Reuses a physical rightmost native word slot; view count, weights and colors stay native. */
+    fun canShowTextStickerSuggestion(): Boolean = !stripArbiter.active() && !isExternalSuggestionVisible &&
+        !toolbarContainer.isVisible && suggestionsStrip.isVisible && !isShowingMoreSuggestionPanel &&
+        (0 until suggestionsStrip.childCount).count { suggestionsStrip.getChildAt(it) is TextView } >= 3
+
+    fun showTextStickerSuggestion(bitmap: android.graphics.Bitmap, send: Runnable, save: Runnable): Boolean {
+        if (!canShowTextStickerSuggestion() || bitmap.isRecycled) return false
+        clearTextStickerSuggestion()
+        val words = (0 until suggestionsStrip.childCount).map { suggestionsStrip.getChildAt(it) }.filterIsInstance<TextView>()
+        val target = if (suggestionsStrip.layoutDirection == LAYOUT_DIRECTION_RTL) words.first() else words.last()
+        stickerSlot = target
+        stickerOriginalText = target.text
+        stickerOriginalDescription = target.contentDescription
+        val side = min(28.dpToPx(resources), resources.getDimensionPixelSize(R.dimen.config_suggestions_strip_height) - 4.dpToPx(resources))
+        val drawable = android.graphics.drawable.BitmapDrawable(resources, bitmap)
+        drawable.setBounds(0, 0, side.coerceAtLeast(1), side.coerceAtLeast(1))
+        target.text = android.text.SpannableString("\uFFFC").apply {
+            setSpan(android.text.style.ImageSpan(drawable, android.text.style.ImageSpan.ALIGN_BASELINE), 0, 1, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        target.contentDescription = "Enviar sticker de texto; mantener pulsado para guardar"
+        target.setOnClickListener { send.run() }
+        target.setOnLongClickListener { save.run(); true }
+        return true
+    }
+
+    fun clearTextStickerSuggestion() {
+        stickerSlot?.let { target ->
+            target.text = stickerOriginalText
+            target.contentDescription = stickerOriginalDescription
+            target.setOnClickListener(this)
+            target.setOnLongClickListener(this)
+        }
+        stickerSlot = null
+        stickerOriginalText = null
+        stickerOriginalDescription = null
+    }
+
     fun setExternalSuggestionView(view: View?, addCloseButton: Boolean) {
         normalExternal = view
         normalExternalClose = addCloseButton
@@ -410,6 +450,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     override fun onDetachedFromWindow() {
+        clearTextStickerSuggestion()
         super.onDetachedFromWindow()
         if (stripArbiter.active() && ::listener.isInitialized) listener.onAiAction("Cerrar")
         dismissMoreSuggestionsPanel()
@@ -598,6 +639,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     private fun clear() {
+        clearTextStickerSuggestion()
         suggestionsStrip.removeAllViews()
         if (DEBUG_SUGGESTIONS) removeAllDebugInfoViews()
         if (!toolbarContainer.isVisible)

@@ -147,6 +147,7 @@ public class LatinIME extends InputMethodService implements
     private InsetsOutlineProvider mInsetsUpdater;
     private SuggestionStripView mSuggestionStripView;
     private AiKeyboardAssistant mAiKeyboardAssistant;
+    private helium314.keyboard.latin.gifs.TextStickerSuggestionController mTextStickerSuggestions;
 
     private RichInputMethodManager mRichImm;
     final KeyboardSwitcher mKeyboardSwitcher;
@@ -777,6 +778,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onDestroy() {
+        if(mTextStickerSuggestions!=null)mTextStickerSuggestions.close();
         closeInternalInputPanel();
         if (sR252bActiveInstance == this) sR252bActiveInstance = null;
         sR252bHarnessObserver = null;
@@ -805,6 +807,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onConfigurationChanged(final Configuration conf) {
+        if(mTextStickerSuggestions!=null)mTextStickerSuggestions.invalidate();
         if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();
         SettingsValues settingsValues = mSettings.getCurrent();
         Log.i(TAG, "onConfigurationChanged");
@@ -945,6 +948,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     private void onStartInputInternal(final EditorInfo editorInfo, final boolean restarting) {
+        if(mTextStickerSuggestions!=null)mTextStickerSuggestions.invalidate();
         super.onStartInput(editorInfo, restarting);
         // R2.5.2c: release opt-in OR isolated debug ADB gate; evaluated only at editor start.
         if (mR252ColorLifecycle != null) mR252ColorLifecycle.refreshActivation(this);
@@ -980,6 +984,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     void onStartInputViewInternal(final EditorInfo editorInfo, final boolean restarting) {
+        if(mTextStickerSuggestions!=null)mTextStickerSuggestions.invalidate();
         super.onStartInputView(editorInfo, restarting);
         if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();
 
@@ -1165,6 +1170,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     void onFinishInputInternal() {
+        if(mTextStickerSuggestions!=null)mTextStickerSuggestions.invalidate();
         if (mR252ColorLifecycle != null) mR252ColorLifecycle.onEditorFinish();
         super.onFinishInput();
         Log.i(TAG, "onFinishInput");
@@ -1183,6 +1189,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     private void cleanupInternalStateForFinishInput() {
+        if(mTextStickerSuggestions!=null)mTextStickerSuggestions.invalidate();
         // Remove pending messages related to update suggestions
         mHandler.cancelUpdateSuggestionStrip();
         // Should do the following in onFinishInputInternal but until JB MR2 it's not called :(
@@ -1198,6 +1205,8 @@ public class LatinIME extends InputMethodService implements
     public void onUpdateSelection(final int oldSelStart, final int oldSelEnd,
                                   final int newSelStart, final int newSelEnd,
                                   final int composingSpanStart, final int composingSpanEnd) {
+        if(mTextStickerSuggestions!=null&&(newSelStart!=mInputLogic.mConnection.getExpectedSelectionStart()
+                ||newSelEnd!=mInputLogic.mConnection.getExpectedSelectionEnd()))mTextStickerSuggestions.invalidate();
         if (isInternalInputPanelShowing() && (oldSelStart != newSelStart || oldSelEnd != newSelEnd))
             closeInternalInputPanel();
         super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd,
@@ -1582,6 +1591,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onAiAction(final String action) {
+        if(mTextStickerSuggestions!=null)mTextStickerSuggestions.invalidate();
         if (mSuggestionStripView == null) { return; }
         if (mAiKeyboardAssistant == null) mAiKeyboardAssistant = new AiKeyboardAssistant(this);
         mAiKeyboardAssistant.onAction(action, mSuggestionStripView);
@@ -1728,6 +1738,9 @@ public class LatinIME extends InputMethodService implements
             if (currentSettingsValues.mAutoHideToolbar && !noSuggestionsFromDictionaries) {
                 mSuggestionStripView.setToolbarVisibility(false);
             }
+            if(mTextStickerSuggestions==null&&hasAiComposition()&&mSuggestionStripView.canShowTextStickerSuggestion())
+                mTextStickerSuggestions=new helium314.keyboard.latin.gifs.TextStickerSuggestionController(this);
+            if(mTextStickerSuggestions!=null)mTextStickerSuggestions.refresh(mSuggestionStripView);
         }
     }
 
@@ -1983,6 +1996,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     public void showInternalInputPanel(final View panel) {
+        if(mTextStickerSuggestions!=null)mTextStickerSuggestions.invalidate();
         if (!(panel instanceof helium314.keyboard.keyboard.gifs.InternalInputPanel))
             throw new IllegalArgumentException("Internal panel must own its input lifecycle");
         if (mAiKeyboardAssistant != null) mAiKeyboardAssistant.onNewEditor();

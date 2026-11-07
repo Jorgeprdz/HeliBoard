@@ -37,6 +37,7 @@ public final class HandwritingPanel extends LinearLayout implements InternalInpu
   modelGeneration++;invalidateCandidates();pad.clear();ready=false;download.setEnabled(false);recognize.setEnabled(false);if(engine!=null){engine.close();engine=null;}
   try{
    if(Os.sysconf(OsConstants._SC_PAGESIZE)>4096){status.setText("Escritura a mano no disponible en dispositivos con páginas de 16 KB");return;}
+   if(!HandwritingRuntimeProvider.ensureInitialized(getContext())){status.setText("Reconocimiento local no disponible en este momento");return;}
    engine=new DigitalInkEngine(tag);final long ticket=modelGeneration;status.setText("Comprobando modelo local…");
    engine.available((found,error)->{if(closed||ticket!=modelGeneration||!session.current(host.editorToken()))return;ready=found;download.setEnabled(!found);recognize.setEnabled(found);status.setText(found?"Modelo listo · reconocimiento sin conexión":"Descarga el modelo una vez para reconocer sin conexión");});
   }catch(Exception|LinkageError error){status.setText("Reconocimiento local no disponible en este dispositivo");}

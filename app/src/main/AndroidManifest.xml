@@ -33,6 +33,20 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
             tools:remove="android:appComponentFactory"
             tools:targetApi="33">
 
+        <!-- ML Kit's downloader needs credential storage. The keyboard itself
+             must continue using device storage, including before first unlock. -->
+        <provider android:name="com.google.mlkit.common.internal.MlKitInitProvider"
+            android:authorities="${applicationId}.mlkitinitprovider" tools:node="remove" />
+        <provider android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false" tools:node="merge">
+            <meta-data android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup" tools:node="remove" />
+        </provider>
+        <provider android:name="helium314.keyboard.latin.ai.handwriting.HandwritingRuntimeProvider"
+            android:authorities="${applicationId}.handwriting-runtime"
+            android:exported="false" android:directBootAware="false" android:initOrder="100" />
+
         <!-- Services -->
         <service android:name="helium314.keyboard.latin.ai.cloud.TypingSync" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="false" android:directBootAware="false" />
         <service android:name="LatinIME"

@@ -1,0 +1,7 @@
+# Original text stickers
+
+User authorization: “si vas a volver a compilar incluye lo que dejamos en el to-do”. The existing TODO specifies a word/phrase becomes an original sticker, preview, save and send inside keyboard, no popup or app switch, existing keyboard appearance preserved.
+
+Implementation choice: generate decorated transparent PNG text stickers locally, without credentials or network. This fulfills the literal text sticker request with deterministic low-latency rendering. Image generation from semantic prompts would require a separate image service/key and is outside this implementation. Existing GIPHY search remains independent.
+
+Latest user constraint: “la sugerencia del sticker se debe mostrar en la barra de sugerencias, no en nuevo panel”. Show an automatic sticker thumbnail in an existing suggestion slot while typing, preserve normal strip geometry, remaining predictions, theme and main keyboard. Tap sends PNG directly; long press explicitly saves with brief feedback. No new panel. Private/password/incognito fields suppress suggestions. Render on worker with debounce; validate current input connection, logical editor, selection and input snapshot before display/send/save. Persist only on explicit save, maximum40 stickers. Unsaved previews use cache; share via existing scoped FileProvider and image/png content commit. Unsupported recipients get feedback without app/window fallback. Limit input120 Unicode code points, preserve emoji/grapheme integrity, reject empty input. No global key/render/appearance changes.
