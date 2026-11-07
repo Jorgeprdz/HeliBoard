@@ -6,7 +6,7 @@ import helium314.keyboard.latin.BuildConfig
 import helium314.keyboard.latin.common.Links
 import helium314.keyboard.latin.common.LocaleUtils.constructLocale
 import helium314.keyboard.latin.utils.getKnownDictionariesForLocale
-import org.json.JSONArray
+import org.json.JSONObject
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.File
@@ -27,19 +27,20 @@ class XLinkTest { // Without the X, SubtypeTests fail with ClassCastException. W
                 urls.add(it.second)
             }
         }
-        // Validate every generated path against the live repository, with only
-        // two API requests instead of hundreds of rate-limited raw-file requests.
+        // The contents/dictionaries endpoint times out on the large directory (HTTP504).
+        // The Git tree endpoint returns the same live paths in one bounded metadata request.
         val directories = listOf("dictionaries", "emoji_cldr_signal_dictionaries")
+        val api = "https://codeberg.org/api/v1/repos/Helium314/aosp-dictionaries/git/trees/main?recursive=true"
+        val catalog = JSONObject(readLink(api))
+        assertTrue(!catalog.optBoolean("truncated", false), "Truncated live dictionary catalog")
+        val entries = catalog.getJSONArray("tree")
         val available = mutableSetOf<String>()
+        for (index in 0 until entries.length()) {
+            val entry = entries.getJSONObject(index)
+            if (entry.getString("type") == "blob") available.add(entry.getString("path"))
+        }
         directories.forEach { directory ->
-            val api = "https://codeberg.org/api/v1/repos/Helium314/aosp-dictionaries/contents/$directory?ref=main"
-            val entries = JSONArray(readLink(api))
-            assertTrue(entries.length() > 0, "Empty catalog: $api")
-            for (index in 0 until entries.length()) {
-                val entry = entries.getJSONObject(index)
-                if (entry.getString("type") == "file")
-                    available.add("$directory/" + entry.getString("name"))
-            }
+            assertTrue(available.any { it.startsWith("$directory/") }, "Empty live catalog: $directory")
         }
         val prefix = Links.DICTIONARY_URL + Links.DICTIONARY_DOWNLOAD_SUFFIX
         assertTrue(urls.isNotEmpty(), "No dictionary URLs were generated")

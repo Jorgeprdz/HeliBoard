@@ -797,13 +797,17 @@ public final class AiKeyboardAssistant {
     private helium314.keyboard.latin.ai.panels.PanelHost panelHost(){
         final InputConnection editor=ime.getCurrentInputConnection();final EditorInfo info=ime.getCurrentInputEditorInfo();
         final int start=ime.getAiInputConnection().getExpectedSelectionStart(),end=ime.getAiInputConnection().getExpectedSelectionEnd();
+        final String packageId=info==null?null:info.packageName;
+        final int fieldId=info==null?-1:info.fieldId,inputType=info==null?0:info.inputType,options=info==null?0:info.imeOptions;
         final CharSequence before=editor==null?null:editor.getTextBeforeCursor(512,0),selectedText=editor==null?null:editor.getSelectedText(0);
         final Object token=new Object();
         return new helium314.keyboard.latin.ai.panels.PanelHost(){
             public Object editorToken(){
                 InputConnection current=ime.getCurrentInputConnection();
-                if(editor==null||current!=editor||ime.getCurrentInputEditorInfo()!=info||start!=ime.getAiInputConnection().getExpectedSelectionStart()
-                    ||end!=ime.getAiInputConnection().getExpectedSelectionEnd())return null;
+                EditorInfo currentInfo=ime.getCurrentInputEditorInfo();
+                if(editor==null||info==null||current!=editor||currentInfo==null||!Objects.equals(packageId,currentInfo.packageName)
+                    ||fieldId!=currentInfo.fieldId||inputType!=currentInfo.inputType||options!=currentInfo.imeOptions
+                    ||start!=ime.getAiInputConnection().getExpectedSelectionStart()||end!=ime.getAiInputConnection().getExpectedSelectionEnd())return null;
                 CharSequence currentBefore=current.getTextBeforeCursor(512,0),currentSelected=current.getSelectedText(0);
                 return Objects.equals(before==null?null:before.toString(),currentBefore==null?null:currentBefore.toString())
                     &&Objects.equals(selectedText==null?null:selectedText.toString(),currentSelected==null?null:currentSelected.toString())?token:null;

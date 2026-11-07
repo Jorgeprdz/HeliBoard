@@ -248,7 +248,7 @@ public class AiSettingsActivity extends Activity {
         stack.addView(modelLabel);
         EditText model = new com.google.android.material.textfield.TextInputEditText(this);
         model.setSingleLine(true);model.setHint("Automático al guardar; modelo avanzado opcional");
-        model.setText(readModel(this));
+        model.setHint(readModel(this).isEmpty()?"Automático al guardar":"Automático al guardar · actual: "+readModel(this));
         stack.addView(model);
         TextView status = new TextView(this);
         status.setPadding(0, pad/2, 0, pad/2);
