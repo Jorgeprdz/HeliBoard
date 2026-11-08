@@ -577,6 +577,10 @@ class DictionaryFacilitatorImpl : DictionaryFacilitator {
     // Spell checker is using this, and has its own instance of DictionaryFacilitatorImpl,
     // meaning that it always has default mConfidence. So we cannot choose to only check preferred
     // locale, and instead simply return true if word is in any of the available dictionaries
+    override fun isPersonalSpellingWord(word: String): Boolean = dictionaryGroups.any { group ->
+        isValidWord(word, arrayOf(Dictionary.TYPE_USER, Dictionary.TYPE_CONTACTS, Dictionary.TYPE_APPS), group)
+    }
+
     override fun isValidSpellingWord(word: String): Boolean {
         mValidSpellingWordReadCache?.get(word)?.let { return it }
         val result = dictionaryGroups.any { isValidWord(word, DictionaryFacilitator.ALL_DICTIONARY_TYPES, it) }

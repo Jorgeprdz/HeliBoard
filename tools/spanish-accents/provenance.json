@@ -1,0 +1,13 @@
+{
+  "source": "app/src/main/assets/dicts/main_es.dict",
+  "source_sha256": "beb2fda8a3bbaeeec95c301c5cce3e40474e01677a4412fb070eee2040c391d3",
+  "builder": {
+    "url": "https://codeberg.org/Helium314/aosp-dictionaries/raw/commit/ff0cd52be8d9530200fefe8b296c53d4f662091e/dicttool_aosp.jar",
+    "sha256": "a8c5bd21f631ed0a92235d42d2fe83af5d70216172bf7e22781a9a946858237e"
+  },
+  "minimum_frequency": 64,
+  "entries": 10407,
+  "sha256": "a6eeffbb51ed39fbadaff650daaabb138d0f988b7538fa2422c8729fd99770bc",
+  "policy": "One acute, lowercase, unique before frequency filter, no bare Spanish form (case insensitive).",
+  "license": "Derived from the existing bundled Spanish dictionary; same dictionary licensing applies."
+}

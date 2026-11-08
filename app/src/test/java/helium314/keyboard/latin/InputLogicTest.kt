@@ -593,6 +593,33 @@ class InputLogicTest {
         r22NativeCandidateObservationsDriveActualImeSpellingEdit()
     }
 
+    @Test
+    @org.robolectric.annotation.Config(sdk = [28])
+    @org.robolectric.annotation.ConscryptMode(org.robolectric.annotation.ConscryptMode.Mode.OFF)
+    fun R30CanonicalAccentUsesShippedAssetAndNativeAtomicUndoWithVeto() {
+        r22Enable("yo tambien ")
+        val assistant = r23Assistant()
+        val index = latinIME.assets.open("spanish-accents.tsv").reader(Charsets.UTF_8).use {
+            helium314.keyboard.latin.ai.local.SpanishAccentIndex.read(it)
+        }
+        val dictionary = helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon(
+            helium314.keyboard.latin.ai.local.R29NeighborCorrectionTest.Lex(), { true }, { false }, { index.get(it) })
+        val correction = helium314.keyboard.latin.ai.local.LocalContextReviewer().review(text,dictionary,emptySet(),{false}).single()
+        assertEquals("canonical-spanish-acute",correction.reason)
+        val snapshot = assistant.javaClass.getDeclaredMethod("capture").apply { isAccessible=true }.invoke(assistant)
+        val apply = assistant.javaClass.getDeclaredMethod("applyBoundary",helium314.keyboard.latin.ai.EditorSnapshot::class.java,
+            String::class.java,helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction::class.java).apply { isAccessible=true }
+        kotlin.test.assertTrue(apply.invoke(assistant,snapshot,text,correction) as Boolean)
+        assertEquals("yo también ",text)
+        checkConnectionConsistency()
+        functionalKeyPress(KeyCode.DELETE)
+        assertEquals("yo tambien ",text)
+        val veto = helium314.keyboard.latin.ai.AiSettingsActivity.rejectedCorrections(latinIME)
+        kotlin.test.assertTrue(veto.contains("tambien→también"))
+        kotlin.test.assertTrue(helium314.keyboard.latin.ai.local.LocalContextReviewer().review(text,dictionary,veto,{false}).isEmpty())
+        checkConnectionConsistency()
+    }
+
     @Test fun R24NativeRejectionVetoesFutureAutomaticCandidate() {
         r22Enable("poryectos")
         val assistant = r23Assistant()

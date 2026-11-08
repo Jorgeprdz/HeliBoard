@@ -6,11 +6,15 @@ import java.util.function.Predicate;
 public final class BoundedDictionaryLexicon implements LocalContextReviewer.Lexicon {
  private final LocalContextReviewer.Lexicon base;
  private final Predicate<String> dictionary;
+ private final java.util.function.Function<String,String> canonical;
  private final LocalContextReviewer.Cancellation cancel;
  private int observedOnly,preservedChecks;
  private final Map<String,Boolean> checked=new HashMap<>();
  public BoundedDictionaryLexicon(LocalContextReviewer.Lexicon base,Predicate<String> dictionary,LocalContextReviewer.Cancellation cancel){
-  this.base=base;this.dictionary=dictionary;this.cancel=cancel;
+  this(base,dictionary,cancel,word->null);
+ }
+ public BoundedDictionaryLexicon(LocalContextReviewer.Lexicon base,Predicate<String> dictionary,LocalContextReviewer.Cancellation cancel,java.util.function.Function<String,String> canonical){
+  this.base=base;this.dictionary=dictionary;this.cancel=cancel;this.canonical=canonical;
  }
  public boolean valid(String word){
   if(cancel.cancelled())throw new java.util.concurrent.CancellationException();
@@ -27,6 +31,7 @@ public final class BoundedDictionaryLexicon implements LocalContextReviewer.Lexi
   if(!result&&observed)observedOnly++;
   return result || observed;
  }
+ public String canonicalAccent(String word){if(cancel.cancelled())throw new java.util.concurrent.CancellationException();return base.preserved(word)?null:canonical.apply(word);}
  public boolean knownInvalid(String word){return !valid(word);}
  public boolean preserved(String word){return base.preserved(word);}
  public boolean spaceNeighbor(char c){return base.spaceNeighbor(c);}

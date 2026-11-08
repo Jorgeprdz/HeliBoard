@@ -31,6 +31,8 @@ public final class LocalContextReviewer {
         List<String> candidates(String word);
         /** True only after native validity checked the configured languages and personal words. */
         default boolean preserved(String word) { return false; }
+        /** Worker-only unambiguous Spanish evidence, after personal dictionary veto. */
+        default String canonicalAccent(String word) { return null; }
         default boolean spaceNeighbor(char c) { return "vbn".indexOf(c)>=0; }
         default boolean knownInvalid(String word) { return false; }
         default double prior(String source,String candidate){return 0;}
@@ -73,7 +75,17 @@ public final class LocalContextReviewer {
                 Token token = tokens.get(i);
                 if (token.protectedText || token.word.length() > MAX_WORD_LENGTH
                         || NEGATIONS.contains(token.lower) || lexicon.preserved(token.lower)) continue;
-                Correction proposal = hasCapital(token.word) ? title(text,tokens,i,lexicon,cancellation) : mechanics(text,tokens,i,lexicon);
+                Correction proposal = null;
+                boolean initialTitle = i == 0 && token.start == 0
+                    && token.word.matches("[A-ZÑÜ][a-zñü]{3,31}");
+                if (!hasCapital(token.word) || initialTitle) {
+                    String canonical = lexicon.canonicalAccent(token.lower);
+                    if (canonical != null && singleAcute(token.lower, canonical) && lexicon.valid(canonical)) {
+                        String replacement = initialTitle ? Character.toUpperCase(canonical.charAt(0)) + canonical.substring(1) : canonical;
+                        proposal = correction(token, replacement, "canonical-spanish-acute", .97, true);
+                    }
+                }
+                if (proposal == null) proposal = hasCapital(token.word) ? title(text,tokens,i,lexicon,cancellation) : mechanics(text,tokens,i,lexicon);
                 if (proposal == null && !hasCapital(token.word)) {
                     NeighborWordCorrector.Choice accent = NeighborWordCorrector.accent(token.lower, lexicon, cancellation);
                     if (accent != null) proposal = correction(token, accent.word,
@@ -106,6 +118,17 @@ public final class LocalContextReviewer {
         } catch (RuntimeException unavailableDictionary) {
             return Collections.emptyList();
         }
+    }
+
+    private static boolean singleAcute(String source, String target) {
+        if (!source.matches("[a-zñü]{4,32}") || target.length() != source.length()) return false;
+        int changes=0;
+        for (int i=0;i<source.length();i++) {
+            if(source.charAt(i)==target.charAt(i))continue;
+            int vowel="aeiou".indexOf(source.charAt(i));
+            if(vowel<0||"áéíóú".charAt(vowel)!=target.charAt(i)||++changes>1)return false;
+        }
+        return changes==1;
     }
 
     private static Correction grammar(String text, List<Token> tokens, int i, Lexicon lexicon) {

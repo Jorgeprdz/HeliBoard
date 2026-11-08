@@ -196,6 +196,18 @@ public final class AiKeyboardAssistant {
     /** Content-free state for Android's existing protected service dump. */
     public String localReviewDiagnostics(){return "LocalReview phase="+localReviewPhase
         +" boundaries="+localReviewBoundaries+" validated="+localReviewValidated+" proposals="+localReviewProposals+localLexiconDiagnostics;}
+    private helium314.keyboard.latin.ai.local.SpanishAccentIndex spanishAccents;
+    /** Called exclusively by the serialized continuous-review worker. No IO on the IME thread. */
+    private helium314.keyboard.latin.ai.local.SpanishAccentIndex spanishAccents() {
+        if (spanishAccents == null) {
+            try(java.io.Reader reader=new java.io.InputStreamReader(ime.getAssets().open("spanish-accents.tsv"),java.nio.charset.StandardCharsets.UTF_8)) {
+                spanishAccents=helium314.keyboard.latin.ai.local.SpanishAccentIndex.read(reader);
+            } catch(java.io.IOException unavailable) {
+                spanishAccents=helium314.keyboard.latin.ai.local.SpanishAccentIndex.empty();
+            }
+        }
+        return spanishAccents;
+    }
     private void queueContinuous(EditorSnapshot base,String context){
         if(context.length()>512||base.start<context.length())return;
         if(continuousRunning){latestReview=new QueuedReview(base,context,anchor(base,context));return;}
@@ -208,15 +220,20 @@ public final class AiKeyboardAssistant {
         // Only configured dictionaries may confirm these candidates on the worker.
         final Collection<String> nativeWords=lexicon.nativeValidVocabulary();
         final Set<String> rejected=AiSettingsActivity.rejectedCorrections(ime);
+        final boolean spanish="es-MX".equals(typingLanguage());
         final java.util.concurrent.atomic.AtomicReference<java.util.List<helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction>> found=
             new java.util.concurrent.atomic.AtomicReference<>(Collections.emptyList());
         continuousRunning=true;
         continuousSession.submit(cancel->{
             localReviewPhase="worker-running";
+            final helium314.keyboard.latin.ai.local.SpanishAccentIndex accents=spanish?spanishAccents():null;
             long deadline=System.nanoTime()+100_000_000L;
             helium314.keyboard.latin.ai.local.LocalContextReviewer.Cancellation stop=()->cancel.cancelled()||System.nanoTime()>deadline;
             helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon vocabulary=
-                new helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon(observed,dictionary::isValidSpellingWord,stop);
+                new helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon(observed,dictionary::isValidSpellingWord,stop,word->{
+                    String canonical=accents==null?null:accents.get(word);
+                    return canonical!=null&&!dictionary.isPersonalSpellingWord(word)?canonical:null;
+                });
             try{found.set(boundaryReviewer.review(context,vocabulary,rejected,stop));}
             finally{localReviewValidated=vocabulary.validationCount();localLexiconDiagnostics=vocabulary.diagnostics();}
             localReviewProposals=found.get().size();

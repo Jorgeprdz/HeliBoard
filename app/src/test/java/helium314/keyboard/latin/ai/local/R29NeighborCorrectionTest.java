@@ -6,7 +6,7 @@ import static org.junit.Assert.*;
 
 /** Literal user regressions plus negative controls; synthetic dictionary, not accuracy claims. */
 public class R29NeighborCorrectionTest {
- static class Lex implements LocalContextReviewer.Lexicon {
+ public static class Lex implements LocalContextReviewer.Lexicon {
   final Set<String> words=new HashSet<>(Arrays.asList("mejora la detección de pulsar teclas vecinas hola como tengo que teclado funciona también canción rápido teléfono no ni me le si sí el él mas más tu tú continuo termino sunbathing banana".split(" ")));
   final Set<String> unknown=new HashSet<>(),protectedWords=new HashSet<>();
   public boolean valid(String word){return words.contains(word);}
@@ -20,6 +20,11 @@ public class R29NeighborCorrectionTest {
   List<LocalContextReviewer.Correction> found=review(text,lex,Collections.emptySet(),()->false);StringBuilder out=new StringBuilder(text);
   for(int i=found.size()-1;i>=0;i--){LocalContextReviewer.Correction c=found.get(i);assertEquals(c.original,text.substring(c.start,c.end));if(c.automaticAllowed)out.replace(c.start,c.end,c.replacement);}
   return out.toString();
+ }
+ @Test public void canonicalSpanishAcuteRecoversDespitePermissiveSourceValidity(){
+  Lex lex=new Lex(){public String canonicalAccent(String word){return word.equals("tambien")?"también":null;}};
+  lex.words.add("tambien");
+  assertEquals("yo también ",apply("yo tambien ",lex));
  }
  @Test public void exactUserCompoundTypoRecoversWithoutNativeCandidateSeed(){assertEquals("mejora la detección de pulsar teclas vecinas ",apply("mejora la detecxiomnde pulsar teclas vecinas ",new Lex()));}
  @Test public void nAndBReplaceSpaceOnlyWithVerifiedUniqueWords(){for(String letter:Arrays.asList("n","b")){assertEquals("hola como ",apply("hola"+letter+"como ",new Lex()));assertEquals("teclado funciona ",apply("teclado"+letter+"funciona ",new Lex()));assertEquals("tengo que ",apply("tengo"+letter+"que ",new Lex()));}}

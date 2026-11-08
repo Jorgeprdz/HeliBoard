@@ -148,6 +148,9 @@ public interface DictionaryFacilitator {
 
     boolean isValidSpellingWord(final String word);
 
+    /** Worker-only veto for explicit user words, contacts and application names. Unknown implementations abstain. */
+    default boolean isPersonalSpellingWord(final String word) { return true; }
+
     boolean isValidSuggestionWord(final String word);
 
     void clearUserHistoryDictionary(final Context context);
