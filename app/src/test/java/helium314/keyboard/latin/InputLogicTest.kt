@@ -581,6 +581,18 @@ class InputLogicTest {
         kotlin.test.assertTrue(corrections.any { it.replacement == "también" && it.automaticAllowed })
     }
 
+    @Test
+    @org.robolectric.annotation.Config(sdk = [28])
+    @org.robolectric.annotation.ConscryptMode(org.robolectric.annotation.ConscryptMode.Mode.OFF)
+    fun R29MainDictionaryScenariosAlsoWorkAtApi28() {
+        // Reuse the existing API36 scenarios at the supported ARM host API too.
+        R243ObservedNativeSuggestionsFeedHybridWithoutChangingEditor()
+        reset()
+        R24MotorCorrectionAndUndoReuseNativeTransaction()
+        reset()
+        r22NativeCandidateObservationsDriveActualImeSpellingEdit()
+    }
+
     @Test fun R24NativeRejectionVetoesFutureAutomaticCandidate() {
         r22Enable("poryectos")
         val assistant = r23Assistant()
@@ -770,8 +782,11 @@ class InputLogicTest {
     }
 
     private fun r22NativeCandidates(typed: String, valid: Boolean, candidates: List<String>) {
-        val typedInfo = SuggestedWordInfo(typed, "", 0, SuggestedWordInfo.KIND_TYPED, null, 0, 0)
-        val source = Mockito.mock(helium314.keyboard.latin.dictionary.Dictionary::class.java)
+        val source = Mockito.mock(helium314.keyboard.latin.dictionary.Dictionary::class.java,
+            Mockito.withSettings().useConstructor("main", Locale("en"))
+                .defaultAnswer(Mockito.CALLS_REAL_METHODS))
+        val typedInfo = SuggestedWordInfo(typed, "", 0, SuggestedWordInfo.KIND_TYPED,
+            if (valid) source else helium314.keyboard.latin.dictionary.Dictionary.DICTIONARY_USER_TYPED, 0, 0)
         val infos = arrayListOf(typedInfo)
         candidates.forEach { infos.add(SuggestedWordInfo(it, "", 100, SuggestedWordInfo.KIND_CORRECTION, source, 0, 0)) }
         val words = SuggestedWords(infos, null, typedInfo, valid, false, false, SuggestedWords.INPUT_STYLE_TYPING, 0)
