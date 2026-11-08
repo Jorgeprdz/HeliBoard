@@ -11,16 +11,36 @@ public final class WordBoundarySegmenter {
  public static Choice choose(String word,LocalContextReviewer.Lexicon lexicon,LocalContextReviewer.Cancellation cancel){
   if(word.length()<6||word.length()>32||lexicon.valid(word)||!lexicon.knownInvalid(word))return null;
   Map<String,Double> found=new HashMap<>();
+  Set<String> neighborBoundaries=new HashSet<>();
   int[] budget={0};
   search(word,0,new ArrayList<>(),0,lexicon,cancel,found,budget);
   if(budget[0]>256)return null;
+  // An actual N/B key in place of space may be adjacent to another motor typo.
+  // Validate the suffix before exploring the expensive prefix variants on the worker.
+  for(int i=3;i+2<word.length();i++){
+   if(cancel.cancelled())return null;
+   char noise=word.charAt(i);
+   if((noise!='n'&&noise!='b')||!lexicon.spaceNeighbor(noise))continue;
+   String left=word.substring(0,i),right=word.substring(i+1);
+   if(!lexicon.valid(right)||lexicon.preserved(right)||lexicon.preserved(left))continue;
+   NeighborWordCorrector.Choice repair=null;
+   if(!lexicon.valid(left)){
+    repair=NeighborWordCorrector.accent(left,lexicon,cancel);
+    if(repair==null)repair=NeighborWordCorrector.choose(left,lexicon,cancel);
+    if(repair==null)continue;
+   }
+   String value=(repair==null?left:repair.word)+" "+right;
+   double cost=.65+(repair==null?0:repair.cost);
+   found.merge(value,cost,Math::min);neighborBoundaries.add(value);
+  }
   if(cancel.cancelled()||found.isEmpty())return null;
   List<Map.Entry<String,Double>> ordered=new ArrayList<>(found.entrySet());
   ordered.sort(Comparator.comparingDouble(Map.Entry::getValue));
   Map.Entry<String,Double> best=ordered.get(0);
   double margin=ordered.size()<2?Double.POSITIVE_INFINITY:ordered.get(1).getValue()-best.getValue();
   if(margin<.35||lexicon.rejected(word,best.getKey()))return null;
-  return new Choice(best.getKey(),best.getValue()<=1.4&&licensed(best.getKey().split(" ")));
+  return new Choice(best.getKey(),(best.getValue()<=1.4&&licensed(best.getKey().split(" ")))
+    ||(neighborBoundaries.contains(best.getKey())&&best.getValue()<=2.1));
  }
  private static void search(String word,int pos,List<String> parts,double cost,LocalContextReviewer.Lexicon lexicon,
    LocalContextReviewer.Cancellation cancel,Map<String,Double> found,int[] budget){

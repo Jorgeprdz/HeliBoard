@@ -27,8 +27,9 @@ public final class R25ContextReviewTest {
     found.stream().anyMatch(c->c.original.equals(source)&&c.replacement.equals(target)
       &&!c.automaticAllowed&&text.substring(c.start,c.end).equals(c.original)));
  }
- @Test public void gluedWordNeedsRealDictionaryAndNeverAutoCorrectsPrematurely(){
-  manual("Este tecladonfunciona en casa","tecladonfunciona","teclado funciona");
+ @Test public void verifiedSpaceNeighborCorrectsAutomaticallyButUnknownWordsDoNot(){
+  assertTrue(context("Este tecladonfunciona en casa",new Lex()).stream().anyMatch(c->
+    c.original.equals("tecladonfunciona")&&c.replacement.equals("teclado funciona")&&c.automaticAllowed));
   Lex lex=new Lex();lex.unknown.add("tecladonfunciona");
   assertTrue(context("Este tecladonfunciona en casa",lex).isEmpty());
  }
@@ -72,7 +73,7 @@ public final class R25ContextReviewTest {
   for(LocalContextReviewer.Correction c:context(text,new Lex())){
    assertTrue(c.start>=2);
    assertEquals(c.original,text.substring(c.start,c.end));
-   assertFalse(c.automaticAllowed);
+   assertTrue(c.automaticAllowed);
   }
   assertTrue(HybridImeReview.propose("fe",Collections.emptyList(),new Lex(),
      Collections.emptySet(),()->true).isEmpty());

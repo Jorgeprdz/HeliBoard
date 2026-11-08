@@ -1,4 +1,4 @@
-name: Tactic R28 One UI 8 verification
+name: Tactic R29 local autocorrection verification
 on:
   push:
     branches: [feat/gifs-and-automatic-gemini]
@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 70
     env:
-      HELIBOARD_VERSION_CODE: '20261111'
-      HELIBOARD_VERSION_NAME: '4.1-tactic-r28-oneui8'
+      HELIBOARD_VERSION_CODE: '20261112'
+      HELIBOARD_VERSION_NAME: '4.1-tactic-r29-local-correction'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -73,22 +73,22 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p delivery
-          cp app/build/outputs/apk/release/*.apk delivery/Tactic-R28-OneUI8.apk
-          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs delivery/Tactic-R28-OneUI8.apk > delivery/certificate.txt
+          cp app/build/outputs/apk/release/*.apk delivery/Tactic-R29-Local-Correction.apk
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs delivery/Tactic-R29-Local-Correction.apk > delivery/certificate.txt
           grep -F 'cfea5c3e180245ec7db199a1d8d799a4a91e0454fef7d02c5313b6d923b66ba2' delivery/certificate.txt
-          "$ANDROID_HOME/build-tools/37.0.0/aapt" dump badging delivery/Tactic-R28-OneUI8.apk > delivery/package.txt
+          "$ANDROID_HOME/build-tools/37.0.0/aapt" dump badging delivery/Tactic-R29-Local-Correction.apk > delivery/package.txt
           grep -F "name='com.jorgeprdz.ioskeyboard'" delivery/package.txt
-          grep -F "versionCode='20261111'" delivery/package.txt
-          (cd delivery && sha256sum Tactic-R28-OneUI8.apk > SHA256SUMS.txt)
+          grep -F "versionCode='20261112'" delivery/package.txt
+          (cd delivery && sha256sum Tactic-R29-Local-Correction.apk > SHA256SUMS.txt)
       - uses: actions/upload-artifact@v4
         with:
-          name: Tactic-R28-signed-update
+          name: Tactic-R29-signed-update
           path: delivery/
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: Tactic-R28-verification-reports
+          name: Tactic-R29-verification-reports
           path: |
             app/build/reports
             app/build/test-results

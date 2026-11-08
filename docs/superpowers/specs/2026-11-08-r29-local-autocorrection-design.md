@@ -1,0 +1,11 @@
+# R29: corrección local de teclas vecinas
+
+Petición explícita: continuar hasta instalar. Casos aportados: N/B por espacio; tildes omitidas; «detecxiomnde» por «detección de»; sustituciones perjudiciales NO→NI y ME→LE. Sin Gemini ni nuevo modelo, apariencia/datos/firma conservados.
+
+Prioridad: protección nativa de palabras cortas de función/negación, incluso sin la asistencia local opcional; mantener alternativas y elección manual, atajos explícitos y cambios solo de mayúsculas. Después reparar N/B interiores con separación inequívoca confirmada por todos los diccionarios; recuperar hasta dos sustituciones físicamente vecinas y una tilde, con presupuesto finito, fuera del hilo de escritura cuando requiere el diccionario. Ante ambigüedad, palabra válida en cualquier idioma, nombre/campo protegido, rechazo, cancelación o presupuesto incompleto, conservar original. Usar transacciones/deshacer existentes.
+
+Alternativas consideradas: endurecer globalmente todo el autocorrector perdería correcciones útiles; nuevo modelo local añade memoria y no resuelve reglas de compromiso nativo; elegida extensión acotada de guardas y revisor existentes, por los ejemplos y autorización del usuario. La política nueva autoriza automáticamente algunas separaciones que antes eran manuales; actualizar solo esas expectativas, conservar controles negativos.
+
+Verificación: ejemplos exactos, palabras válidas bilingües, pronombres/negaciones, ambigüedad, rechazo, proximidad física, cancelación/límite, texto/UTF16/cursor/deshacer. FullCI y lint/release/firma/runtime, instalación-r y prueba fixture sin captar audio ni datos ajenos. No afirmar comprensión semántica ni paridadGboard.
+
+Ampliación explícita: usuario exige verificar palabras con vecinas de todo el abecedario. Matrices independientes de 27 letras, 114vecinas QWERTY y132del layoutespañolalineado (incluidasdiagonales). Geometría real usa centros de teclas, no un mapa fijo de sustituciones. Single-error cubre todas las vecinas físicas hasta1.55anchos; dos errores se limitan a2vecinasmáscercanas por posición para acotar trabajo. Máximo1536variantes por palabra y caché2048validaciones por revisión; cancelación100msworker/8msIME existente. Casos ambiguos y búsquedas incompletas conservan original.

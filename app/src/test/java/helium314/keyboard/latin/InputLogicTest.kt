@@ -476,6 +476,85 @@ class InputLogicTest {
         checkConnectionConsistency()
     }
 
+    @Test
+    @org.robolectric.annotation.Config(sdk = [28])
+    @org.robolectric.annotation.ConscryptMode(org.robolectric.annotation.ConscryptMode.Mode.OFF)
+    fun R29ShortNativeCorrectionsNeverChangeMeaningAutomatically() {
+        for ((source, candidate) in listOf("no" to "ni", "No" to "Ni", "me" to "le", "ME" to "LE")) {
+            r22Enable("")
+            setInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_AUTO_CORRECT)
+            latinIME.getSharedPreferences("keyboard_ai_private", 0).edit().putBoolean("intelligent_typing", false).commit()
+            input(source)
+            val typed = SuggestedWordInfo(source, "", 0, SuggestedWordInfo.KIND_TYPED, null, -1, -1)
+            val alternative = SuggestedWordInfo(candidate, "", 100, SuggestedWordInfo.KIND_CORRECTION, null, -1, -1)
+            inputLogic.setSuggestedWords(SuggestedWords(arrayListOf(typed, alternative), null, typed,
+                false, true, false, SuggestedWords.INPUT_STYLE_TYPING, 0))
+            kotlin.test.assertFalse(inputLogic.mSuggestedWords.mWillAutoCorrect)
+            assertEquals(candidate, inputLogic.mSuggestedWords.getWord(1))
+            input(' ')
+            assertEquals(source + " ", text)
+            checkConnectionConsistency()
+        }
+    }
+
+    @Test
+    @org.robolectric.annotation.Config(sdk = [28])
+    @org.robolectric.annotation.ConscryptMode(org.robolectric.annotation.ConscryptMode.Mode.OFF)
+    fun R29ShortAlternativesManualChoiceAndExplicitShortcutRemainAvailable() {
+        r22Enable("")
+        setInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_AUTO_CORRECT)
+        input("me")
+        val typed = SuggestedWordInfo("me", "", 0, SuggestedWordInfo.KIND_TYPED, null, -1, -1)
+        val alternative = SuggestedWordInfo("le", "", 100, SuggestedWordInfo.KIND_CORRECTION, null, -1, -1)
+        inputLogic.setSuggestedWords(SuggestedWords(arrayListOf(typed, alternative), null, typed,
+            false, true, false, SuggestedWords.INPUT_STYLE_TYPING, 0))
+        pickSuggestion("le")
+        input(' ')
+        assertEquals("le ", text)
+        r22Enable("")
+        setInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_AUTO_CORRECT)
+        input("me")
+        val shortcut = SuggestedWordInfo("mensaje", "", 100, SuggestedWordInfo.KIND_SHORTCUT, null, -1, -1)
+        inputLogic.setSuggestedWords(SuggestedWords(arrayListOf(typed, shortcut), null, typed,
+            false, true, false, SuggestedWords.INPUT_STYLE_TYPING, 0))
+        kotlin.test.assertTrue(inputLogic.mSuggestedWords.mWillAutoCorrect)
+        input(' ')
+        assertEquals("mensaje ", text)
+        r22Enable("")
+        input("i")
+        getAutocorrectedWithSpaceAfter("I", "i")
+        assertEquals("I ", text)
+    }
+
+    @Test
+    @org.robolectric.annotation.Config(sdk = [28])
+    @org.robolectric.annotation.ConscryptMode(org.robolectric.annotation.ConscryptMode.Mode.OFF)
+    fun R29NeighborAccentAndBoundaryUseAtomicUndoAndPairVeto() {
+        for ((source, expected) in listOf("tambien" to "también", "detecxiomnde" to "detección de")) {
+            r22Enable(source)
+            r241Observe(source, false)
+            r241Observe("detecxiom", false)
+            for (word in listOf("también", "detección", "de")) r241Observe(word)
+            val assistant = r23Assistant()
+            val field = assistant.javaClass.getDeclaredField("lexicon").apply { isAccessible = true }
+            val observed = field.get(assistant) as helium314.keyboard.latin.ai.local.ObservedLexicon
+            val positions = mutableMapOf<Char, DoubleArray>()
+            listOf("qwertyuiop", "asdfghjklñ", "zxcvbnm").forEachIndexed { y, row ->
+                row.forEachIndexed { x, key -> positions[key] = doubleArrayOf(x * 10.0 + y * 2.5, y * 10.0, 10.0, 10.0) }
+            }
+            positions[' '] = doubleArrayOf(40.0, 30.0, 50.0, 10.0)
+            observed.keyboard(positions)
+            r22Key(' '.code)
+            assertEquals(expected + " ", text)
+            assertEquals(text.length, cursor)
+            functionalKeyPress(KeyCode.DELETE)
+            assertEquals(source + " ", text)
+            latinIME.onLocalWordBoundary()
+            assertEquals(source + " ", text)
+            checkConnectionConsistency()
+        }
+    }
+
     @Test fun R24NativeRejectionVetoesFutureAutomaticCandidate() {
         r22Enable("poryectos")
         val assistant = r23Assistant()

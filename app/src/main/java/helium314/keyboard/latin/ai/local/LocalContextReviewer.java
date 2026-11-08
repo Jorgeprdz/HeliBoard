@@ -74,6 +74,11 @@ public final class LocalContextReviewer {
                 if (token.protectedText || token.word.length() > MAX_WORD_LENGTH
                         || NEGATIONS.contains(token.lower) || lexicon.preserved(token.lower)) continue;
                 Correction proposal = hasCapital(token.word) ? title(text,tokens,i,lexicon,cancellation) : mechanics(text,tokens,i,lexicon);
+                if (proposal == null && !hasCapital(token.word)) {
+                    NeighborWordCorrector.Choice accent = NeighborWordCorrector.accent(token.lower, lexicon, cancellation);
+                    if (accent != null) proposal = correction(token, accent.word,
+                        "motor-error-native-context-ranking", .96, true);
+                }
                 // Explicit, locally licensed grammar may offer an initial adverbial accent.
                 // Never treat an arbitrary capitalized token as a motor typo.
                 if(proposal==null&&(!hasCapital(token.word)||(i==0&&token.lower.equals("aun"))))
@@ -266,9 +271,16 @@ public final class LocalContextReviewer {
     private static Correction spelling(String text, List<Token> tokens, int i, Lexicon lexicon,
                                         Cancellation cancellation) {
         Token t = tokens.get(i);
+        List<String> nativeCandidates = lexicon.candidates(t.lower);
+        if (nativeCandidates == null || nativeCandidates.size() > MAX_CANDIDATES) return null;
         String previous=i>0&&linked(text,tokens,i-1,i)?tokens.get(i-1).lower:"",
             next=i+1<tokens.size()&&linked(text,tokens,i,i+1)?tokens.get(i+1).lower:"";
         TypingCandidateRanker.Choice choice=TypingCandidateRanker.choose(t.lower,previous,next,lexicon,cancellation);
+        if (choice == null) {
+            NeighborWordCorrector.Choice neighbor = NeighborWordCorrector.choose(t.lower, lexicon, cancellation);
+            return neighbor == null ? null : correction(t, neighbor.word,
+                "motor-error-native-context-ranking", .94, true);
+        }
         if(choice==null)return null;
         String best=choice.word;
         double confidence=Math.min(.97,Math.max(.65,1-choice.cost*.12));
@@ -286,6 +298,10 @@ public final class LocalContextReviewer {
         boolean automatic=lexicon.knownInvalid(t.lower)&&!lexicon.valid(t.lower)
             &&source.length()>=8&&confusion&&differences==1
             &&!best.equals(target)&&choice.margin>=.30;
+        if (!automatic && !choice.automatic) {
+            NeighborWordCorrector.Choice neighbor = NeighborWordCorrector.choose(t.lower, lexicon, cancellation);
+            automatic = neighbor != null && neighbor.word.equals(best);
+        }
         return correction(t, best, "motor-error-native-context-ranking", confidence, automatic||choice.automatic);
     }
 

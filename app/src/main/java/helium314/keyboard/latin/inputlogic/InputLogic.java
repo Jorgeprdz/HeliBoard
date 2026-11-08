@@ -686,7 +686,8 @@ public final class InputLogic {
 
     // TODO: on the long term, this method should become private, but it will be difficult.
     // Especially, how do we deal with InputMethodService.onDisplayCompletions?
-    public void setSuggestedWords(final SuggestedWords suggestedWords) {
+    public void setSuggestedWords(final SuggestedWords proposedWords) {
+        final SuggestedWords suggestedWords = helium314.keyboard.latin.ai.NativeAutoCorrectionPolicy.protect(proposedWords);
         if (!suggestedWords.isEmpty()) {
             final SuggestedWordInfo suggestedWordInfo;
             if (suggestedWords.mWillAutoCorrect) {

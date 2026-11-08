@@ -19,7 +19,7 @@ public final class BoundedDictionaryLexicon implements LocalContextReviewer.Lexi
   // The worker predicate checks ALL currently configured dictionaries when available.
   Boolean result=checked.get(key);
   if(result==null){
-   if(checked.size()>=512)throw new java.util.concurrent.CancellationException();
+   if(checked.size()>=2048)throw new java.util.concurrent.CancellationException();
    result=dictionary.test(key);checked.put(key,result);
   }
   return result || base.valid(key);

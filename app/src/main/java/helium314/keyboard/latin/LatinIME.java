@@ -1710,6 +1710,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     private void setSuggestedWords(SuggestedWords suggestedWords) {
+        suggestedWords=helium314.keyboard.latin.ai.NativeAutoCorrectionPolicy.protect(suggestedWords);
         if(helium314.keyboard.latin.ai.AiSettingsActivity.typingEnabled(this)) {
             if(mAiKeyboardAssistant==null) { mAiKeyboardAssistant=new AiKeyboardAssistant(this); }
             suggestedWords=mAiKeyboardAssistant.protectNativeSuggestions(suggestedWords);
