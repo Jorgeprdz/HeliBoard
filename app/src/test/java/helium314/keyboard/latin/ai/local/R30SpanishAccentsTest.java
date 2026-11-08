@@ -14,7 +14,7 @@ public class R30SpanishAccentsTest {
     }
     static LocalContextReviewer.Lexicon lex(SpanishAccentIndex index,Set<String> personal) {
         return new BoundedDictionaryLexicon(new R29NeighborCorrectionTest.Lex(),w->true,()->false,
-            w->personal.contains(w)?null:index.get(w));
+            w->index.get(w,personal::contains));
     }
     static String apply(String text, LocalContextReviewer.Lexicon lex,Set<String> rejected) {
         StringBuilder result=new StringBuilder(text);
@@ -36,6 +36,7 @@ public class R30SpanishAccentsTest {
     @Test public void personalVetoRejectionAndProtectedTextStayExact() throws Exception {
         SpanishAccentIndex index=index();
         assertEquals("tambien ",apply("tambien ",lex(index,Collections.singleton("tambien")),Collections.emptySet()));
+        assertEquals("Tambien ",apply("Tambien ",lex(index,Collections.singleton("Tambien")),Collections.emptySet()));
         assertEquals("tambien ",apply("tambien ",lex(index,Collections.emptySet()),Collections.singleton("tambien→también")));
         for(String text:Arrays.asList("TAMBIEN ","TaMbien ","hola Tambien ","`tambien` ","https://tambien.example ","\"tambien\" "))
             assertEquals(text,apply(text,lex(index,Collections.emptySet()),Collections.emptySet()));

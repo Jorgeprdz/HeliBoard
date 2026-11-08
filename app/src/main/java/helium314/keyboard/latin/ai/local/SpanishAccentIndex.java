@@ -10,6 +10,13 @@ public final class SpanishAccentIndex {
     private SpanishAccentIndex(Map<String,String> words){this.words=Collections.unmodifiableMap(words);}
     public static SpanishAccentIndex empty(){return new SpanishAccentIndex(Collections.emptyMap());}
     public String get(String word){return words.get(word);}
+    /** Preserve both ordinary words and titlecase personal names before overriding validity. */
+    public String get(String word,java.util.function.Predicate<String> personal) {
+        String candidate=words.get(word);
+        if(candidate==null)return null;
+        String title=Character.toUpperCase(word.charAt(0))+word.substring(1);
+        return personal.test(word)||personal.test(title)?null:candidate;
+    }
     public int size(){return words.size();}
     public static SpanishAccentIndex read(Reader source) throws IOException {
         Map<String,String> words=new HashMap<>();

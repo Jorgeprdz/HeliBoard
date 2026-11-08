@@ -230,10 +230,7 @@ public final class AiKeyboardAssistant {
             long deadline=System.nanoTime()+100_000_000L;
             helium314.keyboard.latin.ai.local.LocalContextReviewer.Cancellation stop=()->cancel.cancelled()||System.nanoTime()>deadline;
             helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon vocabulary=
-                new helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon(observed,dictionary::isValidSpellingWord,stop,word->{
-                    String canonical=accents==null?null:accents.get(word);
-                    return canonical!=null&&!dictionary.isPersonalSpellingWord(word)?canonical:null;
-                });
+                new helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon(observed,dictionary::isValidSpellingWord,stop,word->accents==null?null:accents.get(word,dictionary::isPersonalSpellingWord));
             try{found.set(boundaryReviewer.review(context,vocabulary,rejected,stop));}
             finally{localReviewValidated=vocabulary.validationCount();localLexiconDiagnostics=vocabulary.diagnostics();}
             localReviewProposals=found.get().size();
