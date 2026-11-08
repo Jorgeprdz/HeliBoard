@@ -555,6 +555,32 @@ class InputLogicTest {
         }
     }
 
+    @Test
+    @org.robolectric.annotation.Config(sdk = [28])
+    @org.robolectric.annotation.ConscryptMode(org.robolectric.annotation.ConscryptMode.Mode.OFF)
+    fun R29HistorySuggestionsDoNotWhitelistMisspellingsForWorker() {
+        r22Enable("yo tambien ")
+        val assistant = r23Assistant()
+        val history = Mockito.mock(helium314.keyboard.latin.dictionary.Dictionary::class.java,
+            Mockito.withSettings().useConstructor("history", Locale("es"))
+                .defaultAnswer(Mockito.CALLS_REAL_METHODS))
+        val typed = SuggestedWordInfo("tambien", "", 0, SuggestedWordInfo.KIND_TYPED, history, -1, -1)
+        val remembered = SuggestedWordInfo("detecxiomnde", "", 100, SuggestedWordInfo.KIND_CORRECTION, history, -1, -1)
+        // Native UI validity also means "do not autocorrect" or a history match; it is
+        // not evidence that any configured spelling dictionary contains this word.
+        assistant.onPredictions(SuggestedWords(arrayListOf(typed, remembered), null, typed,
+            true, false, false, SuggestedWords.INPUT_STYLE_TYPING, 0), null)
+        val field = assistant.javaClass.getDeclaredField("lexicon").apply { isAccessible = true }
+        val observed = field.get(assistant) as helium314.keyboard.latin.ai.local.ObservedLexicon
+        val dictionary = helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon(observed.snapshot(),
+            { word -> word in setOf("yo", "también", "detección", "de") }, { false })
+        kotlin.test.assertFalse(dictionary.valid("tambien"))
+        kotlin.test.assertFalse(dictionary.valid("detecxiomnde"))
+        val corrections = helium314.keyboard.latin.ai.local.LocalContextReviewer().review("yo tambien ",
+            dictionary, emptySet(), { false })
+        kotlin.test.assertTrue(corrections.any { it.replacement == "también" && it.automaticAllowed })
+    }
+
     @Test fun R24NativeRejectionVetoesFutureAutomaticCandidate() {
         r22Enable("poryectos")
         val assistant = r23Assistant()

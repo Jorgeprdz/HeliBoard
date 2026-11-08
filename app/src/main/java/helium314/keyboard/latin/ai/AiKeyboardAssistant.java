@@ -278,23 +278,40 @@ public final class AiKeyboardAssistant {
     }
 
     private helium314.keyboard.latin.SuggestedWords nativeSuggestions;
+    private static boolean spellingSource(helium314.keyboard.latin.dictionary.Dictionary dictionary) {
+        if (dictionary == null) return false;
+        // History and "do not autocorrect" UI flags are not spelling validation.
+        // In particular UserHistoryDictionary.isValidWord deliberately returns false.
+        return helium314.keyboard.latin.dictionary.Dictionary.TYPE_MAIN.equals(dictionary.mDictType)
+            || helium314.keyboard.latin.dictionary.Dictionary.TYPE_USER.equals(dictionary.mDictType)
+            || helium314.keyboard.latin.dictionary.Dictionary.TYPE_CONTACTS.equals(dictionary.mDictType)
+            || helium314.keyboard.latin.dictionary.Dictionary.TYPE_APPS.equals(dictionary.mDictType);
+    }
     public void onPredictions(helium314.keyboard.latin.SuggestedWords words,SuggestionStripView view) {
         if(!AiSettingsActivity.typingEnabled(ime)||typingProtected())return;
         if(!words.isPrediction()&&words.size()>0) {
             String typed=words.mTypedWordInfo==null?words.getWord(0):words.mTypedWordInfo.mWord;
             List<String> candidates=new ArrayList<>();
+            Set<String> confirmed=new HashSet<>();
             for(int i=0;i<words.size();i++) {
                 helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo info=words.getInfo(i);
                 if(info.isKindOf(helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo.KIND_CORRECTION)
-                        &&info.mSourceDict!=null) candidates.add(info.mWord);
+                        &&info.mSourceDict!=null) {
+                    candidates.add(info.mWord);
+                    if(spellingSource(info.mSourceDict))confirmed.add(info.mWord);
+                }
             }
-            lexicon.record(typed,words.mTypedWordValid,candidates,!words.mIsObsoleteSuggestions&&words.mTypedWordInfo!=null);
+            boolean verified=words.mTypedWordValid&&words.mTypedWordInfo!=null
+                &&spellingSource(words.mTypedWordInfo.mSourceDict);
+            boolean checked=!words.mIsObsoleteSuggestions&&words.mTypedWordInfo!=null
+                &&(!words.mTypedWordValid||verified);
+            lexicon.record(typed,verified,candidates,checked);
             Map<String,Double> priors=new HashMap<>();
             // Use native ordering, which already combines lexical frequency and active languages.
             for(int i=0;i<candidates.size();i++)priors.put(candidates.get(i),.12/(i+1));
             lexicon.nativePriors(typed,priors);
             updateKeyGeometry();
-            for(String word:candidates)if(!word.equals(typed))lexicon.record(word,true,Collections.emptyList());
+            for(String word:confirmed)if(!word.equals(typed))lexicon.record(word,true,Collections.emptyList());
         }
         if(view==null||view.isAiActive())return;
         strip=view;nativeSuggestions=words;
