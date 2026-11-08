@@ -32,4 +32,6 @@ public final class BoundedDictionaryLexicon implements LocalContextReviewer.Lexi
  public double personalPreference(String source,String target){return base.personalPreference(source,target);}
  public boolean rejected(String source,String target){return base.rejected(source,target);}
  public double keyDistance(char a,char b){return base.keyDistance(a,b);}
+ /** Count only: service diagnostics never expose the validated words. */
+ public int validationCount(){return checked.size();}
 }

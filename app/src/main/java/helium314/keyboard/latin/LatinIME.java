@@ -2091,6 +2091,7 @@ public class LatinIME extends InputMethodService implements
 
         Printer p = new PrintWriterPrinter(fout);
         p.println("LatinIME state :");
+        p.println(mAiKeyboardAssistant==null?"LocalReview assistant=inactive":mAiKeyboardAssistant.localReviewDiagnostics());
         p.println("  VersionCode = " + BuildConfig.VERSION_CODE);
         p.println("  VersionName = " + BuildConfig.VERSION_NAME);
         Keyboard keyboard = mKeyboardSwitcher.getKeyboard();
