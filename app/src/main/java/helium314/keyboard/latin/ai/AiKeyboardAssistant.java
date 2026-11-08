@@ -191,10 +191,11 @@ public final class AiKeyboardAssistant {
         return now!=null&&anchor.matches(now.editor,now.packageName,now.fieldId,continuousEpoch,now.start,now.end,before);
     }
     private volatile String localReviewPhase="idle";
+    private volatile String localLexiconDiagnostics="";
     private volatile int localReviewBoundaries,localReviewValidated,localReviewProposals;
     /** Content-free state for Android's existing protected service dump. */
     public String localReviewDiagnostics(){return "LocalReview phase="+localReviewPhase
-        +" boundaries="+localReviewBoundaries+" validated="+localReviewValidated+" proposals="+localReviewProposals;}
+        +" boundaries="+localReviewBoundaries+" validated="+localReviewValidated+" proposals="+localReviewProposals+localLexiconDiagnostics;}
     private void queueContinuous(EditorSnapshot base,String context){
         if(context.length()>512||base.start<context.length())return;
         if(continuousRunning){latestReview=new QueuedReview(base,context,anchor(base,context));return;}
@@ -217,7 +218,7 @@ public final class AiKeyboardAssistant {
             helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon vocabulary=
                 new helium314.keyboard.latin.ai.local.BoundedDictionaryLexicon(observed,dictionary::isValidSpellingWord,stop);
             try{found.set(boundaryReviewer.review(context,vocabulary,rejected,stop));}
-            finally{localReviewValidated=vocabulary.validationCount();}
+            finally{localReviewValidated=vocabulary.validationCount();localLexiconDiagnostics=vocabulary.diagnostics();}
             localReviewProposals=found.get().size();
             localReviewPhase=stop.cancelled()?"worker-budget-or-cancel":"worker-complete";
             for(helium314.keyboard.latin.ai.local.LocalContextReviewer.Correction repair:found.get())
